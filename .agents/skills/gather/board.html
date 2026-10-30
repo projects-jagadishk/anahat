@@ -1,0 +1,1179 @@
+<!doctype html>
+<!--
+  Gather board. Copy this file to .gather/<brief>/index.html and write board.js beside it:
+
+  window.board = {
+    title: "Settings Page",
+    brief: "Desktop settings page, looking for grouping and density.",
+    groups: [
+      {
+        title: "Grouping",
+        description: "How long lists of options are split up.",
+        items: [
+          {
+            image: "img/4c03063e.jpg",
+            title: "Linear",
+            source: "Mobbin",
+            url: "https://mobbin.com/screens/4c03063e",
+            note: "Take the grouped list, not the colours."
+          }
+        ]
+      }
+    ]
+  };
+
+  The board title takes Title Case, such as "Agent Chats". Group titles take two or three words in Title Case, such as "Agent Activity". `source` puts › between a library and the board inside it, such as "Pond › Are.na". An item may add `details`, extra rows for the viewer such as { Creator: "Kevin", Style: ["Minimal", "Clean"] }. `image` is a path beside this file or a full URL. `url` is the original, and it identifies the item, so each one is unique.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gather</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..600&display=swap"
+    />
+    <style>
+      :root {
+        --gray-1: #fdfdfc;
+        --gray-2: #f9f9f8;
+        --gray-3: #f1f0ef;
+        --gray-4: #e9e8e6;
+        --gray-5: #e2e1de;
+        --gray-10: #82827c;
+        --gray-11: #63635e;
+        --gray-12: #21201c;
+        --shadow-strength: 1;
+        color-scheme: light dark;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --gray-1: #111110;
+          --gray-2: #191918;
+          --gray-3: #222221;
+          --gray-4: #2a2a28;
+          --gray-5: #31312e;
+          --gray-10: #7c7b74;
+          --gray-11: #b5b3ad;
+          --gray-12: #eeeeec;
+          --shadow-strength: 3;
+        }
+      }
+
+      :root {
+        --accent: #02bbff;
+        --border-primary: color-mix(in oklab, var(--gray-12) 7%, transparent);
+        --border-secondary: color-mix(in oklab, var(--gray-12) 12%, transparent);
+        --text-primary: var(--gray-12);
+        --text-secondary: color-mix(in oklab, var(--gray-12) 80%, var(--gray-11));
+        --text-tertiary: var(--gray-11);
+        --text-quaternary: var(--gray-10);
+        --background-primary: var(--gray-1);
+        --background-tertiary: var(--gray-3);
+        --shadow-raised:
+          0 0 0 1px var(--border-secondary),
+          0 1px 2px oklch(0 0 0 / calc(4% * var(--shadow-strength))),
+          0 4px 12px oklch(0 0 0 / calc(3% * var(--shadow-strength)));
+        --font-weight-400: "wght" 400, "opsz" 14;
+        --font-weight-500: "wght" 500, "opsz" 14;
+        --ease-out-cubic: cubic-bezier(0.215, 0.61, 0.355, 1);
+        --ease-out-quart: cubic-bezier(0.165, 0.84, 0.44, 1);
+        --duration-snappy: 220ms;
+        --column: 200px;
+        --gap: 24px;
+        --inset: 48px;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      * {
+        padding: 0;
+        margin: 0;
+        font: inherit;
+        font-variation-settings: inherit;
+        color: inherit;
+        text-decoration: none;
+        border: 0;
+      }
+
+      img,
+      svg {
+        display: block;
+        max-width: 100%;
+      }
+
+      button {
+        cursor: pointer;
+        user-select: none;
+        background: none;
+      }
+
+      html {
+        font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
+        font-size: 14px;
+        line-height: 20px;
+        font-variation-settings: var(--font-weight-400);
+        font-optical-sizing: none;
+        font-feature-settings: "calt", "ccmp", "locl", "kern", "cv01", "ss03";
+        -webkit-font-smoothing: antialiased;
+        color: var(--text-primary);
+        background: var(--background-primary);
+      }
+
+      * {
+        scrollbar-width: none;
+      }
+
+      ::-webkit-scrollbar {
+        display: none;
+      }
+
+      ::selection {
+        background: color-mix(in oklab, var(--accent) 28%, transparent);
+      }
+
+      :focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+        border-radius: 4px;
+      }
+
+      p {
+        text-wrap: pretty;
+      }
+
+      .page {
+        width: min(768px, 100% - var(--inset) * 2);
+        margin: 0 auto;
+        padding: 96px 0 128px;
+
+        @media (width <= 640px) {
+          --inset: 24px;
+          padding-top: 64px;
+        }
+      }
+
+      .head {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        max-width: 640px;
+      }
+
+      .title {
+        font-variation-settings: var(--font-weight-500);
+        text-wrap: balance;
+      }
+
+      .brief {
+        color: var(--text-tertiary);
+      }
+
+      @property --bar-line {
+        syntax: "<color>";
+        inherits: false;
+        initial-value: transparent;
+      }
+
+      .bar {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        margin-top: 48px;
+        padding: 16px 0;
+        border-image: linear-gradient(to top, var(--bar-line) 1px, var(--background-primary) 1px) fill 0 / / 0 100vw;
+        transition: --bar-line var(--duration-snappy) var(--ease-out-cubic);
+
+        &[data-stuck] {
+          --bar-line: var(--border-primary);
+        }
+      }
+
+      .filters,
+      .picks {
+        display: flex;
+        gap: 8px;
+        min-width: 0;
+      }
+
+      .picks {
+        margin-left: auto;
+      }
+
+      .copy {
+        position: relative;
+        display: flex;
+      }
+
+      .toast {
+        position: absolute;
+        bottom: calc(100% + 8px);
+        left: 50%;
+        z-index: 1;
+        display: inline-flex;
+        align-items: center;
+        height: 32px;
+        padding: 0 12px;
+        font-size: 13px;
+        font-variation-settings: var(--font-weight-500);
+        color: var(--text-primary);
+        white-space: nowrap;
+        pointer-events: none;
+        background: var(--gray-2);
+        border-radius: 10px;
+        box-shadow: var(--shadow-raised);
+        opacity: 0;
+        translate: -50% 4px;
+        scale: 0.97;
+        transform-origin: bottom center;
+        transition:
+          opacity var(--duration-snappy) var(--ease-out-cubic),
+          translate var(--duration-snappy) var(--ease-out-cubic),
+          scale var(--duration-snappy) var(--ease-out-cubic);
+
+        &[data-side="below"] {
+          top: calc(100% + 8px);
+          bottom: auto;
+          translate: -50% -4px;
+          transform-origin: top center;
+        }
+
+        &[data-open] {
+          opacity: 1;
+          translate: -50% 0;
+          scale: 1;
+        }
+      }
+
+      .select {
+        display: inline-flex;
+        gap: 6px;
+        align-items: center;
+        min-width: 0;
+        max-width: 280px;
+        height: 32px;
+        padding: 0 28px 0 12px;
+        font-size: 13px;
+        font-variation-settings: var(--font-weight-500);
+        color: var(--text-primary);
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        cursor: pointer;
+        appearance: none;
+        background: var(--background-tertiary) no-repeat right 11px center / 10px
+          url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10' fill='none' stroke='%2382827c' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 4l2.5 2.5L7.5 4'/%3E%3C/svg%3E");
+        border-radius: 999px;
+        transition: background-color var(--duration-snappy) var(--ease-out-cubic);
+
+        &:hover {
+          background-color: var(--gray-4);
+        }
+      }
+
+      @supports (appearance: base-select) {
+        .select,
+        .select::picker(select) {
+          appearance: base-select;
+        }
+
+        .select {
+          padding-right: 12px;
+          background-image: none;
+
+          &::picker-icon {
+            width: 10px;
+            height: 10px;
+            content: "";
+            background: var(--text-quaternary);
+            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 4l2.5 2.5L7.5 4'/%3E%3C/svg%3E");
+            transition: rotate var(--duration-snappy) var(--ease-out-cubic);
+          }
+
+          &:open::picker-icon {
+            rotate: 180deg;
+          }
+
+          selectedcontent {
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+
+          &::picker(select) {
+            min-width: anchor-size(width);
+            max-height: min(400px, 60dvh);
+            scrollbar-width: none;
+            padding: 4px;
+            margin-top: 4px;
+            background: var(--gray-2);
+            border: 0;
+            border-radius: 12px;
+            box-shadow: var(--shadow-raised);
+            opacity: 0;
+            transition:
+              opacity var(--duration-snappy) var(--ease-out-cubic),
+              display var(--duration-snappy) allow-discrete,
+              overlay var(--duration-snappy) allow-discrete;
+          }
+
+          &:open::picker(select) {
+            opacity: 1;
+
+            @starting-style {
+              opacity: 0;
+            }
+          }
+        }
+
+        .select option {
+          display: flex;
+          gap: 6px;
+          align-items: center;
+          height: 28px;
+          padding: 0 8px;
+          font-size: 13px;
+          font-variation-settings: var(--font-weight-500);
+          color: var(--text-tertiary);
+          white-space: nowrap;
+          cursor: pointer;
+          border-radius: 8px;
+
+          &:hover,
+          &:focus-visible {
+            color: var(--text-primary);
+            background: var(--background-tertiary);
+            outline: none;
+          }
+
+          &:checked {
+            color: var(--text-primary);
+          }
+
+          &::checkmark {
+            order: 1;
+            margin-left: auto;
+            padding-left: 16px;
+            color: var(--accent);
+          }
+        }
+      }
+
+      .chip,
+      .action {
+        display: inline-flex;
+        gap: 6px;
+        align-items: center;
+        height: 32px;
+        padding: 0 12px;
+        font-size: 13px;
+        font-variation-settings: var(--font-weight-500);
+        color: var(--text-tertiary);
+        white-space: nowrap;
+        border-radius: 999px;
+        transition:
+          color var(--duration-snappy) var(--ease-out-cubic),
+          background-color var(--duration-snappy) var(--ease-out-cubic);
+
+        &:hover {
+          color: var(--text-primary);
+        }
+
+        &[aria-pressed="true"] {
+          color: var(--text-primary);
+          background: var(--background-tertiary);
+        }
+
+        &:disabled {
+          cursor: default;
+          opacity: 0.5;
+        }
+      }
+
+      .count {
+        color: var(--text-quaternary);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .action {
+        color: var(--text-primary);
+        background: var(--background-tertiary);
+
+        &:hover:not(:disabled) {
+          background: var(--gray-4);
+        }
+      }
+
+      .groups {
+        display: flex;
+        flex-direction: column;
+        gap: 64px;
+        margin-top: 32px;
+      }
+
+      .group[hidden] {
+        display: none;
+      }
+
+      .group-head {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px 12px;
+        align-items: baseline;
+        margin-bottom: 20px;
+      }
+
+      .group-title {
+        font-variation-settings: var(--font-weight-500);
+      }
+
+      .group-description {
+        color: var(--text-tertiary);
+      }
+
+      .group-count {
+        margin-left: auto;
+        color: var(--text-quaternary);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .columns {
+        display: flex;
+        gap: var(--gap);
+        align-items: flex-start;
+      }
+
+      .column {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        gap: var(--gap);
+        min-width: 0;
+      }
+
+      .ref {
+        position: relative;
+      }
+
+      .shot {
+        position: relative;
+        display: block;
+        width: 100%;
+        overflow: hidden;
+        cursor: zoom-in;
+        background: var(--background-tertiary);
+        border-radius: 10px;
+        transition: box-shadow var(--duration-snappy) var(--ease-out-cubic);
+
+        &::after {
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          content: "";
+          border-radius: inherit;
+          box-shadow: inset 0 0 0 1px var(--border-primary);
+        }
+
+        img {
+          width: 100%;
+          height: auto;
+        }
+      }
+
+      .ref[data-kept] .shot {
+        box-shadow:
+          0 0 0 2px var(--background-primary),
+          0 0 0 4px var(--accent);
+      }
+
+      .ref[data-missing] .shot {
+        aspect-ratio: 4 / 3;
+      }
+
+      @media (prefers-reduced-motion: no-preference) {
+        .shot img {
+          transition:
+            opacity 0.6s var(--ease-out-quart),
+            filter 0.7s var(--ease-out-quart);
+
+          &:not([data-loaded]) {
+            opacity: 0;
+            filter: blur(6px);
+          }
+        }
+      }
+
+      .keep {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        display: grid;
+        place-items: center;
+        width: 28px;
+        height: 28px;
+        color: var(--text-tertiary);
+        background: color-mix(in oklab, var(--gray-1) 82%, transparent);
+        border-radius: 999px;
+        box-shadow: var(--shadow-raised);
+        opacity: 0;
+        backdrop-filter: blur(8px);
+        transition:
+          opacity var(--duration-snappy) var(--ease-out-cubic),
+          color var(--duration-snappy) var(--ease-out-cubic),
+          background-color var(--duration-snappy) var(--ease-out-cubic);
+
+        &::before {
+          position: absolute;
+          inset: -8px;
+          content: "";
+        }
+
+        &:hover {
+          color: var(--text-primary);
+        }
+
+        &[aria-pressed="true"] {
+          color: #fff;
+          background: var(--accent);
+          opacity: 1;
+        }
+
+        @media (hover: none) {
+          opacity: 1;
+        }
+      }
+
+      .ref:hover .keep,
+      .keep:focus-visible {
+        opacity: 1;
+      }
+
+      .empty {
+        padding: 96px 0;
+        color: var(--text-tertiary);
+        text-align: center;
+      }
+
+      .viewer {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        max-width: none;
+        height: 100%;
+        max-height: none;
+        color: var(--text-primary);
+        background: transparent;
+        backdrop-filter: blur(0);
+        transition:
+          background-color var(--duration-snappy) var(--ease-out-cubic),
+          backdrop-filter var(--duration-snappy) var(--ease-out-cubic),
+          display var(--duration-snappy) allow-discrete,
+          overlay var(--duration-snappy) allow-discrete;
+
+        grid-template-columns: 1fr 320px;
+
+        @media (width <= 900px) {
+          grid-template-rows: 1fr auto;
+          grid-template-columns: 1fr;
+        }
+
+        &[open] {
+          display: grid;
+          background: color-mix(in oklab, var(--gray-1) 92%, transparent);
+          backdrop-filter: blur(24px);
+
+          @starting-style {
+            background: transparent;
+            backdrop-filter: blur(0);
+          }
+        }
+
+        &[open][data-closing] {
+          background: transparent;
+          backdrop-filter: blur(0);
+        }
+
+        &::backdrop {
+          background: transparent;
+        }
+      }
+
+      .stage {
+        display: grid;
+        place-items: center;
+        min-width: 0;
+        min-height: 0;
+        padding: var(--inset);
+        cursor: zoom-out;
+
+        img {
+          max-height: calc(100dvh - var(--inset) * 2);
+          object-fit: contain;
+          cursor: default;
+          border-radius: 12px;
+          box-shadow: var(--shadow-raised);
+
+          @media (width <= 900px) {
+            max-height: calc(60dvh - var(--inset));
+          }
+        }
+      }
+
+      .panel {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        min-height: 0;
+        padding: 20px;
+        overflow-y: auto;
+        border-left: 1px solid var(--border-primary);
+        opacity: 0;
+        translate: 12px 0;
+        transition:
+          opacity var(--duration-snappy) var(--ease-out-cubic),
+          translate 320ms var(--ease-out-quart);
+
+        .viewer[open] & {
+          opacity: 1;
+          translate: 0;
+          transition-delay: 60ms;
+
+          @starting-style {
+            opacity: 0;
+            translate: 12px 0;
+          }
+        }
+
+        .viewer[open][data-closing] & {
+          opacity: 0;
+          translate: 12px 0;
+          transition-delay: 0s;
+        }
+
+        @media (width <= 900px) {
+          border-top: 1px solid var(--border-primary);
+          border-left: 0;
+        }
+      }
+
+      .panel-top,
+      .panel-tools {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .panel-top {
+        justify-content: space-between;
+      }
+
+      .icon-button {
+        position: relative;
+        display: grid;
+        place-items: center;
+        width: 28px;
+        height: 28px;
+        color: var(--text-tertiary);
+        background: var(--background-tertiary);
+        border-radius: 999px;
+        transition:
+          color var(--duration-snappy) var(--ease-out-cubic),
+          background-color var(--duration-snappy) var(--ease-out-cubic),
+          opacity var(--duration-snappy) var(--ease-out-cubic);
+
+        &:hover:not(:disabled) {
+          color: var(--text-primary);
+          background: var(--gray-4);
+        }
+
+        &:disabled {
+          cursor: default;
+          opacity: 0.4;
+        }
+
+        &[aria-pressed="true"] {
+          color: #fff;
+          background: var(--accent);
+        }
+      }
+
+      [aria-pressed="true"] .bookmark path {
+        fill: currentColor;
+      }
+
+      .panel-head {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .panel-group {
+        color: var(--text-tertiary);
+      }
+
+      .panel-title {
+        font-variation-settings: var(--font-weight-500);
+        text-wrap: pretty;
+      }
+
+      .panel-note {
+        margin-top: 10px;
+        color: var(--text-secondary);
+        text-wrap: pretty;
+      }
+
+      .panel-count {
+        margin-top: 10px;
+        color: var(--text-quaternary);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .detail {
+        display: flex;
+        gap: 16px;
+        justify-content: space-between;
+        padding: 6px 0;
+
+        & + & {
+          border-top: 1px solid var(--border-primary);
+        }
+
+        dt {
+          flex: none;
+          color: var(--text-tertiary);
+        }
+
+        dd {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+          min-width: 0;
+          text-align: right;
+          overflow-wrap: anywhere;
+        }
+
+        a {
+          display: inline-flex;
+          gap: 4px;
+          align-items: center;
+
+          svg {
+            color: var(--text-quaternary);
+            transition: color var(--duration-snappy) var(--ease-out-cubic);
+          }
+
+          &:hover svg {
+            color: var(--text-primary);
+          }
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          transition-duration: 0s !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="head">
+        <h1 class="title" id="title"></h1>
+        <p class="brief" id="brief"></p>
+      </header>
+
+      <nav class="bar" aria-label="Filters">
+        <div class="filters">
+          <select class="select" id="group-filter" aria-label="Group"></select>
+          <select class="select" id="source-filter" aria-label="Source"></select>
+        </div>
+        <div class="picks">
+          <button class="chip" id="kept-only" type="button" aria-pressed="false"></button>
+          <span class="copy">
+            <button class="action" id="copy" type="button" title="Copy Picks (⇧C)" aria-keyshortcuts="Shift+C" disabled>Copy Picks</button>
+            <output class="toast" id="copy-toast"></output>
+          </span>
+        </div>
+      </nav>
+
+      <main class="groups" id="groups"></main>
+    </div>
+
+    <dialog class="viewer" id="viewer" aria-label="Reference">
+      <div class="stage" id="stage"><img id="viewer-image" alt="" /></div>
+      <aside class="panel">
+        <div class="panel-top">
+          <button class="icon-button" id="viewer-close" type="button" aria-label="Close" title="Close (Esc)">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8" /></svg>
+          </button>
+          <div class="panel-tools">
+            <button class="icon-button" id="viewer-keep" type="button" aria-pressed="false"></button>
+            <button class="icon-button" id="viewer-prev" type="button" aria-label="Previous" title="Previous (←)">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 8h-9M7 4.5L3.5 8 7 11.5" /></svg>
+            </button>
+            <button class="icon-button" id="viewer-next" type="button" aria-label="Next" title="Next (→)">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8h9M9 4.5L12.5 8 9 11.5" /></svg>
+            </button>
+          </div>
+        </div>
+        <header class="panel-head">
+          <span class="panel-group" id="viewer-group"></span>
+          <h2 class="panel-title" id="viewer-title"></h2>
+          <p class="panel-note" id="viewer-note"></p>
+          <span class="panel-count" id="viewer-count"></span>
+        </header>
+        <dl id="viewer-details"></dl>
+      </aside>
+    </dialog>
+
+    <script src="board.js"></script>
+    <script>
+      const board = window.board;
+      const storageKey = `gather:${location.pathname}`;
+      const kept = new Set(JSON.parse(localStorage.getItem(storageKey) || "[]"));
+      const filters = { group: null, source: null, keptOnly: false };
+      const $ = (id) => document.getElementById(id);
+
+      const bookmark = `<svg class="bookmark" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M4.5 2.5h7v11L8 11l-3.5 2.5z" /></svg>`;
+      const external = `<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 4.5h6v6M11.5 4.5l-7 7" /></svg>`;
+      function h(tag, props = {}, ...children) {
+        const node = document.createElement(tag);
+        for (const [key, value] of Object.entries(props)) {
+          if (key === "html") node.innerHTML = value;
+          else if (key.startsWith("on")) node.addEventListener(key.slice(2), value);
+          else node.setAttribute(key, value);
+        }
+        node.append(...children.filter((child) => child != null));
+        return node;
+      }
+
+      const items = board.groups.flatMap((group, index) =>
+        group.items.map((item) => ({ ...item, group: index })),
+      );
+      const sources = [...new Set(items.map((item) => item.source))];
+
+      document.title = `${board.title} · Gather`;
+      $("title").textContent = board.title;
+      $("brief").textContent = board.brief;
+      function isVisible(item) {
+        return (
+          (filters.group === null || item.group === filters.group) &&
+          (filters.source === null || item.source === filters.source) &&
+          (!filters.keptOnly || kept.has(item.url))
+        );
+      }
+
+      function option(value, label, count) {
+        return h("option", { value }, label, " ", h("span", { class: "count" }, String(count)));
+      }
+
+      $("group-filter").append(
+        option("", "All Groups", items.length),
+        ...board.groups.map((group, index) => option(index, group.title, group.items.length)),
+      );
+      $("source-filter").append(
+        option("", "All Sources", items.length),
+        ...sources.map((source) =>
+          option(source, source, items.filter((item) => item.source === source).length),
+        ),
+      );
+      $("group-filter").addEventListener("change", (event) =>
+        setFilter("group", event.target.value === "" ? null : Number(event.target.value)),
+      );
+      $("source-filter").addEventListener("change", (event) =>
+        setFilter("source", event.target.value || null),
+      );
+
+      function renderPicks() {
+        const keptOnly = $("kept-only");
+        keptOnly.setAttribute("aria-pressed", String(filters.keptOnly));
+        keptOnly.replaceChildren("Kept", h("span", { class: "count" }, String(kept.size)));
+        $("copy").disabled = kept.size === 0;
+      }
+
+      function setFilter(key, value) {
+        filters[key] = value;
+        renderPicks();
+        layout();
+      }
+
+      for (const item of items) {
+        const image = h("img", { src: item.image, alt: "", decoding: "async" });
+        const keep = h("button", {
+          class: "keep",
+          type: "button",
+          html: bookmark,
+          onclick: () => toggleKeep(item),
+        });
+        item.node = h(
+          "figure",
+          { class: "ref" },
+          h("button", { class: "shot", type: "button", "aria-label": `View ${item.title}`, onclick: () => openViewer(item) }, image),
+          keep,
+        );
+        item.keep = keep;
+        item.ready = image
+          .decode()
+          .then(() => {
+            image.style.aspectRatio = `${image.naturalWidth} / ${image.naturalHeight}`;
+          })
+          .catch(() => item.node.setAttribute("data-missing", ""));
+        renderKeep(item);
+      }
+
+      const sections = board.groups.map((group) => {
+        const count = h("span", { class: "group-count" });
+        const columns = h("div", { class: "columns" });
+        const node = h(
+          "section",
+          { class: "group" },
+          h(
+            "header",
+            { class: "group-head" },
+            h("h2", { class: "group-title" }, group.title),
+            group.description ? h("p", { class: "group-description" }, group.description) : null,
+            count,
+          ),
+          columns,
+        );
+        $("groups").append(node);
+        return { node, count, columns };
+      });
+      const empty = h("p", { class: "empty", hidden: "" }, "Nothing Kept Yet");
+      $("groups").append(empty);
+
+      function columnCount() {
+        const width = $("groups").clientWidth;
+        const column = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--column"));
+        const gap = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--gap"));
+        return Math.min(3, Math.max(1, Math.floor((width + gap) / (column + gap))));
+      }
+
+      let currentColumns = 0;
+
+      function layout() {
+        currentColumns = columnCount();
+        let shown = 0;
+        sections.forEach((section, index) => {
+          const visible = items.filter((item) => item.group === index && isVisible(item));
+          section.node.hidden = visible.length === 0;
+          section.count.textContent = String(visible.length);
+          const columns = Array.from({ length: currentColumns }, () => h("div", { class: "column" }));
+          section.columns.replaceChildren(...columns);
+          for (const item of visible) {
+            const shortest = columns.reduce((a, b) => (b.offsetHeight < a.offsetHeight ? b : a));
+            shortest.append(item.node);
+          }
+          shown += visible.length;
+        });
+        empty.hidden = shown > 0;
+      }
+
+      new ResizeObserver(() => {
+        if (columnCount() !== currentColumns) layout();
+      }).observe($("groups"));
+
+      function save() {
+        localStorage.setItem(storageKey, JSON.stringify([...kept]));
+      }
+
+      function renderKeep(item) {
+        const isKept = kept.has(item.url);
+        item.node.toggleAttribute("data-kept", isKept);
+        item.keep.setAttribute("aria-pressed", String(isKept));
+        item.keep.setAttribute("aria-label", isKept ? `Unkeep ${item.title}` : `Keep ${item.title}`);
+      }
+
+      function toggleKeep(item) {
+        if (kept.has(item.url)) kept.delete(item.url);
+        else kept.add(item.url);
+        save();
+        renderKeep(item);
+        renderPicks();
+        if (viewer.open && current === item) renderViewer();
+        if (filters.keptOnly && !viewer.open) layout();
+      }
+
+      $("kept-only").addEventListener("click", () => setFilter("keptOnly", !filters.keptOnly));
+
+      const bar = document.querySelector(".bar");
+      const markStuck = () => bar.toggleAttribute("data-stuck", bar.getBoundingClientRect().top <= 0);
+      addEventListener("scroll", markStuck, { passive: true });
+      markStuck();
+
+      async function copyPicks() {
+        const picks = items.filter((item) => kept.has(item.url));
+        if (picks.length === 0) return;
+        const lines = picks.map((item, index) =>
+          [`${index + 1}. ${item.title}, ${item.source}`, `   ${item.note}`, `   ${item.url}`].join("\n"),
+        );
+        const text = `Keep these ${picks.length} references from ${board.title}:\n\n${lines.join("\n\n")}\n`;
+        const tokens = Math.ceil(text.length / 4).toLocaleString();
+        const toast = $("copy-toast");
+        toast.textContent = await navigator.clipboard.writeText(text).then(
+          () => `Copied · ~${tokens} tokens`,
+          () => "Copy Failed",
+        );
+        toast.dataset.side = $("copy").getBoundingClientRect().top < 48 ? "below" : "above";
+        toast.dataset.open = "";
+        clearTimeout(toast.hide);
+        toast.hide = setTimeout(() => delete toast.dataset.open, 1600);
+      }
+
+      $("copy").addEventListener("click", copyPicks);
+
+      document.addEventListener("keydown", (event) => {
+        if (!event.shiftKey || event.code !== "KeyC" || event.metaKey || event.ctrlKey || event.altKey) return;
+        if (viewer.open || event.target.closest("input, textarea, select, [contenteditable]")) return;
+        event.preventDefault();
+        copyPicks();
+      });
+
+      const viewer = $("viewer");
+      $("viewer-keep").innerHTML = bookmark;
+      let sequence = [];
+      let current = null;
+
+      const motion = matchMedia("(prefers-reduced-motion: no-preference)");
+      const easeOutQuart = "cubic-bezier(0.165, 0.84, 0.44, 1)";
+      let flight = null;
+
+      function thumbnail(item) {
+        const rect = item.node.querySelector(".shot").getBoundingClientRect();
+        return rect.bottom > 0 && rect.top < innerHeight ? rect : null;
+      }
+
+      function thumbnailFrame(image, rect) {
+        const to = image.getBoundingClientRect();
+        const scale = rect.width / to.width;
+        const x = rect.left + rect.width / 2 - (to.left + to.width / 2);
+        const y = rect.top + rect.height / 2 - (to.top + to.height / 2);
+        return { transform: `translate(${x}px, ${y}px) scale(${scale})`, borderRadius: `${10 / scale}px` };
+      }
+
+      async function openViewer(item) {
+        if (viewer.open) return;
+        sequence = items.filter(isVisible);
+        current = item;
+        renderViewer();
+        flight?.cancel();
+        const image = $("viewer-image");
+        const rect = motion.matches && thumbnail(item);
+        image.style.opacity = rect ? "0" : "";
+        viewer.showModal();
+        if (!rect) return;
+        await image.decode().catch(() => {});
+        image.style.opacity = "";
+        flight = image.animate([thumbnailFrame(image, rect), { transform: "none", borderRadius: "12px" }], {
+          duration: 360,
+          easing: easeOutQuart,
+        });
+      }
+
+      async function closeViewer() {
+        if (!viewer.open || viewer.hasAttribute("data-closing")) return;
+        flight?.cancel();
+        const image = $("viewer-image");
+        const rect = motion.matches && thumbnail(current);
+        if (!rect) return viewer.close();
+        viewer.setAttribute("data-closing", "");
+        flight = image.animate([{}, thumbnailFrame(image, rect)], { duration: 260, easing: easeOutQuart, fill: "forwards" });
+        await flight.finished.catch(() => {});
+        viewer.style.transition = "none";
+        viewer.close();
+        viewer.removeAttribute("data-closing");
+        flight.cancel();
+        requestAnimationFrame(() => viewer.style.removeProperty("transition"));
+      }
+
+      function renderViewer() {
+        const index = sequence.indexOf(current);
+        const isKept = kept.has(current.url);
+        $("viewer-image").src = current.image;
+        $("viewer-image").alt = current.title;
+        $("viewer-count").textContent = `${index + 1} of ${sequence.length}`;
+        $("viewer-group").textContent = board.groups[current.group].title;
+        $("viewer-title").textContent = current.title;
+        $("viewer-note").textContent = current.note;
+
+        const original = h("a", { href: current.url, target: "_blank", rel: "noreferrer", html: external });
+        original.prepend(new URL(current.url).hostname.replace(/^www\./, ""));
+        const rows = [["Source", current.source], ["Original", original], ...Object.entries(current.details ?? {})];
+        $("viewer-details").replaceChildren(
+          ...rows.map(([label, value]) =>
+            h(
+              "div",
+              { class: "detail" },
+              h("dt", {}, label),
+              h("dd", {}, ...[value].flat().map((part) => (typeof part === "string" ? h("span", {}, part) : part))),
+            ),
+          ),
+        );
+
+        const keep = $("viewer-keep");
+        const label = isKept ? "Unkeep" : "Keep";
+        keep.setAttribute("aria-pressed", String(isKept));
+        keep.setAttribute("aria-label", label);
+        keep.title = `${label} (K)`;
+        $("viewer-prev").disabled = index === 0;
+        $("viewer-next").disabled = index === sequence.length - 1;
+      }
+
+      function step(offset) {
+        const next = sequence[sequence.indexOf(current) + offset];
+        if (!next) return;
+        current = next;
+        renderViewer();
+      }
+
+      $("viewer-prev").addEventListener("click", () => step(-1));
+      $("viewer-next").addEventListener("click", () => step(1));
+      $("viewer-keep").addEventListener("click", () => toggleKeep(current));
+      $("viewer-close").addEventListener("click", closeViewer);
+      $("stage").addEventListener("click", (event) => {
+        if (event.target === event.currentTarget) closeViewer();
+      });
+      viewer.addEventListener("cancel", (event) => {
+        event.preventDefault();
+        closeViewer();
+      });
+
+      viewer.addEventListener("keydown", (event) => {
+        if (event.metaKey || event.ctrlKey || event.altKey) return;
+        if (event.key === "Escape") closeViewer();
+        else if (event.key === "ArrowLeft") step(-1);
+        else if (event.key === "ArrowRight") step(1);
+        else if (event.key.toLowerCase() === "k") toggleKeep(current);
+        else if (event.key.toLowerCase() === "o") window.open(current.url, "_blank", "noreferrer");
+        else return;
+        event.preventDefault();
+      });
+
+      viewer.addEventListener("close", () => {
+        if (filters.keptOnly) layout();
+        const shot = current?.node.querySelector(".shot");
+        shot?.focus({ preventScroll: true });
+        shot?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      });
+
+      renderPicks();
+      Promise.all(items.map((item) => item.ready)).then(() => {
+        layout();
+        requestAnimationFrame(() => {
+          for (const image of document.querySelectorAll(".shot img")) image.setAttribute("data-loaded", "");
+        });
+      });
+    </script>
+  </body>
+</html>
