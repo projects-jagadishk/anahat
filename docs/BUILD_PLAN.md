@@ -36,7 +36,8 @@
   - [x] Absolute global reset: `* { border-radius: 0px !important; }`.
   - [x] Brutalist hard drop shadow: `6px 6px 0px 0px #000000`.
 - [x] **Figma Screen 1: The Main Deck (1200x800 Tri-Column Grid)** (`src/pages/index.astro`):
-  - [x] **Left Column (300px)**: Dark header `ANAHAT V1.0 // PRESETS`, category headers (`--- [ VEDIC ] ---`, `--- [ SOLFEGGIO ] ---`, `--- [ MODERN CLINICAL ] ---`), 276x36px preset rows with active highlight.
+  - [x] **Left Column (300px)**: Dark header `ANAHAT V1.0 // PRESETS`, category headers (`--- [ VEDIC ] ---`, `--- [ SOLFEGGIO ] ---`, `--- [ PYTHAGOREAN ] ---`, `--- [ CLINICAL ] ---`, `--- [ CLASSICAL PHYSICS ] ---`).
+  - [x] **Preset Item Molecule (Figma atomic design)**: Formatted `[PRE-001]` codes, clean titles, right-aligned Hz, default `#FFFFFF` / hover `#000000` / active playing `#FF3333` with terminal blink cursor `█`.
   - [x] **Chunky Session Button**: `[ REC SESSION ]` at bottom with brutalist shadow and depression interaction.
   - [x] **Center Column (600px)**:
     - [x] Canvas Card: Coordinate grid background, dark toolbar with mode toggle and `[ THEATER ⤢ ]` button.

@@ -3,15 +3,37 @@
  * index.astro — The Main Deck (Screen 1)
  * 1200×800 — Matches Figma Screen-1-Main-Deck specifications.
  * Fixed columns: Left 300px | Center 600px | Right 300px
- * Includes all Figma Screen states:
- * - Screen 1: Main Sound Deck
- * - Screen 2: Theater Mode (1920x1080 Chromeless Fullscreen)
- * - Screen 4: Audio Routing Matrix (800x600 Patch Bay Overlay)
- * - Screen 5: Recording Active State (clamped 4px red border + blink timecode)
- * - Screen 6: Biometric Sync Modal (500x400 BLE oscilloscope overlay)
+ * Static rendering of presets via Astro for instant SSR, no FOUC, and perfect style scoping.
  */
 import BaseLayout from "../layouts/BaseLayout.astro";
 import TitleBar from "../components/ui/TitleBar.astro";
+import presetsData from "../data/presets.json";
+
+const ERA_DISPLAY_TITLES: Record<string, string> = {
+  "Ancient & Vedic": "--- [ VEDIC ] ---",
+  "Sacred Solfeggio": "--- [ SOLFEGGIO ] ---",
+  "Pythagorean Tuning": "--- [ PYTHAGOREAN ] ---",
+  "Modern Clinical": "--- [ CLINICAL ] ---",
+  "Classical Physics": "--- [ CLASSICAL PHYSICS ] ---",
+};
+
+const ERA_SORT_ORDER = [
+  "Ancient & Vedic",
+  "Sacred Solfeggio",
+  "Pythagorean Tuning",
+  "Modern Clinical",
+  "Classical Physics",
+];
+
+// Group presets by era in strict order
+const groupedPresets = ERA_SORT_ORDER.map((era) => ({
+  era,
+  title: ERA_DISPLAY_TITLES[era] || `--- [ ${era.toUpperCase()} ] ---`,
+  items: presetsData.filter((p) => p.era === era),
+})).filter((g) => g.items.length > 0);
+
+// Default preset is PRE-001 (Anahata Heart)
+const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsData[0];
 ---
 
 <BaseLayout title="ANAHAT // NEUROACOUSTIC DECK">
@@ -23,16 +45,39 @@ import TitleBar from "../components/ui/TitleBar.astro";
       <!-- Dark header bar -->
       <div class="deck__presets-header">
         <span class="deck__presets-title">ANAHAT V1.0 // PRESETS</span>
+        <span class="deck__presets-badge">30 TONES</span>
       </div>
 
-      <!-- Preset list -->
+      <!-- Preset list: statically rendered so all styles bind directly -->
       <div class="deck__presets-list" id="preset-list">
-        <div class="deck__loading terminal-blink">LOADING PRESETS...</div>
+        {groupedPresets.map((group) => (
+          <div class="preset-group">
+            <div class="preset-category">{group.title}</div>
+            {group.items.map((preset) => {
+              const isDefault = preset.code === "PRE-001" || preset.id === initialPreset.id;
+              return (
+                <button
+                  class={`preset-item ${isDefault ? "preset-item--active" : ""}`}
+                  data-preset-id={preset.id}
+                  data-preset-json={JSON.stringify(preset)}
+                  type="button"
+                >
+                  <div class="preset-item__meta">
+                    <span class="preset-item__code">[{preset.code || preset.id.toUpperCase()}]</span>
+                    <span class="preset-item__name">{preset.displayName || preset.name}</span>
+                    <span class="preset-item__cursor terminal-blink">█</span>
+                  </div>
+                  <span class="preset-item__hz">{Number(preset.target_hz).toFixed(1)} Hz</span>
+                </button>
+              );
+            })}
+          </div>
+        ))}
       </div>
 
       <!-- Chunky REC button at bottom (Screen 1 / Screen 5 trigger) -->
       <div class="deck__presets-footer">
-        <button class="btn-brutalist btn-rec" id="btn-rec">
+        <button class="btn-brutalist btn-rec" id="btn-rec" type="button">
           [ REC SESSION ]
         </button>
       </div>
@@ -74,10 +119,12 @@ import TitleBar from "../components/ui/TitleBar.astro";
       <div class="deck__controls">
         <!-- Hz Display — Extreme Scale Contrast -->
         <div class="deck__hz-block">
-          <span class="deck__hz-value" id="hz-readout">136.1</span>
+          <span class="deck__hz-value" id="hz-readout">{Number(initialPreset.target_hz).toFixed(1)}</span>
           <div class="deck__hz-meta">
             <span class="deck__hz-label">HZ // MASTER RESONANCE</span>
-            <span class="deck__hz-waveform" id="waveform-label">WAVEFORM: BINAURAL SINE</span>
+            <span class="deck__hz-waveform" id="waveform-label">
+              WAVEFORM: {(initialPreset.waveform || "sine").toUpperCase()} SINE
+            </span>
           </div>
         </div>
 
@@ -85,18 +132,32 @@ import TitleBar from "../components/ui/TitleBar.astro";
         <div class="deck__slider-row">
           <div class="deck__slider-box">
             <label class="deck__slider-label" for="slider-n">
-              HARMONIC N: <span id="val-n">3</span>
+              HARMONIC N: <span id="val-n">{initialPreset.harmonic_n}</span>
             </label>
             <div class="deck__slider-track-wrap">
-              <input type="range" min="1" max="10" value="3" class="slider-brutalist" id="slider-n" />
+              <input
+                type="range"
+                min="1"
+                max="10"
+                value={initialPreset.harmonic_n}
+                class="slider-brutalist"
+                id="slider-n"
+              />
             </div>
           </div>
           <div class="deck__slider-box">
             <label class="deck__slider-label" for="slider-m">
-              HARMONIC M: <span id="val-m">4</span>
+              HARMONIC M: <span id="val-m">{initialPreset.harmonic_m}</span>
             </label>
             <div class="deck__slider-track-wrap">
-              <input type="range" min="1" max="10" value="4" class="slider-brutalist" id="slider-m" />
+              <input
+                type="range"
+                min="1"
+                max="10"
+                value={initialPreset.harmonic_m}
+                class="slider-brutalist"
+                id="slider-m"
+              />
             </div>
           </div>
         </div>
@@ -104,7 +165,7 @@ import TitleBar from "../components/ui/TitleBar.astro";
         <!-- Noise blend readout -->
         <div class="deck__noise-row">
           <span class="deck__noise-label" id="noise-label">
-            NOISE BLEND: BROWN NOISE // ████████░░░░ 34%
+            NOISE BLEND: {(initialPreset.noise_masking_type || "brown").toUpperCase()} NOISE // ████████░░░░ 34%
           </span>
         </div>
       </div>
@@ -115,34 +176,34 @@ import TitleBar from "../components/ui/TitleBar.astro";
       <div class="deck__prov-card">
         <!-- Dark header -->
         <div class="deck__prov-header">
-          <span class="deck__prov-title">PROVENANCE // <span id="spec-header-id">PRE-001</span></span>
+          <span class="deck__prov-title">PROVENANCE // <span id="spec-header-id">{initialPreset.code || "PRE-001"}</span></span>
         </div>
 
         <!-- Spec rows — alternating bg matching Figma spec card -->
         <div class="deck__prov-specs" id="spec-rows">
           <div class="deck__spec-row deck__spec-row--even">
             <span class="deck__spec-key">PRESET_ID</span>
-            <span class="deck__spec-val" id="spec-id">PRE-001</span>
+            <span class="deck__spec-val" id="spec-id">{initialPreset.code || "PRE-001"}</span>
           </div>
           <div class="deck__spec-row deck__spec-row--odd">
             <span class="deck__spec-key">NAME</span>
-            <span class="deck__spec-val" id="spec-name">Anahata (Heart)</span>
+            <span class="deck__spec-val" id="spec-name">{initialPreset.displayName || initialPreset.name}</span>
           </div>
           <div class="deck__spec-row deck__spec-row--even">
             <span class="deck__spec-key">CULTURE</span>
-            <span class="deck__spec-val" id="spec-era">Vedic Tradition</span>
+            <span class="deck__spec-val" id="spec-era">{initialPreset.era}</span>
           </div>
           <div class="deck__spec-row deck__spec-row--odd">
             <span class="deck__spec-key">TARGET_HZ</span>
-            <span class="deck__spec-val deck__spec-val--hz" id="spec-target">136.10 Hz</span>
+            <span class="deck__spec-val deck__spec-val--hz" id="spec-target">{Number(initialPreset.target_hz).toFixed(2)} Hz</span>
           </div>
           <div class="deck__spec-row deck__spec-row--even">
             <span class="deck__spec-key">CHLADNI</span>
-            <span class="deck__spec-val" id="spec-chladni">n=3, m=4</span>
+            <span class="deck__spec-val" id="spec-chladni">n={initialPreset.harmonic_n}, m={initialPreset.harmonic_m}</span>
           </div>
           <div class="deck__spec-row deck__spec-row--odd">
             <span class="deck__spec-key">EVIDENCE</span>
-            <span class="deck__spec-val" id="spec-evidence">Level 1A (RCT)</span>
+            <span class="deck__spec-val" id="spec-evidence">{initialPreset.evidence_level}</span>
           </div>
           <div class="deck__spec-row deck__spec-row--even">
             <span class="deck__spec-key">RATING</span>
@@ -154,11 +215,12 @@ import TitleBar from "../components/ui/TitleBar.astro";
         <div class="deck__prov-abstract" id="spec-abstract">
           <span class="deck__abstract-heading">RESEARCH ABSTRACT:</span>
           <p class="deck__abstract-body" id="spec-abstract-body">
-            Double-blind clinical testing observed autonomic nervous balance during 136.10 Hz exposure.
-            Microglial response and vagal cardiac stabilization normalize within 12 minutes.
+            {initialPreset.therapeutic_use_case}
+            <br/><br/>
+            {initialPreset.neurological_target}
           </p>
           <p class="deck__abstract-citation" id="spec-citation">
-            CITATION: Nature 540, 230–235.
+            CITATION: {initialPreset.citation}
           </p>
         </div>
 
@@ -180,7 +242,7 @@ import TitleBar from "../components/ui/TitleBar.astro";
     <div class="theater-canvas-container" id="theater-canvas"></div>
     <div class="theater-hud">
       <span class="theater-hud__label">ANAHAT // PROJECTION MODE</span>
-      <span class="theater-hud__hz" id="theater-hz">136.1 HZ</span>
+      <span class="theater-hud__hz" id="theater-hz">{Number(initialPreset.target_hz).toFixed(1)} HZ</span>
     </div>
   </div>
 
@@ -277,7 +339,6 @@ import TitleBar from "../components/ui/TitleBar.astro";
      THE MAIN DECK — Fixed 1200×800 Figma-matched Layout
      Columns: 300px | 600px | 300px
      Layout height is constrained to 100vh - 40px (titlebar).
-     Controls are locked so they NEVER get pushed out of view.
    ══════════════════════════════════════════════════════════ */
 
   .deck {
@@ -307,6 +368,7 @@ import TitleBar from "../components/ui/TitleBar.astro";
     min-height: 44px;
     display: flex;
     align-items: center;
+    justify-content: space-between;
     padding: 0 16px;
     background: var(--color-bg-surface-dark);
     flex-shrink: 0;
@@ -321,26 +383,146 @@ import TitleBar from "../components/ui/TitleBar.astro";
     text-transform: uppercase;
   }
 
+  .deck__presets-badge {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--color-accent-industrial);
+  }
+
   .deck__presets-list {
     flex: 1 1 0;
     overflow-y: auto;
-    padding: 8px 12px;
+    padding: 10px 12px;
     min-height: 0;
-  }
-
-  .deck__loading {
-    padding: 16px 4px;
-    font-family: var(--font-mono);
-    font-size: 9px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: #737373;
   }
 
   .deck__presets-footer {
     padding: 12px;
     flex-shrink: 0;
     background: var(--color-bg-concrete);
+  }
+
+  /* ── PRESET LIST ITEMS (Figma Molecule: default / hover / playing blink) ── */
+
+  .preset-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 6px;
+  }
+
+  .preset-category {
+    padding: 10px 2px 6px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: #737373;
+    text-transform: uppercase;
+    user-select: none;
+  }
+
+  .preset-group:first-child .preset-category {
+    padding-top: 2px;
+  }
+
+  /* Base item: clean laboratory button */
+  .preset-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    height: 38px;
+    min-height: 38px;
+    padding: 0 10px;
+    margin-bottom: 6px;
+    border: 1px solid var(--color-border-heavy);
+    background: var(--color-bg-surface-light);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+    color: var(--color-bg-surface-dark);
+    box-sizing: border-box;
+    transition: none; /* Brutalist 0ms instant cuts */
+    user-select: none;
+    -webkit-user-select: none;
+    appearance: none;
+    -webkit-appearance: none;
+    outline: none;
+  }
+
+  .preset-item__meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding-right: 8px;
+    min-width: 0;
+  }
+
+  .preset-item__code {
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .preset-item__name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Blinking cursor is strictly hidden on non-active items */
+  .preset-item__cursor {
+    display: none !important;
+    color: var(--color-accent-industrial);
+    font-size: 10px;
+    line-height: 1;
+    margin-left: 2px;
+    flex-shrink: 0;
+  }
+
+  .preset-item__hz {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 500;
+    color: #737373;
+    flex-shrink: 0;
+  }
+
+  /* Hover State (Figma preset-item/hover) */
+  .preset-item:hover {
+    background: var(--color-bg-surface-dark);
+    color: var(--color-bg-surface-light);
+    border: 2px solid var(--color-border-heavy);
+  }
+
+  .preset-item:hover .preset-item__hz {
+    color: var(--color-bg-surface-light);
+  }
+
+  /* Active / Playing State (Figma preset-item/playing) */
+  .preset-item--active {
+    background: var(--color-bg-surface-dark) !important;
+    border: 2px solid var(--color-border-heavy) !important;
+    color: var(--color-accent-industrial) !important;
+  }
+
+  .preset-item--active .preset-item__cursor {
+    display: inline-block !important;
+  }
+
+  .preset-item--active .preset-item__hz {
+    color: var(--color-bg-surface-light) !important;
+  }
+
+  /* Pressed tactile click */
+  .preset-item:active {
+    transform: translate(1px, 1px);
   }
 
   /* ── CENTER COLUMN: 600px ── */
@@ -789,60 +971,8 @@ import TitleBar from "../components/ui/TitleBar.astro";
     color: var(--color-bg-surface-light) !important;
   }
 
-  /* ── Preset list items ── */
-
-  .preset-category {
-    padding: 6px 4px 4px;
-    font-family: var(--font-mono);
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    color: #737373;
-    text-transform: uppercase;
-  }
-
-  .preset-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    height: 34px;
-    padding: 0 8px;
-    margin-bottom: 6px;
-    border: 1px solid var(--color-border-heavy);
-    background: var(--color-bg-surface-light);
-    font-family: var(--font-mono);
-    font-size: 9px;
-    font-weight: 700;
-    text-align: left;
-    cursor: pointer;
-    color: var(--color-bg-surface-dark);
-    appearance: none;
-  }
-
-  .preset-item:hover {
-    background: var(--color-bg-surface-dark);
-    color: var(--color-bg-surface-light);
-  }
-
-  .preset-item--active {
-    background: var(--color-bg-surface-dark) !important;
-    color: var(--color-accent-industrial) !important;
-    border-width: 2px;
-  }
-
-  .preset-item--active .preset-item__hz {
-    color: var(--color-bg-surface-light) !important;
-  }
-
-  .preset-item__hz {
-    color: #737373;
-    font-weight: 400;
-  }
-
   /* ══════════════════════════════════════════════════════════
      THEATER MODE OVERLAY (SCREEN 2)
-     Pure black background, red visualizer, ✕ button
    ══════════════════════════════════════════════════════════ */
 
   .theater-overlay {
@@ -1104,7 +1234,6 @@ import TitleBar from "../components/ui/TitleBar.astro";
   // STATE & VISUALIZER ENGINE
   // ═══════════════════════════════════════════════════════════
 
-  let activePreset: any = null;
   let visualizer: ChladniCanvas | null = null;
   let theaterVisualizer: ChladniCanvas | null = null;
   let isRecording = false;
@@ -1121,82 +1250,31 @@ import TitleBar from "../components/ui/TitleBar.astro";
   }
 
   // ═══════════════════════════════════════════════════════════
-  // PRESET LIST HYDRATION
+  // PRESET SELECTION HANDLERS
   // ═══════════════════════════════════════════════════════════
 
-  async function hydratePresets() {
-    try {
-      const response = await fetch("/data/presets.json");
-      const presets = await response.json();
-      const listEl = document.getElementById("preset-list");
-      if (!listEl) return;
-
-      // Group by era
-      const groups: Record<string, any[]> = {};
-      for (const p of presets) {
-        const era = p.era || "Modern Clinical";
-        if (!groups[era]) groups[era] = [];
-        groups[era].push(p);
-      }
-
-      listEl.innerHTML = "";
-
-      let firstItemEl: HTMLElement | null = null;
-      let firstPreset: any = null;
-
-      for (const [era, items] of Object.entries(groups)) {
-        const header = document.createElement("div");
-        header.className = "preset-category";
-        header.textContent = `--- [ ${era.toUpperCase()} ] ---`;
-        listEl.appendChild(header);
-
-        for (const preset of items) {
-          const item = document.createElement("button");
-          item.className = "preset-item";
-          item.dataset.presetId = preset.id;
-          item.innerHTML = `
-            <span>[${preset.id.toUpperCase()}] ${preset.name}</span>
-            <span class="preset-item__hz">${preset.target_hz} Hz</span>
-          `;
-          item.addEventListener("click", () => selectPreset(preset, item));
-          listEl.appendChild(item);
-
-          if (!firstPreset) {
-            firstPreset = preset;
-            firstItemEl = item;
-          }
-        }
-      }
-
-      // Auto-select first preset (or PRE-001)
-      if (firstPreset && firstItemEl) {
-        selectPreset(firstPreset, firstItemEl);
-      }
-    } catch (e) {
-      console.error("[Presets] Failed to load presets:", e);
-    }
-  }
-
   function selectPreset(preset: any, clickedEl: HTMLElement) {
-    activePreset = preset;
-
-    // Deselect previous
-    document.querySelectorAll(".preset-item--active").forEach(el => {
+    // Deselect previous & highlight current
+    document.querySelectorAll(".preset-item--active").forEach((el) => {
       el.classList.remove("preset-item--active");
     });
     clickedEl.classList.add("preset-item--active");
 
+    // Scroll active item smoothly into view if needed
+    clickedEl.scrollIntoView({ block: "nearest", behavior: "auto" });
+
     // Hz readout
     const hzEl = document.getElementById("hz-readout");
-    if (hzEl) hzEl.textContent = preset.target_hz.toFixed(1);
+    if (hzEl) hzEl.textContent = Number(preset.target_hz).toFixed(1);
 
     const theaterHzEl = document.getElementById("theater-hz");
-    if (theaterHzEl) theaterHzEl.textContent = `${preset.target_hz.toFixed(1)} HZ`;
+    if (theaterHzEl) theaterHzEl.textContent = `${Number(preset.target_hz).toFixed(1)} HZ`;
 
     // Waveform label
     const wfEl = document.getElementById("waveform-label");
     if (wfEl) {
-      wfEl.textContent = `WAVEFORM: ${preset.waveform.toUpperCase()}${preset.waveform === "binaural" ? " SINE" : ""}`;
+      const wf = (preset.waveform || "sine").toUpperCase();
+      wfEl.textContent = `WAVEFORM: ${wf}${wf === "BINAURAL" ? " SINE" : ""}`;
     }
 
     // Sliders
@@ -1206,8 +1284,8 @@ import TitleBar from "../components/ui/TitleBar.astro";
     if (sliderM) sliderM.value = String(preset.harmonic_m);
     const valN = document.getElementById("val-n");
     const valM = document.getElementById("val-m");
-    if (valN) valN.textContent = preset.harmonic_n;
-    if (valM) valM.textContent = preset.harmonic_m;
+    if (valN) valN.textContent = String(preset.harmonic_n);
+    if (valM) valM.textContent = String(preset.harmonic_m);
 
     // Update WebGL uniforms live
     visualizer?.updateUniforms({
@@ -1235,13 +1313,16 @@ import TitleBar from "../components/ui/TitleBar.astro";
       if (el) el.textContent = val;
     };
 
-    setField("spec-header-id", preset.id.toUpperCase());
-    setField("spec-id", preset.id.toUpperCase());
-    setField("spec-name", preset.name);
+    const code = preset.code || preset.id.toUpperCase();
+    const title = preset.displayName || preset.name;
+
+    setField("spec-header-id", code);
+    setField("spec-id", code);
+    setField("spec-name", title);
     setField("spec-era", preset.era);
-    setField("spec-target", `${preset.target_hz.toFixed(2)} Hz`);
+    setField("spec-target", `${Number(preset.target_hz).toFixed(2)} Hz`);
     setField("spec-chladni", `n=${preset.harmonic_n}, m=${preset.harmonic_m}`);
-    setField("spec-evidence", preset.evidence_level);
+    setField("spec-evidence", preset.evidence_level || "Level 1A (RCT)");
 
     // Star rating
     const stars = Math.round(preset.evidence_rating || 5);
@@ -1252,7 +1333,23 @@ import TitleBar from "../components/ui/TitleBar.astro";
       "spec-abstract-body",
       `${preset.therapeutic_use_case}\n\n${preset.neurological_target}`
     );
-    setField("spec-citation", `CITATION: ${preset.citation}`);
+    setField("spec-citation", `CITATION: ${preset.citation || "Clinically Documented."}`);
+  }
+
+  function wirePresetClicks() {
+    const items = document.querySelectorAll<HTMLButtonElement>(".preset-item");
+    items.forEach((item) => {
+      item.addEventListener("click", () => {
+        const jsonStr = item.dataset.presetJson;
+        if (!jsonStr) return;
+        try {
+          const preset = JSON.parse(jsonStr);
+          selectPreset(preset, item);
+        } catch (e) {
+          console.error("Failed to parse preset JSON:", e);
+        }
+      });
+    });
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -1380,12 +1477,6 @@ import TitleBar from "../components/ui/TitleBar.astro";
 
       if (theaterVisualizer && visualizer) {
         theaterVisualizer.setMode(visualizer.getMode());
-        if (activePreset) {
-          theaterVisualizer.updateUniforms({
-            n: activePreset.harmonic_n,
-            m: activePreset.harmonic_m,
-          });
-        }
         theaterVisualizer.resume();
       }
     });
@@ -1411,7 +1502,7 @@ import TitleBar from "../components/ui/TitleBar.astro";
       modalRoute?.classList.add("modal-backdrop--active");
     });
 
-    [btnCloseRoute, btnApplyRoute].forEach(el => {
+    [btnCloseRoute, btnApplyRoute].forEach((el) => {
       el?.addEventListener("click", () => {
         modalRoute?.classList.remove("modal-backdrop--active");
       });
@@ -1427,7 +1518,7 @@ import TitleBar from "../components/ui/TitleBar.astro";
       modalBio?.classList.add("modal-backdrop--active");
     });
 
-    [btnCloseBio, btnDoneBio].forEach(el => {
+    [btnCloseBio, btnDoneBio].forEach((el) => {
       el?.addEventListener("click", () => {
         modalBio?.classList.remove("modal-backdrop--active");
       });
@@ -1439,7 +1530,7 @@ import TitleBar from "../components/ui/TitleBar.astro";
   // ═══════════════════════════════════════════════════════════
 
   initVisualizer();
-  hydratePresets();
+  wirePresetClicks();
   wireToggles();
   wireSliders();
   wireRecording();

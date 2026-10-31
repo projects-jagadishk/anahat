@@ -1,5 +1,5 @@
 node_modules
 dist
 figma-plugin
-
+.astro/dev.json
 **/debug
