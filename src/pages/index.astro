@@ -224,6 +224,11 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
               <button class="deck__widget-btn" id="btn-detail-cycle" type="button" data-tooltip="Cycle particle and mesh geometry density: Low (25%), Mid (50%), High (85%), Ultra (100%) (Hotkey: D)">
                 <span id="detail-btn-label">DET: HIGH</span>
               </button>
+
+              <!-- Reset 3D Camera Perspective Button -->
+              <button class="deck__widget-btn" id="btn-reset-perspective" type="button" data-tooltip="Reset 3D camera perspective, rotation and zoom to default front view (Hotkey: R or Double-Click canvas)">
+                <span>⟲ RESET VIEW</span>
+              </button>
             </div>
 
             <div class="canvas-bar__spacer"></div>
@@ -454,6 +459,7 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
       <button class="theater-ctrl-btn" id="theater-btn-random" type="button" data-tooltip="Toggle random visualizer cycling interval: OFF, 15S, 30S, 60S (Hotkey: S)">⚄ RND: OFF</button>
       <button class="theater-ctrl-btn" id="theater-btn-palette" type="button" data-tooltip="Cycle harmonic color palette (Hotkey: C)">PAL: PASTEL</button>
       <button class="theater-ctrl-btn" id="theater-btn-detail" type="button" data-tooltip="Cycle geometry density and resolution (Hotkey: D)">DET: HIGH</button>
+      <button class="theater-ctrl-btn" id="theater-btn-reset-view" type="button" data-tooltip="Reset 3D camera perspective and zoom to default front view (Hotkey: R or Double-Click)">⟲ RESET</button>
     </div>
     <div class="theater-canvas-container" id="theater-canvas"></div>
     <div class="theater-hud">
@@ -790,6 +796,7 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
                 <strong>[ D ]</strong> Cycle Geometry Density (Low, Mid, High, Ultra)<br/>
                 <strong>[ + / - ]</strong> Scale visual amplitude / sensitivity<br/>
                 <strong>[ Z ]</strong> Expand Canvas (Collapse synthesis deck)<br/>
+                <strong>[ R ]</strong> Reset 3D perspective & zoom (or double-click)<br/>
                 <strong>[ T ]</strong> Fullscreen Theater projection mode
               </div>
             </div>
@@ -919,6 +926,10 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
             <div class="hotkey-row">
               <span class="hotkey-badge">Z</span>
               <span class="hotkey-desc">Expand Canvas (Collapse Synthesis Deck)</span>
+            </div>
+            <div class="hotkey-row">
+              <span class="hotkey-badge">R</span>
+              <span class="hotkey-desc">Reset 3D Perspective & Zoom (or Double-Click)</span>
             </div>
             <div class="hotkey-row">
               <span class="hotkey-badge">T</span>
@@ -1655,6 +1666,13 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     width: 76px;
     min-width: 76px;
     max-width: 76px;
+    justify-content: center;
+  }
+
+  #btn-reset-perspective {
+    width: 96px;
+    min-width: 96px;
+    max-width: 96px;
     justify-content: center;
   }
 
@@ -2753,6 +2771,12 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
   }
 
   #theater-btn-detail {
+    width: 76px;
+    min-width: 76px;
+    max-width: 76px;
+  }
+
+  #theater-btn-reset-view {
     width: 76px;
     min-width: 76px;
     max-width: 76px;
@@ -3896,6 +3920,9 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
       } else if (e.key.toLowerCase() === "z" && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();
         toggleCanvasMaximize();
+      } else if (e.key.toLowerCase() === "r" && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        resetCameraViewUI();
       } else if (e.key.toLowerCase() === "p" && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();
         openNewPresetModal();
@@ -4834,23 +4861,32 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     });
   }
 
+  function resetCameraViewUI(): void {
+    visualizer?.resetPerspective();
+    theaterVisualizer?.resetPerspective();
+  }
+
   function wireVisualizerStyleTuning(): void {
     const btnScaleDown = document.getElementById("btn-scale-down");
     const btnScaleUp = document.getElementById("btn-scale-up");
     const btnPaletteCycle = document.getElementById("btn-palette-cycle");
     const btnDetailCycle = document.getElementById("btn-detail-cycle");
+    const btnResetPerspective = document.getElementById("btn-reset-perspective");
 
     const theaterBtnPalette = document.getElementById("theater-btn-palette");
     const theaterBtnDetail = document.getElementById("theater-btn-detail");
+    const theaterBtnResetView = document.getElementById("theater-btn-reset-view");
 
     btnScaleDown?.addEventListener("click", () => setScaleIndex(currentScaleIdx - 1));
     btnScaleUp?.addEventListener("click", () => setScaleIndex(currentScaleIdx + 1));
 
     btnPaletteCycle?.addEventListener("click", cyclePaletteUI);
     btnDetailCycle?.addEventListener("click", cycleDetailUI);
+    btnResetPerspective?.addEventListener("click", resetCameraViewUI);
 
     theaterBtnPalette?.addEventListener("click", cyclePaletteUI);
     theaterBtnDetail?.addEventListener("click", cycleDetailUI);
+    theaterBtnResetView?.addEventListener("click", resetCameraViewUI);
 
     // Initial sync
     setScaleIndex(currentScaleIdx);

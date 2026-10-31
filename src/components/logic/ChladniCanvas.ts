@@ -165,9 +165,12 @@ export class ChladniCanvas {
   private tunnelGroup: THREE.Group | null = null;
   private tunnelRings: THREE.LineLoop[] = [];
   private tunnelRingPos: Float32Array[] = [];
+  private tunnelRingColors: Float32Array[] = [];
   private tunnelRingZ = new Float32Array(24);
   private tunnelRibsLine: THREE.LineSegments | null = null;
   private tunnelRibsPos: Float32Array | null = null;
+  private tunnelRibsCol: Float32Array | null = null;
+  private tunnelRibColors: THREE.Color[] = [];
 
   // 09 // Laboratory Digital Storage Oscilloscope (DSO with Edge Trigger)
   private digitalScopeGroup: THREE.Group | null = null;
@@ -1548,6 +1551,136 @@ export class ChladniCanvas {
   // 08 // WARP TUNNEL (3D ACOUSTIC PERSPECTIVE CORRIDOR)
   // ═══════════════════════════════════════════════════════════
 
+  private updateTunnelColors(): void {
+    let hexList: number[];
+
+    switch (this.currentPalette) {
+      case "pastel":
+        hexList = [
+          0xF561B8, // 0: Pastel Rose Coral
+          0xFB7185, // 1: Soft Salmon Rose
+          0xF87171, // 2: Soft Coral
+          0xFB923C, // 3: Pastel Peach
+          0xFBBF24, // 4: Warm Honey Amber
+          0xFDE047, // 5: Pastel Butter
+          0xBEF264, // 6: Soft Lime
+          0x72E1B8, // 7: Pastel Mint
+          0x2DD4BF, // 8: Pastel Turquoise
+          0x62C0F7, // 9: Pastel Sky Blue
+          0x60A5FA, // 10: Cornflower Blue
+          0x818CF8, // 11: Soft Iris
+          0xA78BFA, // 12: Pastel Periwinkle
+          0xC084FC, // 13: Pastel Lavender
+          0xE879F9, // 14: Soft Orchid
+          0xF472B6, // 15: Pastel Pink
+        ];
+        break;
+      case "amber_crt":
+        hexList = [
+          0xFF3300, // 0: Deep Amber-Red
+          0xFF4D00, // 1: Fiery Amber
+          0xFF6600, // 2: Tangerine Phosphor
+          0xFF8000, // 3: Warm Orange
+          0xFF9900, // 4: Pure Sodium D
+          0xFFB000, // 5: 589nm Bright Amber
+          0xFFC400, // 6: Golden Amber
+          0xFFD700, // 7: Bright Gold
+          0xFFE57F, // 8: Pale Amber Beam
+          0xFFD54F, // 9: Incandescent Yellow
+          0xFFC107, // 10: Warm Ochre
+          0xFFA000, // 11: Deep Golden Ochre
+          0xFF8F00, // 12: Rich Amber
+          0xFF6F00, // 13: Dark Amber
+          0xE65100, // 14: Burnt Amber
+          0xBF360C, // 15: Deep Cathode Crimson
+        ];
+        break;
+      case "green_crt":
+        hexList = [
+          0x00FF66, // 0: Laser Green
+          0x1DE9B6, // 1: Cyan-Green
+          0x00E5FF, // 2: Phosphor Cyan
+          0x00E676, // 3: Acid Green
+          0x33FF33, // 4: Oscilloscope Green
+          0x66FFAA, // 5: Mint Phosphor
+          0x76FF03, // 6: Intense Lime
+          0xAEEA00, // 7: Chartreuse
+          0xB2FF59, // 8: Radioactive Lime
+          0x64DD17, // 9: Emerald Phosphor
+          0x00C853, // 10: Pure Emerald
+          0x00E676, // 11: Electric Green
+          0x69F0AE, // 12: Pale Trace
+          0xB9F6CA, // 13: Phosphor Flash
+          0x00BFA5, // 14: Deep Aqua
+          0x00897B, // 15: Cathode Jade
+        ];
+        break;
+      case "cyber_blue":
+        hexList = [
+          0x00F0FF, // 0: Laser Cyan
+          0x00D4FF, // 1: Electric Sky
+          0x00B4D8, // 2: Cerulean
+          0x0096C7, // 3: Vivid Blue
+          0x0077B6, // 4: Cobalt Blue
+          0x023E8A, // 5: Deep Marine
+          0x3D5AFE, // 6: Indigo Pulse
+          0x651FFF, // 7: Deep Violet
+          0x7C4DFF, // 8: Electric Purple
+          0x9D4EDD, // 9: Neon Violet
+          0xB5179E, // 10: Cyber Orchid
+          0xF72585, // 11: Cyber Magenta
+          0x7209B7, // 12: Deep Neon Purple
+          0x4895EF, // 13: High-Voltage Azure
+          0x4CC9F0, // 14: Aqua Ice
+          0x00F5D4, // 15: Neon Mint Cyan
+        ];
+        break;
+      case "monochrome":
+        hexList = [
+          0xFF1E28, // 0: Stark Industrial Crimson
+          0xFFFFFF, // 1: Pure White
+          0xD1D5DB, // 2: Cool Platinum
+          0x9CA3AF, // 3: Concrete Silver
+          0x6B7280, // 4: Gunmetal Gray
+          0xFF3333, // 5: Accent Red
+          0xFFFFFF, // 6: Brilliant White
+          0xE5E7EB, // 7: Titanium Silver
+          0xFF1E28, // 8: Stark Industrial Crimson
+          0xFFFFFF, // 9: Pure White
+          0xD1D5DB, // 10: Platinum Silver
+          0x9CA3AF, // 11: Slate Gray
+          0x6B7280, // 12: Gunmetal Gray
+          0xFF4D4D, // 13: Hot Crimson Accent
+          0xFFFFFF, // 14: Brilliant White
+          0xF3F4F6, // 15: Pale Silver Ice
+        ];
+        break;
+      case "stark":
+      default:
+        hexList = [
+          0xFF1433, // 0: Stark Crimson
+          0xFF4500, // 1: Neon Orange-Red
+          0xFF8C00, // 2: Electric Amber
+          0xFFD600, // 3: Solar Gold
+          0xAEEA00, // 4: Neon Lime
+          0x00E676, // 5: Acid Green
+          0x00BFA5, // 6: Aqua Mint
+          0x00E5FF, // 7: Electric Cyan
+          0x0091EA, // 8: Sky Blue
+          0x2979FF, // 9: Royal Blue
+          0x651FFF, // 10: Deep Indigo
+          0x7C4DFF, // 11: Electric Purple
+          0xD500F9, // 12: Neon Violet
+          0xFF0D86, // 13: Hot Shocking Magenta
+          0xFF1744, // 14: Electric Ruby
+          0xFF5252, // 15: Coral Red
+        ];
+        break;
+    }
+
+    this.tunnelRibColors = hexList.map((hex) => new THREE.Color(hex));
+  }
+
   private initTunnel(): void {
     this.tunnelGroup = new THREE.Group();
 
@@ -1555,50 +1688,59 @@ export class ChladniCanvas {
     const segsPerRing = 16;
     this.tunnelRings = [];
     this.tunnelRingPos = [];
+    this.tunnelRingColors = [];
     this.tunnelRingZ = new Float32Array(ringCount);
 
-    const tunnelColors = [
-      0xFF3333, // Industrial Crimson
-      0x111111, // Charcoal
-      0x0055CC, // Royal Cobalt
-      0xFF3333, // Industrial Crimson
-      0xDD8800, // Amber Gold
-      0x008855, // Deep Emerald
-    ];
+    this.updateTunnelColors();
 
-    // 24 Sequential Polygonal Rings along Z axis
+    // 24 Sequential Polygonal Rings along Z axis (Horizontal bridging lines)
     for (let k = 0; k < ringCount; k++) {
       const zInit = -14.0 + (k / ringCount) * 16.5;
       this.tunnelRingZ[k] = zInit;
 
-      const pos = new Float32Array((segsPerRing + 1) * 3);
+      const pos = new Float32Array(segsPerRing * 3);
+      const col = new Float32Array(segsPerRing * 3);
       const geo = new THREE.BufferGeometry();
       geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+      geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
+
+      // Initialize vertex colors matching the radiating lines
+      for (let i = 0; i < segsPerRing; i++) {
+        const c = this.tunnelRibColors[i];
+        col[i * 3 + 0] = c.r;
+        col[i * 3 + 1] = c.g;
+        col[i * 3 + 2] = c.b;
+      }
 
       const mat = new THREE.LineBasicMaterial({
-        color: tunnelColors[k % tunnelColors.length],
+        color: 0xFFFFFF,
+        vertexColors: true,
         linewidth: 2.0,
         transparent: true,
-        opacity: 0.92,
+        opacity: 0.95,
       });
 
       const line = new THREE.LineLoop(geo, mat);
       this.tunnelGroup.add(line);
       this.tunnelRings.push(line);
       this.tunnelRingPos.push(pos);
+      this.tunnelRingColors.push(col);
     }
 
-    // 16 Longitudinal Rib Lines (Connecting rings along perspective length)
-    const ribSegCount = 16 * (ringCount - 1);
+    // 16 Longitudinal Rib Lines (Radiating perspective lines)
+    const ribSegCount = segsPerRing * (ringCount - 1);
     this.tunnelRibsPos = new Float32Array(ribSegCount * 2 * 3);
+    this.tunnelRibsCol = new Float32Array(ribSegCount * 2 * 3);
     const ribGeo = new THREE.BufferGeometry();
     ribGeo.setAttribute("position", new THREE.BufferAttribute(this.tunnelRibsPos, 3));
+    ribGeo.setAttribute("color", new THREE.BufferAttribute(this.tunnelRibsCol, 3));
 
     const ribMat = new THREE.LineSegments(ribGeo, new THREE.LineBasicMaterial({
-      color: 0x111111,
-      linewidth: 1.5,
+      color: 0xFFFFFF,
+      vertexColors: true,
+      linewidth: 2.0,
       transparent: true,
-      opacity: 0.45,
+      opacity: 0.92,
     }));
     this.tunnelRibsLine = ribMat;
     this.tunnelGroup.add(this.tunnelRibsLine);
@@ -1607,7 +1749,7 @@ export class ChladniCanvas {
   }
 
   private updateTunnel(delta: number, time: number): void {
-    if (!this.tunnelGroup || !this.tunnelRibsLine || !this.tunnelRibsPos) return;
+    if (!this.tunnelGroup || !this.tunnelRibsLine || !this.tunnelRibsPos || !this.tunnelRibsCol) return;
 
     if (this.freqProvider) {
       this.freqProvider(this.freqDataBuffer);
@@ -1635,6 +1777,7 @@ export class ChladniCanvas {
 
       const z = this.tunnelRingZ[k];
       const pos = this.tunnelRingPos[k];
+      const col = this.tunnelRingColors[k];
       const line = this.tunnelRings[k];
 
       // Natural perspective expansion: corridor widens as it approaches camera
@@ -1646,7 +1789,7 @@ export class ChladniCanvas {
 
       const ringV: [number, number, number][] = [];
 
-      for (let i = 0; i <= segsPerRing; i++) {
+      for (let i = 0; i < segsPerRing; i++) {
         const theta = (i / segsPerRing) * Math.PI * 2.0;
 
         // Acoustic undulation: standing wave ripple + live FFT excitation
@@ -1663,17 +1806,25 @@ export class ChladniCanvas {
         pos[idx + 1] = y;
         pos[idx + 2] = z;
 
-        if (i < segsPerRing) {
-          ringV.push([x, y, z]);
+        // Synchronize vertex color to radiating line color with depth attenuation
+        const c = this.tunnelRibColors[i];
+        if (c) {
+          col[idx]     = c.r * depthFactor;
+          col[idx + 1] = c.g * depthFactor;
+          col[idx + 2] = c.b * depthFactor;
         }
+
+        ringV.push([x, y, z]);
       }
 
       ringCoords.push(ringV);
-      const attr = line.geometry.getAttribute("position") as THREE.BufferAttribute;
-      attr.needsUpdate = true;
+      const posAttr = line.geometry.getAttribute("position") as THREE.BufferAttribute;
+      posAttr.needsUpdate = true;
+      const colAttr = line.geometry.getAttribute("color") as THREE.BufferAttribute;
+      colAttr.needsUpdate = true;
     }
 
-    // Update Longitudinal Ribs
+    // Update Longitudinal Radiating Ribs
     let ribIdx = 0;
     // Sort rings by Z so ribs connect in topological order
     const sortedIndices = Array.from({ length: ringCount }, (_, i) => i)
@@ -1690,24 +1841,41 @@ export class ChladniCanvas {
 
       const v1 = ringCoords[k1];
       const v2 = ringCoords[k2];
+      const depth1 = Math.max(0.15, Math.min(1.0, (z1 + 14.0) / 16.5));
+      const depth2 = Math.max(0.15, Math.min(1.0, (z2 + 14.0) / 16.5));
 
       for (let i = 0; i < segsPerRing; i++) {
         const p1 = v1[i];
         const p2 = v2[i];
+        const c = this.tunnelRibColors[i];
 
-        this.tunnelRibsPos[ribIdx] = p1[0];
+        this.tunnelRibsPos[ribIdx]     = p1[0];
         this.tunnelRibsPos[ribIdx + 1] = p1[1];
         this.tunnelRibsPos[ribIdx + 2] = p1[2];
 
         this.tunnelRibsPos[ribIdx + 3] = p2[0];
         this.tunnelRibsPos[ribIdx + 4] = p2[1];
         this.tunnelRibsPos[ribIdx + 5] = p2[2];
+
+        if (c) {
+          this.tunnelRibsCol[ribIdx]     = c.r * depth1;
+          this.tunnelRibsCol[ribIdx + 1] = c.g * depth1;
+          this.tunnelRibsCol[ribIdx + 2] = c.b * depth1;
+
+          this.tunnelRibsCol[ribIdx + 3] = c.r * depth2;
+          this.tunnelRibsCol[ribIdx + 4] = c.g * depth2;
+          this.tunnelRibsCol[ribIdx + 5] = c.b * depth2;
+        }
+
         ribIdx += 6;
       }
     }
 
-    const ribAttr = this.tunnelRibsLine.geometry.getAttribute("position") as THREE.BufferAttribute;
-    ribAttr.needsUpdate = true;
+    this.tunnelRibsLine.geometry.setDrawRange(0, ribIdx / 3);
+    const ribPosAttr = this.tunnelRibsLine.geometry.getAttribute("position") as THREE.BufferAttribute;
+    ribPosAttr.needsUpdate = true;
+    const ribColAttr = this.tunnelRibsLine.geometry.getAttribute("color") as THREE.BufferAttribute;
+    ribColAttr.needsUpdate = true;
 
     // Subtle hypnotic corridor roll
     this.tunnelGroup.rotation.z = time * 0.12;
@@ -2497,6 +2665,20 @@ export class ChladniCanvas {
       this.cameraAzimuth = 0.0;
       this.cameraDistance = 2.4;
     }
+    if (this.camera) {
+      const cosElev = Math.cos(this.cameraElevation);
+      const sinElev = Math.sin(this.cameraElevation);
+      const x = this.cameraDistance * cosElev * Math.sin(this.cameraAzimuth);
+      const y = this.cameraDistance * sinElev;
+      const z = this.cameraDistance * cosElev * Math.cos(this.cameraAzimuth);
+      this.camera.position.set(x, y, z);
+      if (Math.abs(this.cameraElevation) > 1.4) {
+        this.camera.up.set(0, 0, -1);
+      } else {
+        this.camera.up.set(0, 1, 0);
+      }
+      this.camera.lookAt(0, 0, 0);
+    }
     this.onCameraPresetChange?.(this.cameraPreset);
   }
 
@@ -2513,7 +2695,11 @@ export class ChladniCanvas {
   }
 
   resetCameraPreset(): void {
-    this.setCameraPreset(this.cameraPreset === "custom" ? "front" : this.cameraPreset);
+    this.setCameraPreset("front");
+  }
+
+  resetPerspective(): void {
+    this.setCameraPreset("front");
   }
 
   setDetail(detail: GeometryDetail): void {
@@ -2614,11 +2800,27 @@ export class ChladniCanvas {
       else mat.color.copy(accent);
     });
 
-    // Warp tunnel
+    // Warp tunnel (radiating ribs in distinct palette hues, horizontal rings gradient-transitioning)
+    this.updateTunnelColors();
     if (this.tunnelGroup) {
       this.tunnelGroup.traverse((child) => {
         if ((child as any).material && (child as any).material.color) {
-          ((child as any).material as THREE.LineBasicMaterial).color.copy(primary);
+          ((child as any).material as THREE.LineBasicMaterial).color.setHex(0xFFFFFF);
+        }
+      });
+      this.tunnelRings.forEach((line, k) => {
+        const col = this.tunnelRingColors[k];
+        if (col) {
+          for (let i = 0; i < 16; i++) {
+            const c = this.tunnelRibColors[i];
+            if (c) {
+              col[i * 3 + 0] = c.r;
+              col[i * 3 + 1] = c.g;
+              col[i * 3 + 2] = c.b;
+            }
+          }
+          const colAttr = line.geometry.getAttribute("color") as THREE.BufferAttribute;
+          if (colAttr) colAttr.needsUpdate = true;
         }
       });
     }

@@ -54,5 +54,24 @@
   - Random Cycle Button (`#theater-btn-random`): `94px`
   - Palette Cycle Button (`#theater-btn-palette`): `90px`
   - Detail Density Button (`#theater-btn-detail`): `76px`
+  - Reset View Button (`#theater-btn-reset-view`): `76px`
 - Imposed `flex-shrink: 0`, `white-space: nowrap !important;` and fixed `gap: 6px`.
 - Prevents buttons from reflowing, shifting left/right, or jittering as titles or cycle states change in Fullscreen Theater Mode.
+
+### 7. Warp Tunnel Chromatic Perspective Upgrade
+- **Radiating Perspective Lines (16 Longitudinal Ribs)**:
+  - Each of the 16 radiating perspective lines is assigned a distinct hue mapped around the active harmonic palette (`stark`, `pastel`, `amber_crt`, `green_crt`, `cyber_blue`, `monochrome`).
+  - Both segment endpoints along rib `i` share that rib's specific color, attenuated with depth distance along the corridor.
+- **Horizontal Bridging Rings (Transverse Undulation Loops)**:
+  - Each polygonal ring vertex `i` is set to radiating line `i`'s corresponding color.
+  - Enabled hardware `vertexColors: true` on `THREE.LineLoop`.
+  - Every bridging line segment connecting rib `i` to rib `(i + 1) % 16` hardware-interpolates (gradient transitions) smoothly between the two connecting colors.
+  - Full synchronization with palette changes in `updateStaticMaterialsForPalette()`.
+
+### 8. Interactive 3D Perspective Reset Controls
+- **Toolbar Reset Button**: Added `[ ⟲ RESET VIEW ]` to Visualizer Toolbar Row 2 (`#btn-reset-perspective`, locked `96px`).
+- **Theater Reset Button**: Added `[ ⟲ RESET ]` to Fullscreen Theater toolbar (`#theater-btn-reset-view`, locked `76px`).
+- **Global Hotkey & Gesture**:
+  - Hotkey `R` / `r`: Instantly resets camera elevation ($0^\circ$), azimuth ($0^\circ$), and distance ($2.4$) to default canonical front projection.
+  - Canvas Double-Click: Double-clicking either the main deck canvas or fullscreen theater canvas resets perspective and zoom.
+- **Documentation**: Documented `[ R ]` in both `#modal-hotkeys` and `#modal-info`.
