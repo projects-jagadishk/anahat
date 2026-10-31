@@ -117,22 +117,25 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
         <!-- Dark toolbar inside canvas -->
         <div class="deck__canvas-bar">
           <div class="deck__canvas-toggles">
-            <button class="deck__toggle deck__toggle--active" id="toggle-particles" type="button">
-              [X] CHLADNI
-            </button>
+            <!-- Visualizer Navigator -->
+            <div class="engine-navigator" id="engine-navigator">
+              <button class="engine-nav-arrow" id="btn-engine-prev" type="button" title="Previous Visualizer Engine (Hotkey: [)">◀</button>
+              <button class="engine-selector-btn" id="btn-engine-menu" type="button" title="Open Visualizer Engine Matrix (Hotkey: M or 1-9)">
+                <span class="engine-selector__num" id="engine-display-num">01</span>
+                <span class="engine-selector__name" id="engine-display-name">CHLADNI NODES</span>
+                <span class="engine-selector__cat" id="engine-display-cat">[PHYSICS]</span>
+                <span class="engine-selector__icon">▾</span>
+              </button>
+              <button class="engine-nav-arrow" id="btn-engine-next" type="button" title="Next Visualizer Engine (Hotkey: ])">▶</button>
+            </div>
+
             <span class="deck__toggle-sep">|</span>
-            <button class="deck__toggle" id="toggle-fluid" type="button">
-              [ ] FLUID
-            </button>
-            <span class="deck__toggle-sep">|</span>
-            <button class="deck__toggle" id="toggle-oscillo" type="button">
-              [ ] OSCILLO
-            </button>
-            <span class="deck__toggle-sep">|</span>
-            <button class="deck__toggle deck__toggle--active" id="toggle-companion" type="button">
+
+            <button class="deck__toggle deck__toggle--active" id="toggle-companion" type="button" title="Toggle 1-Bit Metronome Companion">
               [X] COMPANION
             </button>
           </div>
+
           <button class="btn-theater" id="btn-theater" type="button">
             [ THEATER ⤢ ]
           </button>
@@ -319,11 +322,16 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     <button class="btn-theater-exit" id="btn-theater-exit" title="Exit Theater Mode">
       ✕
     </button>
-    <!-- Theater Visualizer Mode Switcher -->
-    <div class="theater-toolbar">
-      <button class="theater-mode-btn theater-mode-btn--active" data-mode="particles" id="theater-mode-particles">[ CHLADNI ]</button>
-      <button class="theater-mode-btn" data-mode="fluid" id="theater-mode-fluid">[ FLUID ]</button>
-      <button class="theater-mode-btn" data-mode="oscillo" id="theater-mode-oscillo">[ OSCILLO ]</button>
+    <!-- Theater Visualizer Navigator (Centered floating HUD with matrix launcher) -->
+    <div class="theater-toolbar" id="theater-toolbar">
+      <button class="theater-nav-arrow" id="theater-engine-prev" type="button" title="Previous Engine (Hotkey: [)">◀</button>
+      <button class="theater-selector-btn" id="theater-engine-menu" type="button" title="Open Engine Matrix (Hotkey: M or 1-9)">
+        <span class="theater-engine__num" id="theater-display-num">01</span>
+        <span class="theater-engine__name" id="theater-display-name">CHLADNI NODES</span>
+        <span class="theater-engine__cat" id="theater-display-cat">[PHYSICS]</span>
+        <span class="theater-engine__icon">▾</span>
+      </button>
+      <button class="theater-nav-arrow" id="theater-engine-next" type="button" title="Next Engine (Hotkey: ])">▶</button>
     </div>
     <div class="theater-canvas-container" id="theater-canvas"></div>
     <div class="theater-hud">
@@ -557,6 +565,115 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
         <button class="btn-brutalist btn-brutalist--sm" id="btn-acknowledge-info">
           [ ACKNOWLEDGE & CLOSE ]
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       VISUALIZER ENGINE MATRIX MODAL (9 CYMATIC ENGINES)
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="modal-backdrop" id="modal-engines">
+    <div class="modal-box modal-box--engines">
+      <div class="modal-header">
+        <span>CYMATICS & NEUROACOUSTIC VISUALIZER ENGINE MATRIX // 9 PIPELINES</span>
+        <button class="modal-close-btn" id="btn-close-engines" title="Close Matrix">✕</button>
+      </div>
+      <div class="modal-body modal-body--engines">
+        <div class="engine-matrix-grid">
+          <button class="engine-tile engine-tile--active" data-engine="particles" type="button">
+            <div class="engine-tile__top">
+              <span class="engine-tile__num">[01] KEY:1</span>
+              <span class="engine-tile__cat">PHYSICS</span>
+            </div>
+            <div class="engine-tile__title">CHLADNI NODES</div>
+            <div class="engine-tile__desc">Ernst Chladni standing wave particle physics with viscous fluid damping.</div>
+          </button>
+
+          <button class="engine-tile" data-engine="fluid" type="button">
+            <div class="engine-tile__top">
+              <span class="engine-tile__num">[02] KEY:2</span>
+              <span class="engine-tile__cat">CYMATICS</span>
+            </div>
+            <div class="engine-tile__title">FARADAY FLUID</div>
+            <div class="engine-tile__desc">3D continuous standing parametric liquid surface wave mesh.</div>
+          </button>
+
+          <button class="engine-tile" data-engine="oscillo" type="button">
+            <div class="engine-tile__top">
+              <span class="engine-tile__num">[03] KEY:3</span>
+              <span class="engine-tile__cat">SPECTRUM</span>
+            </div>
+            <div class="engine-tile__title">WINAMP OSCILLO</div>
+            <div class="engine-tile__desc">Multi-trace time-domain ribbons with rotating 3D Lissajous phase loop.</div>
+          </button>
+
+          <button class="engine-tile" data-engine="radar" type="button">
+            <div class="engine-tile__top">
+              <span class="engine-tile__num">[04] KEY:4</span>
+              <span class="engine-tile__cat">SPECTRUM</span>
+            </div>
+            <div class="engine-tile__title">POLAR RADAR</div>
+            <div class="engine-tile__desc">360° circular FFT spectrum analyzer with radar sweep & peak-hold.</div>
+          </button>
+
+          <button class="engine-tile" data-engine="waterfall" type="button">
+            <div class="engine-tile__top">
+              <span class="engine-tile__num">[05] KEY:5</span>
+              <span class="engine-tile__cat">SONOGRAM</span>
+            </div>
+            <div class="engine-tile__title">3D WATERFALL</div>
+            <div class="engine-tile__desc">Rolling FFT topographic frequency terrain with spectral elevation contours.</div>
+          </button>
+
+          <button class="engine-tile" data-engine="torus" type="button">
+            <div class="engine-tile__top">
+              <span class="engine-tile__num">[06] KEY:6</span>
+              <span class="engine-tile__cat">FLUX FIELD</span>
+            </div>
+            <div class="engine-tile__title">TORUS VORTEX</div>
+            <div class="engine-tile__desc">Toroidal electromagnetic flux field with spiraling circulating particles.</div>
+          </button>
+
+          <button class="engine-tile" data-engine="voxel_grid" type="button">
+            <div class="engine-tile__top">
+              <span class="engine-tile__num">[07] KEY:7</span>
+              <span class="engine-tile__cat">EQUALIZER</span>
+            </div>
+            <div class="engine-tile__title">VOXEL MATRIX</div>
+            <div class="engine-tile__desc">3D volumetric equalizer matrix with ballistic gravity peak decay.</div>
+          </button>
+
+          <button class="engine-tile" data-engine="harmonograph" type="button">
+            <div class="engine-tile__top">
+              <span class="engine-tile__num">[08] KEY:8</span>
+              <span class="engine-tile__cat">CYMATICS</span>
+            </div>
+            <div class="engine-tile__title">HARMONOGRAPH</div>
+            <div class="engine-tile__desc">Rotary 3-pendulum resonance trace with dual Lissajous ribbons.</div>
+          </button>
+
+          <button class="engine-tile" data-engine="tunnel" type="button">
+            <div class="engine-tile__top">
+              <span class="engine-tile__num">[09] KEY:9</span>
+              <span class="engine-tile__cat">PERSPECTIVE</span>
+            </div>
+            <div class="engine-tile__title">WARP TUNNEL</div>
+            <div class="engine-tile__desc">Infinite 3D acoustic perspective corridor undulating to live audio.</div>
+          </button>
+
+          <button class="engine-tile" data-engine="vector_crt" type="button">
+            <div class="engine-tile__top">
+              <span class="engine-tile__num">[10] KEY:0</span>
+              <span class="engine-tile__cat">ANALOG LAB</span>
+            </div>
+            <div class="engine-tile__title">VECTOR CRT</div>
+            <div class="engine-tile__desc">Vintage laboratory phosphor X-Y vectorscope with persistence trail decay.</div>
+          </button>
+        </div>
+
+        <div class="engine-matrix-footer-bar">
+          <span>SHORTCUTS: KEYS [1 - 9, 0] DIRECT SELECT // [ [ / ] ] CYCLE // [M] MATRIX // [ESC] DISMISS</span>
+        </div>
       </div>
     </div>
   </div>
@@ -830,6 +947,80 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     display: flex;
     align-items: center;
     gap: 8px;
+  }
+
+  /* Engine Navigator Widget */
+  .engine-navigator {
+    display: flex;
+    align-items: center;
+    background: #141414;
+    border: 1px solid #333333;
+    height: 22px;
+  }
+
+  .engine-nav-arrow {
+    appearance: none;
+    background: transparent;
+    border: none;
+    color: #888;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    width: 20px;
+    height: 100%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  .engine-nav-arrow:hover {
+    color: #FFF;
+    background: #262626;
+  }
+
+  .engine-selector-btn {
+    appearance: none;
+    background: transparent;
+    border: none;
+    border-left: 1px solid #282828;
+    border-right: 1px solid #282828;
+    color: var(--color-bg-surface-light);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    height: 100%;
+    padding: 0 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.15s ease;
+  }
+
+  .engine-selector-btn:hover {
+    background: #242424;
+  }
+
+  .engine-selector__num {
+    color: var(--color-accent-industrial);
+    font-weight: 700;
+  }
+
+  .engine-selector__name {
+    color: #FFF;
+    letter-spacing: 0.04em;
+  }
+
+  .engine-selector__cat {
+    color: #777;
+    font-size: 8px;
+  }
+
+  .engine-selector__icon {
+    font-size: 8px;
+    color: #888;
+    margin-left: 2px;
   }
 
   .deck__toggle {
@@ -1516,37 +1707,189 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     color: #FFFFFF;
   }
 
+  /* Theater Navigator Floating Bar */
   .theater-toolbar {
     position: absolute;
     top: 24px;
-    left: 24px;
+    left: 50%;
+    transform: translateX(-50%);
     z-index: 10001;
     display: flex;
-    gap: 8px;
+    align-items: center;
+    background: rgba(18, 18, 18, 0.88);
+    border: 1px solid #444;
+    padding: 2px;
+    backdrop-filter: blur(12px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
   }
 
-  .theater-mode-btn {
+  .theater-toolbar--faded {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(-50%) translateY(-10px);
+  }
+
+  .theater-nav-arrow {
     appearance: none;
     background: transparent;
-    border: 2px solid #555;
-    color: #AAA;
+    border: none;
+    color: #888;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    width: 28px;
+    height: 32px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  .theater-nav-arrow:hover {
+    color: #FFF;
+    background: #2a2a2a;
+  }
+
+  .theater-selector-btn {
+    appearance: none;
+    background: transparent;
+    border: none;
+    border-left: 1px solid #333;
+    border-right: 1px solid #333;
+    color: #FFF;
     font-family: var(--font-mono);
     font-size: 11px;
     font-weight: 700;
-    padding: 6px 14px;
+    height: 32px;
+    padding: 0 14px;
     cursor: pointer;
-    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.15s ease;
   }
 
-  .theater-mode-btn:hover {
-    border-color: #FFF;
+  .theater-selector-btn:hover {
+    background: #262626;
+  }
+
+  .theater-engine__num {
+    color: var(--color-accent-industrial);
+    font-weight: 700;
+  }
+
+  .theater-engine__name {
     color: #FFF;
+    letter-spacing: 0.05em;
   }
 
-  .theater-mode-btn--active {
-    border-color: var(--color-accent-industrial) !important;
-    color: var(--color-accent-industrial) !important;
-    background: rgba(255, 51, 51, 0.15);
+  .theater-engine__cat {
+    color: #888;
+    font-size: 9px;
+  }
+
+  .theater-engine__icon {
+    color: #888;
+    font-size: 9px;
+    margin-left: 2px;
+  }
+
+  /* Engine Matrix Modal Styles */
+  .modal-box--engines {
+    width: 820px;
+    max-width: 94vw;
+    max-height: 86vh;
+    border: 3px solid #000;
+    box-shadow: 8px 8px 0px 0px #000;
+  }
+
+  .modal-body--engines {
+    padding: 16px;
+    background: #0E0E0E;
+    overflow-y: auto;
+  }
+
+  .engine-matrix-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .engine-tile {
+    appearance: none;
+    text-align: left;
+    background: #181818;
+    border: 1px solid #2E2E2E;
+    padding: 12px 14px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    transition: border-color 0.15s ease, background 0.15s ease, transform 0.08s ease;
+  }
+
+  .engine-tile:hover {
+    border-color: var(--color-accent-industrial);
+    background: #222222;
+  }
+
+  .engine-tile--active {
+    border: 2px solid var(--color-accent-industrial) !important;
+    background: #241212 !important;
+    box-shadow: 0 0 10px rgba(255, 51, 51, 0.25);
+  }
+
+  .engine-tile__top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+
+  .engine-tile__num {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--color-accent-industrial);
+    letter-spacing: 0.05em;
+  }
+
+  .engine-tile__cat {
+    font-family: var(--font-mono);
+    font-size: 8px;
+    font-weight: 700;
+    color: #888;
+    background: #101010;
+    padding: 2px 4px;
+    border: 1px solid #333;
+    letter-spacing: 0.04em;
+  }
+
+  .engine-tile__title {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: #FFF;
+    margin-bottom: 4px;
+    letter-spacing: 0.03em;
+  }
+
+  .engine-tile__desc {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    line-height: 1.45;
+    color: #888;
+  }
+
+  .engine-matrix-footer-bar {
+    padding: 8px 12px;
+    background: #141414;
+    border: 1px solid #282828;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: #777;
+    text-align: center;
+    letter-spacing: 0.04em;
   }
 
   .theater-hud {
@@ -1886,7 +2229,7 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
 </style>
 
 <script>
-  import { ChladniCanvas } from "../components/logic/ChladniCanvas";
+  import { ChladniCanvas, VISUALIZER_ENGINES, type VisualizerMode } from "../components/logic/ChladniCanvas";
   import { audioEngine } from "../components/logic/AudioEngine";
   import { spriteMetronome, type CadenceType } from "../components/logic/SpriteMetronome";
   import { listen } from "@tauri-apps/api/event";
@@ -1920,6 +2263,7 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     visualizer.mount(container);
     visualizer.setAudioProvider(() => audioEngine.getRealtimeAmplitude());
     visualizer.setWaveProvider((buf) => audioEngine.getWaveformData(buf));
+    visualizer.setFreqProvider((buf) => audioEngine.getFrequencyData(buf));
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -2054,57 +2398,89 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
   }
 
   // ═══════════════════════════════════════════════════════════
-  // VISUALIZER TOGGLE (CHLADNI PARTICLES <-> FARADAY FLUID)
+  // VISUALIZER ENGINE SWITCHER & MATRIX (9 ENGINES)
   // ═══════════════════════════════════════════════════════════
 
-  function setModeUI(mode: "particles" | "fluid" | "oscillo") {
-    visualizer?.setMode(mode);
-    theaterVisualizer?.setMode(mode);
+  let currentEngineIndex = 0;
 
-    const btnParticles = document.getElementById("toggle-particles");
-    const btnFluid = document.getElementById("toggle-fluid");
-    const btnOscillo = document.getElementById("toggle-oscillo");
+  function setModeUI(mode: VisualizerMode) {
+    const meta = VISUALIZER_ENGINES.find((e) => e.id === mode) || VISUALIZER_ENGINES[0];
+    currentEngineIndex = VISUALIZER_ENGINES.indexOf(meta);
 
-    if (btnParticles) {
-      const active = mode === "particles";
-      btnParticles.textContent = active ? "[X] CHLADNI" : "[ ] CHLADNI";
-      btnParticles.classList.toggle("deck__toggle--active", active);
-    }
-    if (btnFluid) {
-      const active = mode === "fluid";
-      btnFluid.textContent = active ? "[X] FLUID" : "[ ] FLUID";
-      btnFluid.classList.toggle("deck__toggle--active", active);
-    }
-    if (btnOscillo) {
-      const active = mode === "oscillo";
-      btnOscillo.textContent = active ? "[X] OSCILLO" : "[ ] OSCILLO";
-      btnOscillo.classList.toggle("deck__toggle--active", active);
-    }
+    visualizer?.setMode(meta.id);
+    theaterVisualizer?.setMode(meta.id);
 
-    // Theater toolbar mode buttons
-    document.querySelectorAll(".theater-mode-btn").forEach((btn: any) => {
-      btn.classList.toggle("theater-mode-btn--active", btn.dataset.mode === mode);
+    // Update Main Deck Navigator
+    const displayNum = document.getElementById("engine-display-num");
+    const displayName = document.getElementById("engine-display-name");
+    const displayCat = document.getElementById("engine-display-cat");
+    if (displayNum) displayNum.textContent = meta.num;
+    if (displayName) displayName.textContent = meta.name;
+    if (displayCat) displayCat.textContent = `[${meta.category}]`;
+
+    // Update Theater Deck Navigator
+    const theaterNum = document.getElementById("theater-display-num");
+    const theaterName = document.getElementById("theater-display-name");
+    const theaterCat = document.getElementById("theater-display-cat");
+    if (theaterNum) theaterNum.textContent = meta.num;
+    if (theaterName) theaterName.textContent = meta.name;
+    if (theaterCat) theaterCat.textContent = `[${meta.category}]`;
+
+    // Highlight active tile in Matrix modal
+    document.querySelectorAll(".engine-tile").forEach((tile: any) => {
+      tile.classList.toggle("engine-tile--active", tile.dataset.engine === meta.id);
     });
   }
 
+  function cycleEngine(direction: 1 | -1) {
+    const nextIdx = (currentEngineIndex + direction + VISUALIZER_ENGINES.length) % VISUALIZER_ENGINES.length;
+    setModeUI(VISUALIZER_ENGINES[nextIdx].id);
+  }
+
   function wireToggles() {
-    const btnParticles = document.getElementById("toggle-particles");
-    const btnFluid = document.getElementById("toggle-fluid");
-    const btnOscillo = document.getElementById("toggle-oscillo");
     const btnCompanion = document.getElementById("toggle-companion");
     const spriteDock = document.getElementById("sprite-dock");
 
-    btnParticles?.addEventListener("click", () => setModeUI("particles"));
-    btnFluid?.addEventListener("click", () => setModeUI("fluid"));
-    btnOscillo?.addEventListener("click", () => setModeUI("oscillo"));
+    // Prev / Next arrow buttons
+    document.getElementById("btn-engine-prev")?.addEventListener("click", () => cycleEngine(-1));
+    document.getElementById("btn-engine-next")?.addEventListener("click", () => cycleEngine(1));
+    document.getElementById("theater-engine-prev")?.addEventListener("click", () => cycleEngine(-1));
+    document.getElementById("theater-engine-next")?.addEventListener("click", () => cycleEngine(1));
 
-    document.querySelectorAll(".theater-mode-btn").forEach((btn: any) => {
-      btn.addEventListener("click", () => {
-        const mode = btn.dataset.mode as "particles" | "fluid" | "oscillo";
-        if (mode) setModeUI(mode);
+    // Matrix launcher
+    const modalEngines = document.getElementById("modal-engines");
+    const btnOpenEngines = document.getElementById("btn-engine-menu");
+    const btnTheaterOpenEngines = document.getElementById("theater-engine-menu");
+    const btnCloseEngines = document.getElementById("btn-close-engines");
+
+    const openEngineMatrix = () => {
+      modalEngines?.classList.add("modal-backdrop--active");
+    };
+
+    const closeEngineMatrix = () => {
+      modalEngines?.classList.remove("modal-backdrop--active");
+    };
+
+    btnOpenEngines?.addEventListener("click", openEngineMatrix);
+    btnTheaterOpenEngines?.addEventListener("click", openEngineMatrix);
+    btnCloseEngines?.addEventListener("click", closeEngineMatrix);
+
+    modalEngines?.addEventListener("click", (e) => {
+      if (e.target === modalEngines) closeEngineMatrix();
+    });
+
+    // Engine tiles inside matrix
+    document.querySelectorAll(".engine-tile").forEach((tile: any) => {
+      tile.addEventListener("click", () => {
+        const engineId = tile.dataset.engine as VisualizerMode;
+        if (engineId) {
+          setModeUI(engineId);
+          closeEngineMatrix();
+        }
       });
     });
 
+    // Companion toggle
     btnCompanion?.addEventListener("click", () => {
       const isHidden = spriteDock?.classList.toggle("deck__sprite-dock--hidden");
       if (isHidden) {
@@ -2113,6 +2489,44 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
       } else {
         btnCompanion.textContent = "[X] COMPANION";
         btnCompanion.classList.add("deck__toggle--active");
+      }
+    });
+
+    // Global keyboard hotkeys
+    window.addEventListener("keydown", (e) => {
+      // Don't intercept when user is typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      // Direct visualizer engine selection via hotkeys (1-9, 0)
+      const directKeyMap: Record<string, number> = {
+        "1": 0, "2": 1, "3": 2, "4": 3, "5": 4, "6": 5, "7": 6, "8": 7, "9": 8, "0": 9,
+      };
+      if (directKeyMap[e.key] !== undefined) {
+        e.preventDefault();
+        const targetEngine = VISUALIZER_ENGINES[directKeyMap[e.key]];
+        if (targetEngine) {
+          setModeUI(targetEngine.id);
+          closeEngineMatrix();
+        }
+        return;
+      }
+
+      // [ and ] for prev / next
+      if (e.key === "[") {
+        e.preventDefault();
+        cycleEngine(-1);
+      } else if (e.key === "]") {
+        e.preventDefault();
+        cycleEngine(1);
+      } else if (e.key.toLowerCase() === "m" || e.key.toLowerCase() === "v") {
+        e.preventDefault();
+        if (modalEngines?.classList.contains("modal-backdrop--active")) {
+          closeEngineMatrix();
+        } else {
+          openEngineMatrix();
+        }
+      } else if (e.key === "Escape") {
+        closeEngineMatrix();
       }
     });
   }
@@ -2251,6 +2665,7 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
         theaterVisualizer.setClearColor(0x000000, 1.0);
         theaterVisualizer.setAudioProvider(() => audioEngine.getRealtimeAmplitude());
         theaterVisualizer.setWaveProvider((buf) => audioEngine.getWaveformData(buf));
+        theaterVisualizer.setFreqProvider((buf) => audioEngine.getFrequencyData(buf));
       }
 
       if (theaterVisualizer && visualizer) {
@@ -2285,6 +2700,18 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     btnExit?.addEventListener("click", () => {
       theaterOverlay?.classList.remove("theater-overlay--active");
       theaterVisualizer?.pause();
+    });
+
+    // Auto-fade theater toolbar on mouse inactivity
+    let theaterFadeTimer: any = null;
+    const theaterToolbar = document.getElementById("theater-toolbar");
+
+    theaterOverlay?.addEventListener("mousemove", () => {
+      theaterToolbar?.classList.remove("theater-toolbar--faded");
+      if (theaterFadeTimer) clearTimeout(theaterFadeTimer);
+      theaterFadeTimer = setTimeout(() => {
+        theaterToolbar?.classList.add("theater-toolbar--faded");
+      }, 2500);
     });
   }
 
@@ -2341,8 +2768,10 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
       });
     });
 
+    const modalEngines = document.getElementById("modal-engines");
+
     // Close any modal when clicking its dark backdrop
-    [modalRoute, modalBio, modalInfo].forEach((backdrop) => {
+    [modalRoute, modalBio, modalInfo, modalEngines].forEach((backdrop) => {
       backdrop?.addEventListener("click", (e) => {
         if (e.target === backdrop) {
           backdrop.classList.remove("modal-backdrop--active");

@@ -317,6 +317,17 @@ export class AudioEngine {
   }
 
   /**
+   * Sample real-time FFT frequency spectrum data (0-255 magnitude per bin)
+   */
+  getFrequencyData(targetArray: Uint8Array): void {
+    if (!this.analyser || !this.isPlaying) {
+      targetArray.fill(0);
+      return;
+    }
+    this.analyser.getByteFrequencyData(targetArray);
+  }
+
+  /**
    * Session Recording — Start recording live audio buffer
    */
   async startRecording(): Promise<void> {

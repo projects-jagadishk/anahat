@@ -148,5 +148,21 @@
   - [x] Modal detailing purpose, architectural rationale, and 8 core subsystems.
   - [x] Prominent brutalist clinical advisory covering Non-Medical Device status, Photosensitive Epilepsy warning, Hearing & Decibel Safety protocol, Motor Vehicle/Machinery restrictions, and Pre-existing condition guidance.
   - [x] 100% offline air-gapped privacy assurance.
+- [x] **Complete 10-Mode Visualizer Engine Suite & High-Definition Geometry Overhaul**:
+  - [x] **[01] Chladni Nodes** (Hotkey `1`): 2D acoustic standing wave sand physics with viscous fluid damping (0.94), smooth flow with zero seizing, and breath sync expansion/collapse.
+  - [x] **[02] Faraday Fluid** (Hotkey `2`): 3D continuous standing parametric liquid surface wave mesh with standing waves and interference ripples.
+  - [x] **[03] Winamp Oscilloscope** (Hotkey `3`): Saturated high-contrast ribbon spectrum (Crimson, Cobalt, Emerald, Gold) with luminance weighting + rotating 3D Lissajous orbit loop.
+  - [x] **[04] Polar Radar** (Hotkey `4`): 360° circular FFT spectrum analyzer with 96 discrete radial frequency bar teeth, floating peak-hold needles, continuous rotating sonar radar sweep, and -18dB/-12dB/-6dB calibration range rings.
+  - [x] **[05] 3D Waterfall** (Hotkey `5`): Continuous 60 FPS scrolling topographic terrain ridges using dedicated `ShaderMaterial` with multi-harmonic standing waves + FFT audio transient peaks.
+  - [x] **[06] Torus Vortex** (Hotkey `6`): 16 continuous closed 3D helical Tokamak magnetic streamlines in alternating Crimson, Cobalt, and Charcoal + structural wireframe cage + central poloidal spindle.
+  - [x] **[07] Voxel Matrix** (Hotkey `7`): 3D volumetric equalizer matrix with 256 instanced pillars (16×16 grid) and gravity-decaying peak caps in `#FF3333` industrial red.
+  - [x] **[08] Harmonograph** (Hotkey `8`): Rotary 3-pendulum resonance trajectory with dual 1,400-point Lissajous ribbon traces and smooth pastel spectrum gradients.
+  - [x] **[09] Warp Tunnel** (Hotkey `9`): Infinite 3D acoustic perspective corridor with 24 sequential polygonal rings connected by 16 spaceframe rib lines.
+  - [x] **[10] Vector CRT** (Hotkey `0`): Vintage laboratory phosphor X-Y vectorscope with persistence trail decay and graticule calibration bezel.
+- [x] **High-Efficiency Engine Switcher**:
+  - [x] Canvas & Theater Navigator: `[◀] [01 // CHLADNI NODES [PHYSICS] ▾] [▶]`
+  - [x] Brutalist Engine Matrix Modal with 10 interactive tiles, hotkey badges, and descriptions.
+  - [x] Global Keyboard Hotkeys: Direct jump with keys `[1 - 9, 0]`, cycle with `[ [ / ] ]`, matrix toggle with `[M]`, theater toggle with `[T]`.
+  - [x] Theater Mode Auto-Fade: Floating HUD bar auto-fades after 2.5s of mouse inactivity.
 
 
