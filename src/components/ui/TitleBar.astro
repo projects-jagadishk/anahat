@@ -1,0 +1,126 @@
+---
+/**
+ * TitleBar.astro
+ * Custom frameless Tauri title bar — 40px, bg-surface-dark.
+ * Uses data-tauri-drag-region for native window dragging.
+ * macOS traffic lights get 70px left padding.
+ */
+---
+
+<header
+  data-tauri-drag-region
+  class="titlebar"
+>
+  <!-- macOS traffic light spacer -->
+  <div class="titlebar__traffic-spacer"></div>
+
+  <!-- App identity -->
+  <span class="titlebar__label">ANAHAT V0.1</span>
+
+  <!-- Spacer -->
+  <div class="titlebar__flex"></div>
+
+  <!-- Window controls (Windows/Linux — macOS uses native) -->
+  <div class="titlebar__controls" id="window-controls">
+    <button class="titlebar__btn" id="btn-minimize" aria-label="Minimize">─</button>
+    <button class="titlebar__btn" id="btn-maximize" aria-label="Maximize">□</button>
+    <button class="titlebar__btn titlebar__btn--close" id="btn-close" aria-label="Close">✕</button>
+  </div>
+</header>
+
+<style>
+  .titlebar {
+    display: flex;
+    align-items: center;
+    height: var(--titlebar-height);
+    background: var(--color-bg-surface-dark);
+    color: var(--color-bg-surface-light);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-label);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-label);
+    padding: 0;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 9999;
+    border-bottom: var(--stroke-ui) solid var(--color-border-heavy);
+  }
+
+  .titlebar__traffic-spacer {
+    width: 78px;
+    flex-shrink: 0;
+  }
+
+  .titlebar__label {
+    white-space: nowrap;
+    padding: 0 12px;
+  }
+
+  .titlebar__flex {
+    flex: 1;
+  }
+
+  .titlebar__controls {
+    display: flex;
+    height: 100%;
+  }
+
+  .titlebar__btn {
+    appearance: none;
+    border: none;
+    background: transparent;
+    color: var(--color-bg-surface-light);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    width: 46px;
+    height: 100%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: none;
+  }
+
+  .titlebar__btn:hover {
+    background: var(--color-bg-surface-light);
+    color: var(--color-bg-surface-dark);
+  }
+
+  .titlebar__btn--close:hover {
+    background: var(--color-accent-industrial);
+    color: var(--color-bg-surface-light);
+  }
+</style>
+
+<script>
+  import { getCurrentWindow } from "@tauri-apps/api/window";
+
+  const appWindow = getCurrentWindow();
+
+  // Detect macOS — hide custom controls (traffic lights are native)
+  const isMacOS = navigator.userAgent.includes("Macintosh");
+  const controlsEl = document.getElementById("window-controls");
+  if (isMacOS && controlsEl) {
+    controlsEl.style.display = "none";
+  }
+
+  document.getElementById("btn-minimize")?.addEventListener("click", () => {
+    appWindow.minimize();
+  });
+
+  document.getElementById("btn-maximize")?.addEventListener("click", async () => {
+    const isMaximized = await appWindow.isMaximized();
+    if (isMaximized) {
+      appWindow.unmaximize();
+    } else {
+      appWindow.maximize();
+    }
+  });
+
+  document.getElementById("btn-close")?.addEventListener("click", () => {
+    // Hide to tray instead of quitting
+    appWindow.hide();
+  });
+</script>

@@ -1,0 +1,12 @@
+{"message":"connected.","label":"vite","level":"info"}
+{"message":"Generated 0ms","label":"types","level":"info"}
+{"message":"connected.","label":"vite","level":"info"}
+{"message":" astro  v7.4.4 ready in 490 ms\n┃ Local    http://localhost:4321/\n┃ Network  use --host to expose","label":"SKIP_FORMAT","level":"info"}
+{"message":"watching for file changes...","label":null,"level":"info"}
+{"message":"[200] / 16ms","label":null,"level":"info"}
+{"message":"/src/layouts/BaseLayout.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"program reload","label":"vite","level":"info"}
+{"message":"program reload","label":"vite","level":"info"}
+{"message":"[200] / 15ms","label":null,"level":"info"}
+{"message":"[200] / 2ms","label":null,"level":"info"}
+{"message":"[200] / 26ms","label":null,"level":"info"}
