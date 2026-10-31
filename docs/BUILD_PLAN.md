@@ -53,15 +53,20 @@
 ---
 
 ### Step 3: The Audio Engine (Real-Time DSP & Binaural Synthesis)
-- [x] **Architecture Stub & Interface** (`src/components/logic/AudioEngine.ts`):
-  - [x] `AudioParams` interface (carrier Hz, offset Hz, amplitude, waveform, noise type, blend ratio).
-- [ ] **Native Synthesis (Rust DSP / `fundsp` + `rodio`)**:
-  - [ ] Real-time binaural carrier/offset oscillators (independent L/R routing).
-  - [ ] Stochastic noise generators (Pink, Brown, White) with low-pass roll-off filter.
-  - [ ] Live audio buffer capture to uncompressed `.wav` via native save dialog.
-- [ ] **Web Audio API Bridge**:
-  - [ ] Web Audio `AnalyserNode` FFT data export.
-  - [ ] Transfer frequency spectrum to visualizer `DataTexture` uniform.
+- [x] **Architecture Interface & Bridge** (`src/components/logic/AudioEngine.ts`):
+  - [x] `AudioPresetParams` contract (carrier Hz, offset Hz, amplitude, waveform, noise type, blend ratio).
+  - [x] Web Audio `AnalyserNode` real-time FFT spectrum export for 60 FPS WebGL visualizer coupling.
+  - [x] Native Tauri IPC sync bridge calling `audio_set_params`, `audio_play`, `audio_pause`.
+- [x] **Native Real-Time Synthesis (Rust DSP / `rodio 0.23`)** (`src-tauri/src/audio.rs`):
+  - [x] Continuous stereo `NeuroacousticSource` running at 48,000 Hz.
+  - [x] Independent L/R phase oscillators for binaural carrier/offset entrainment (`carrier ± offset/2`).
+  - [x] Harmonic $n$ and $m$ overtone modulation synthesis modifying physical timbre in real-time.
+  - [x] Interactive stochastic noise mixing (BROWN, PINK, WHITE, MUTE) with live blend ratio control (0% to 100%).
+  - [x] Continuous real-time playback on background audio thread that persists when window is hidden to system tray.
+- [x] **Local Session Recording (.WAV Capture)**:
+  - [x] Thread-safe interleaved stereo buffer accumulation during recording.
+  - [x] Native OS Save File dialog via `@tauri-apps/plugin-dialog`.
+  - [x] High-fidelity uncompressed 16-bit 48kHz stereo WAV encoder using `hound` crate.
 
 ---
 

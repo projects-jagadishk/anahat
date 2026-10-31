@@ -1,95 +1,113 @@
+pub mod audio;
+
+use audio::AudioController;
 use serde::Serialize;
+use std::sync::atomic::Ordering;
+use std::sync::Arc;
 use tauri::{
     menu::{MenuBuilder, MenuItemBuilder},
     tray::TrayIconBuilder,
     Emitter, Manager,
 };
 
-/// Audio engine state shared across commands
-#[derive(Default)]
-pub struct AudioState {
-    pub is_playing: bool,
-    pub active_preset_id: Option<String>,
-    pub carrier_hz: f64,
-    pub offset_hz: f64,
-    pub amplitude: f64,
-    pub harmonic_n: u32,
-    pub harmonic_m: u32,
-}
-
-/// Payload sent back to the frontend
+/// High-level audio state payload sent to frontend
 #[derive(Clone, Serialize)]
-pub struct AudioUpdate {
+pub struct AudioStatusPayload {
     pub is_playing: bool,
-    pub carrier_hz: f64,
-    pub offset_hz: f64,
-    pub amplitude: f64,
+    pub is_recording: bool,
+    pub carrier_hz: f32,
+    pub offset_hz: f32,
+    pub amplitude: f32,
     pub harmonic_n: u32,
     pub harmonic_m: u32,
+    pub waveform: String,
+    pub noise_type: String,
+    pub noise_blend_ratio: f32,
 }
 
 // ═══════════════════════════════════════════════════════════
-// IPC COMMANDS — called from the frontend via invoke()
+// IPC COMMANDS — called from frontend via invoke()
 // ═══════════════════════════════════════════════════════════
 
-/// Ping command for health check
 #[tauri::command]
 fn ping() -> String {
     "ANAHAT // SYSTEMS NOMINAL".to_string()
 }
 
-/// Get current audio engine state
 #[tauri::command]
-fn get_audio_state(state: tauri::State<'_, std::sync::Mutex<AudioState>>) -> AudioUpdate {
-    let s = state.lock().unwrap();
-    AudioUpdate {
-        is_playing: s.is_playing,
-        carrier_hz: s.carrier_hz,
-        offset_hz: s.offset_hz,
-        amplitude: s.amplitude,
-        harmonic_n: s.harmonic_n,
-        harmonic_m: s.harmonic_m,
+fn audio_play(audio: tauri::State<'_, Arc<AudioController>>) {
+    audio.play();
+}
+
+#[tauri::command]
+fn audio_pause(audio: tauri::State<'_, Arc<AudioController>>) {
+    audio.pause();
+}
+
+#[tauri::command]
+fn audio_toggle(audio: tauri::State<'_, Arc<AudioController>>) -> bool {
+    audio.toggle_playback()
+}
+
+#[tauri::command]
+fn audio_set_params(
+    carrier_hz: Option<f32>,
+    offset_hz: Option<f32>,
+    amplitude: Option<f32>,
+    harmonic_n: Option<u32>,
+    harmonic_m: Option<u32>,
+    waveform: Option<String>,
+    noise_type: Option<String>,
+    noise_blend_ratio: Option<f32>,
+    audio: tauri::State<'_, Arc<AudioController>>,
+) {
+    audio.update_params(
+        carrier_hz,
+        offset_hz,
+        amplitude,
+        harmonic_n,
+        harmonic_m,
+        waveform,
+        noise_type,
+        noise_blend_ratio,
+    );
+}
+
+#[tauri::command]
+fn audio_start_recording(audio: tauri::State<'_, Arc<AudioController>>) {
+    audio.start_recording();
+}
+
+#[tauri::command]
+fn audio_stop_and_save(
+    destination_path: String,
+    audio: tauri::State<'_, Arc<AudioController>>,
+) -> Result<usize, String> {
+    audio.stop_and_save_wav(&destination_path)
+}
+
+#[tauri::command]
+fn audio_get_status(audio: tauri::State<'_, Arc<AudioController>>) -> AudioStatusPayload {
+    let p = audio.params.lock().unwrap().clone();
+    AudioStatusPayload {
+        is_playing: audio.is_playing.load(Ordering::SeqCst),
+        is_recording: audio.is_recording.load(Ordering::SeqCst),
+        carrier_hz: p.carrier_hz,
+        offset_hz: p.offset_hz,
+        amplitude: p.amplitude,
+        harmonic_n: p.harmonic_n,
+        harmonic_m: p.harmonic_m,
+        waveform: p.waveform,
+        noise_type: p.noise_type,
+        noise_blend_ratio: p.noise_blend_ratio,
     }
-}
-
-/// Set harmonic parameters from frontend sliders
-#[tauri::command]
-fn set_harmonics(
-    n: u32,
-    m: u32,
-    amplitude: f64,
-    state: tauri::State<'_, std::sync::Mutex<AudioState>>,
-) {
-    let mut s = state.lock().unwrap();
-    s.harmonic_n = n;
-    s.harmonic_m = m;
-    s.amplitude = amplitude;
-}
-
-/// Load a preset by updating audio state
-#[tauri::command]
-fn load_preset(
-    preset_id: String,
-    carrier_hz: f64,
-    offset_hz: f64,
-    harmonic_n: u32,
-    harmonic_m: u32,
-    state: tauri::State<'_, std::sync::Mutex<AudioState>>,
-) {
-    let mut s = state.lock().unwrap();
-    s.active_preset_id = Some(preset_id);
-    s.carrier_hz = carrier_hz;
-    s.offset_hz = offset_hz;
-    s.harmonic_n = harmonic_n;
-    s.harmonic_m = harmonic_m;
-    s.is_playing = true;
 }
 
 // ═══════════════════════════════════════════════════════════
 // TRAY ICON SETUP
 // ═══════════════════════════════════════════════════════════
 
-fn setup_tray(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
+fn setup_tray(app: &tauri::App, audio: Arc<AudioController>) -> Result<(), Box<dyn std::error::Error>> {
     let show_item = MenuItemBuilder::with_id("show", "Show Anahat").build(app)?;
     let play_pause_item = MenuItemBuilder::with_id("play_pause", "Play / Pause").build(app)?;
     let quit_item = MenuItemBuilder::with_id("quit", "Quit").build(app)?;
@@ -101,9 +119,11 @@ fn setup_tray(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         .item(&quit_item)
         .build()?;
 
+    let audio_clone = audio.clone();
+
     let _tray = TrayIconBuilder::with_id("main-tray")
         .menu(&menu)
-        .tooltip("Anahat // Neuroacoustic Deck")
+        .tooltip("Anahat // Neuroacoustic Sound Deck")
         .on_menu_event(move |app, event| match event.id().as_ref() {
             "show" => {
                 if let Some(window) = app.get_webview_window("main") {
@@ -112,7 +132,8 @@ fn setup_tray(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
                 }
             }
             "play_pause" => {
-                let _ = app.emit("tray-play-pause", ());
+                let is_playing = audio_clone.toggle_playback();
+                let _ = app.emit("tray-playback-changed", is_playing);
             }
             "quit" => {
                 app.exit(0);
@@ -139,31 +160,35 @@ fn setup_tray(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let audio_controller = Arc::new(AudioController::init().expect("Failed to initialize audio engine"));
+
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
-        .manage(std::sync::Mutex::new(AudioState::default()))
+        .plugin(tauri_plugin_dialog::init())
+        .manage(audio_controller.clone())
         .invoke_handler(tauri::generate_handler![
             ping,
-            get_audio_state,
-            set_harmonics,
-            load_preset,
+            audio_play,
+            audio_pause,
+            audio_toggle,
+            audio_set_params,
+            audio_start_recording,
+            audio_stop_and_save,
+            audio_get_status,
         ])
-        .setup(|app| {
-            // Set up tray icon
-            if let Err(e) = setup_tray(app) {
-                eprintln!("Failed to setup tray: {}", e);
+        .setup(move |app| {
+            // Set up system tray icon
+            if let Err(e) = setup_tray(app, audio_controller.clone()) {
+                eprintln!("[Tray] Failed to setup tray: {}", e);
             }
 
-            // Handle window close — hide to tray instead of quitting
+            // Window close intercepted -> hide to system tray (audio persists seamlessly)
             let window = app.get_webview_window("main").unwrap();
             let win_clone = window.clone();
             window.on_window_event(move |event| {
                 if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                    // Prevent the window from actually closing
                     api.prevent_close();
-                    // Hide to system tray
                     let _ = win_clone.hide();
-                    // Emit event so frontend can pause WebGL
                     let _ = win_clone.emit("window-hidden", ());
                 }
             });

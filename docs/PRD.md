@@ -37,6 +37,12 @@ By bridging algorithmic, scientifically backed acoustic therapy (e.g., 40Hz Gamm
 
 ---
 
+### 3.3. Meditation & Rhythmic Companions
+
+- **Breath Synchronization Engine:** Temporal cadences (e.g., Box Breathing, 4-7-8 method) mapped directly to the Three.js WebGL uniforms. The particle grid must physically expand on the inhale and violently collapse into rigid geometry on the exhale.
+- **1-Bit Sprite Metronome:** A custom Astro Web Component utilizing GSAP to render a high-contrast 2D sprite sheet (e.g., a black indie or grey striped tabby cat). The sprite's idle animations (breathing, tail taps) must synchronize perfectly to the active meditation cadence.
+- **Mathematical Interval Chimes:** The Web Audio API will trigger crisp, unadulterated sine-wave bursts at specific temporal milestones, coupled with an absolute flash of `Accent-Industrial` red across the canvas.
+
 ## 3.5. WebGL & GLSL Technical Specifications
 
 This section contains the explicit mathematical formulas and GPU architecture required for the WebGL visualization engine.
@@ -198,6 +204,23 @@ The interface must feel like raw industrial laboratory equipment or an architect
   - Clicking "Close" hides the UI but does not kill the Rust backend.
   - Audio continues playing uninterrupted from the OS Tray.
   - Closing the window triggers an IPC event that pauses the WebGL loop.
+
+### Epic 5: Structured Meditation & Pacing
+
+**5.1 Temporal Breath Sync**
+
+- **User Story:** As a user meditating, I want a visual anchor to pace my breathing without looking at numbers.
+- **Acceptance Criteria:**
+  - UI allows selection of breathing cadences (4-7-8, Box).
+  - WebGL particles expand/contract mapped to these exact temporal intervals.
+
+**5.2 The Digital Companion**
+
+- **User Story:** As an anxious user, I want a grounding, rhythmic companion on screen to help me maintain focus.
+- **Acceptance Criteria:**
+  - A 1-bit cat sprite renders on the Control Deck.
+  - GSAP timeline syncs the sprite's animation frame rate to the selected breathing cadence.
+    </comment-tag>
 
 ---
 

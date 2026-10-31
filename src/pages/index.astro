@@ -162,11 +162,30 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
           </div>
         </div>
 
-        <!-- Noise blend readout -->
-        <div class="deck__noise-row">
-          <span class="deck__noise-label" id="noise-label">
-            NOISE BLEND: {(initialPreset.noise_masking_type || "brown").toUpperCase()} NOISE // ████████░░░░ 34%
-          </span>
+        <!-- Noise Blend Interactive Control Deck -->
+        <div class="deck__noise-deck">
+          <div class="deck__noise-header">
+            <span class="deck__noise-label" id="noise-label">
+              NOISE BLEND: {(initialPreset.noise_masking_type || "brown").toUpperCase()} // ████████░░░░ {Math.round((initialPreset.noise_blend_ratio || 0.25) * 100)}%
+            </span>
+            <div class="deck__noise-types" id="noise-types">
+              <button class="noise-type-btn noise-type-btn--active" data-noise="brown" type="button">BROWN</button>
+              <button class="noise-type-btn" data-noise="pink" type="button">PINK</button>
+              <button class="noise-type-btn" data-noise="white" type="button">WHITE</button>
+              <button class="noise-type-btn" data-noise="none" type="button">MUTE</button>
+            </div>
+          </div>
+          <div class="deck__slider-track-wrap">
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={Math.round((initialPreset.noise_blend_ratio || 0.25) * 100)}
+              class="slider-brutalist slider-brutalist--noise"
+              id="slider-noise"
+              title="Noise Blend Ratio"
+            />
+          </div>
         </div>
       </div>
     </section>
@@ -777,18 +796,66 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     background: var(--color-accent-industrial);
   }
 
-  .deck__noise-row {
+  .deck__noise-deck {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: var(--color-bg-concrete);
+    border: 2px solid var(--color-border-heavy);
+    padding: 6px 10px;
+    box-sizing: border-box;
     margin-top: auto;
     flex-shrink: 0;
   }
 
+  .deck__noise-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
   .deck__noise-label {
     font-family: var(--font-mono);
-    font-size: 10px;
+    font-size: 9.5px;
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--color-bg-surface-dark);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .deck__noise-types {
+    display: flex;
+    gap: 3px;
+    flex-shrink: 0;
+  }
+
+  .noise-type-btn {
+    appearance: none;
+    -webkit-appearance: none;
+    border: 1px solid var(--color-border-heavy);
+    background: var(--color-bg-surface-light);
+    color: var(--color-bg-surface-dark);
+    font-family: var(--font-mono);
+    font-size: 8px;
+    font-weight: 700;
+    padding: 2px 5px;
+    cursor: pointer;
+    text-transform: uppercase;
+  }
+
+  .noise-type-btn:hover {
+    background: var(--color-bg-surface-dark);
+    color: var(--color-bg-surface-light);
+  }
+
+  .noise-type-btn--active {
+    background: var(--color-bg-surface-dark) !important;
+    color: var(--color-accent-industrial) !important;
+    border-color: var(--color-border-heavy) !important;
   }
 
   /* ── RIGHT COLUMN: 300px ── */
@@ -1229,6 +1296,8 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
 
 <script>
   import { ChladniCanvas } from "../components/logic/ChladniCanvas";
+  import { audioEngine } from "../components/logic/AudioEngine";
+  import { listen } from "@tauri-apps/api/event";
 
   // ═══════════════════════════════════════════════════════════
   // STATE & VISUALIZER ENGINE
@@ -1239,6 +1308,9 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
   let isRecording = false;
   let recSeconds = 0;
   let recInterval: any = null;
+  let currentPreset: any = null;
+  let currentNoiseType = "brown";
+  let currentNoiseRatio = 0.25;
 
   // Initialize WebGL Visualizer
   function initVisualizer() {
@@ -1247,13 +1319,42 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
 
     visualizer = new ChladniCanvas();
     visualizer.mount(container);
+    visualizer.setAudioProvider(() => audioEngine.getRealtimeAmplitude());
   }
 
   // ═══════════════════════════════════════════════════════════
   // PRESET SELECTION HANDLERS
   // ═══════════════════════════════════════════════════════════
 
+  function updateNoiseDisplay() {
+    const noiseEl = document.getElementById("noise-label");
+    const sliderNoise = document.getElementById("slider-noise") as HTMLInputElement;
+
+    const pct = Math.round(currentNoiseRatio * 100);
+    const filled = Math.min(12, Math.max(0, Math.round(pct / 8.33)));
+    const empty = 12 - filled;
+    const typeLabel = currentNoiseType === "none" ? "MUTED" : currentNoiseType.toUpperCase();
+
+    if (noiseEl) {
+      noiseEl.textContent = `NOISE BLEND: ${typeLabel} // ${"█".repeat(filled)}${"░".repeat(empty)} ${pct}%`;
+    }
+    if (sliderNoise && sliderNoise.value !== String(pct)) {
+      sliderNoise.value = String(pct);
+    }
+
+    // Update active noise type button
+    document.querySelectorAll(".noise-type-btn").forEach((btn: any) => {
+      if (btn.dataset.noise === currentNoiseType) {
+        btn.classList.add("noise-type-btn--active");
+      } else {
+        btn.classList.remove("noise-type-btn--active");
+      }
+    });
+  }
+
   function selectPreset(preset: any, clickedEl: HTMLElement) {
+    currentPreset = preset;
+
     // Deselect previous & highlight current
     document.querySelectorAll(".preset-item--active").forEach((el) => {
       el.classList.remove("preset-item--active");
@@ -1262,6 +1363,9 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
 
     // Scroll active item smoothly into view if needed
     clickedEl.scrollIntoView({ block: "nearest", behavior: "auto" });
+
+    // Sync Audio Engine (Native Rust DSP + Web Audio API Analyser)
+    audioEngine.setPreset(preset);
 
     // Hz readout
     const hzEl = document.getElementById("hz-readout");
@@ -1297,15 +1401,10 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
       m: preset.harmonic_m,
     });
 
-    // Noise label
-    const noiseEl = document.getElementById("noise-label");
-    if (noiseEl) {
-      const pct = Math.round((preset.noise_blend_ratio || 0.3) * 100);
-      const filled = Math.min(12, Math.max(0, Math.round(pct / 8.33)));
-      const empty = 12 - filled;
-      const noiseType = (preset.noise_masking_type || "brown").toUpperCase();
-      noiseEl.textContent = `NOISE BLEND: ${noiseType} NOISE // ${"█".repeat(filled)}${"░".repeat(empty)} ${pct}%`;
-    }
+    // Sync noise state
+    currentNoiseType = preset.noise_masking_type || "brown";
+    currentNoiseRatio = preset.noise_blend_ratio !== undefined ? preset.noise_blend_ratio : 0.25;
+    updateNoiseDisplay();
 
     // Provenance spec card fields
     const setField = (id: string, val: string) => {
@@ -1388,7 +1487,7 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
   }
 
   // ═══════════════════════════════════════════════════════════
-  // SLIDER LIVE-UPDATE
+  // SLIDER & NOISE LIVE-UPDATE (Audio Engine + WebGL Sync)
   // ═══════════════════════════════════════════════════════════
 
   function wireSliders() {
@@ -1396,24 +1495,44 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     const sliderM = document.getElementById("slider-m") as HTMLInputElement;
     const valN = document.getElementById("val-n");
     const valM = document.getElementById("val-m");
+    const sliderNoise = document.getElementById("slider-noise") as HTMLInputElement;
 
     sliderN?.addEventListener("input", () => {
       const n = parseInt(sliderN.value, 10);
+      const m = parseInt(sliderM?.value || "4", 10);
       if (valN) valN.textContent = String(n);
-      visualizer?.updateUniforms({ n });
-      theaterVisualizer?.updateUniforms({ n });
+      visualizer?.updateUniforms({ n, m });
+      theaterVisualizer?.updateUniforms({ n, m });
+      audioEngine.setHarmonics(n, m);
     });
 
     sliderM?.addEventListener("input", () => {
       const m = parseInt(sliderM.value, 10);
+      const n = parseInt(sliderN?.value || "3", 10);
       if (valM) valM.textContent = String(m);
-      visualizer?.updateUniforms({ m });
-      theaterVisualizer?.updateUniforms({ m });
+      visualizer?.updateUniforms({ n, m });
+      theaterVisualizer?.updateUniforms({ n, m });
+      audioEngine.setHarmonics(n, m);
+    });
+
+    sliderNoise?.addEventListener("input", () => {
+      currentNoiseRatio = parseInt(sliderNoise.value, 10) / 100.0;
+      updateNoiseDisplay();
+      audioEngine.setNoise(currentNoiseType, currentNoiseRatio);
+    });
+
+    // Noise type selectors ([ BROWN ], [ PINK ], [ WHITE ], [ MUTE ])
+    document.querySelectorAll(".noise-type-btn").forEach((btn: any) => {
+      btn.addEventListener("click", () => {
+        currentNoiseType = btn.dataset.noise || "brown";
+        updateNoiseDisplay();
+        audioEngine.setNoise(currentNoiseType, currentNoiseRatio);
+      });
     });
   }
 
   // ═══════════════════════════════════════════════════════════
-  // RECORDING STATE (SCREEN 5)
+  // RECORDING STATE (SCREEN 5) — WAV EXPORT
   // ═══════════════════════════════════════════════════════════
 
   function wireRecording() {
@@ -1422,7 +1541,7 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     const badge = document.getElementById("rec-badge");
     const timecode = document.getElementById("rec-timecode");
 
-    btnRec?.addEventListener("click", () => {
+    btnRec?.addEventListener("click", async () => {
       isRecording = !isRecording;
 
       if (isRecording) {
@@ -1430,6 +1549,9 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
         btnRec.classList.add("btn-rec--recording");
         canvasCard?.classList.add("deck__canvas-wrap--recording");
         badge?.classList.add("deck__rec-badge--active");
+
+        // Start native DSP recording buffer
+        await audioEngine.startRecording();
 
         recSeconds = 0;
         recInterval = setInterval(() => {
@@ -1451,8 +1573,31 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
           clearInterval(recInterval);
           recInterval = null;
         }
+
+        const defaultName = `anahat-${(currentPreset?.code || "session").toLowerCase()}-${Date.now()}.wav`;
+        const savedPath = await audioEngine.stopAndSaveRecording(defaultName);
+        if (savedPath) {
+          console.log(`[AudioEngine] Saved session to: ${savedPath}`);
+        }
       }
     });
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // TRAY IPC LISTENER
+  // ═══════════════════════════════════════════════════════════
+
+  function wireTrayEvents() {
+    try {
+      listen<boolean>("tray-playback-changed", (event) => {
+        const isPlaying = event.payload;
+        if (isPlaying) {
+          audioEngine.play();
+        } else {
+          audioEngine.pause();
+        }
+      });
+    } catch (_) {}
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -1536,4 +1681,5 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
   wireRecording();
   wireTheaterMode();
   wireModals();
+  wireTrayEvents();
 </script>

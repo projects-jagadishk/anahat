@@ -40,6 +40,7 @@ export class ChladniCanvas {
   private uN = 4.0;
   private uM = 7.0;
   private uAmplitude = 0.7;
+  private audioProvider?: () => number;
 
   // Particle System
   private particleCount = 12000;
@@ -201,6 +202,10 @@ export class ChladniCanvas {
     this.scene?.add(this.fluidMesh);
   }
 
+  setAudioProvider(provider: () => number): void {
+    this.audioProvider = provider;
+  }
+
   setMode(newMode: VisualizerMode): void {
     this.mode = newMode;
     this.applyMode();
@@ -306,6 +311,16 @@ export class ChladniCanvas {
 
     const delta = Math.min(this.clock.getDelta(), 0.1);
     const elapsedTime = this.clock.getElapsedTime();
+
+    if (this.audioProvider) {
+      const liveAmp = this.audioProvider();
+      if (liveAmp > 0.01) {
+        this.uAmplitude = Math.max(0.2, Math.min(1.5, liveAmp * 2.5));
+        if (this.fluidMaterial) {
+          this.fluidMaterial.uniforms.u_amplitude.value = this.uAmplitude;
+        }
+      }
+    }
 
     if (this.mode === "particles") {
       this.updateParticles(delta);
