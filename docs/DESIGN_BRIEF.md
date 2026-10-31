@@ -84,6 +84,14 @@ Construct components using Auto Layout, Component Properties (Booleans, Text), a
   - _Alignment Constraint:_ Enforce **Forced Justification** on the `Mono/Body` text so it perfectly hits both the left and right borders, emulating a printed text block.
 - **Control Deck:** Groups Harmonic Sliders ($n$, $m$) alongside the `Display/Massive` Hz readout.
 
+### 4.4 Meditation V1.5 Components (Code-First)
+
+_Note: These are constructed directly in code via Tailwind, bypassing Figma._
+
+- **Timebox Selector (Atom):** A horizontal row of brutalist radio toggles `[ 10M ] | [ 20M ] | [ 60M ] | [ ∞ ]` in IBM Plex Mono. Active state inverts to `accent-industrial`.
+- **Cadence Dropdown (Atom):** A heavy 2px bordered dropdown labeled `BREATH_SYNC // [ BOX ]`. Options include 4-7-8 and OFF.
+- **1-Bit Sprite Container (Molecule):** A stark 160x160px square with a 4px `border-heavy`. Contains the GSAP canvas for the cat sprite, with a tiny label underneath: `COMPANION_ID: TABBY_01`.
+
 ## 5. Screen Inventory & Layout Architecture
 
 All screens must be assembled _exclusively_ from the Component Library.
@@ -120,6 +128,20 @@ All screens must be assembled _exclusively_ from the Component Library.
 - **Canvas Capture:** A 4px `accent-industrial` border clamps around the inner WebGL canvas. A timecode (e.g., `REC 00:01:24:10`) appears in the top-right of the canvas, utilizing terminal blink motion.
 
 ### Screen 6: V2 Roadmap Modal - Biometric Sync
+
+- **Architecture:** 500x400 modal dead center over the Main Deck.
+- **Content:** Fill `bg-surface-light`, 4px border, `Shadow-Brutalist`. Text: `AWAITING BIOMETRIC SYNC // BLE` with a raw sine wave vector graphic.
+
+### Screen 7: Guided Session Active State (Code-First)
+
+_This screen activates when a meditation timebox is initiated._
+
+- **Canvas Takeover:** The WebGL canvas expands to fill the Center and Right columns (hiding the Provenance Card).
+- **Massive Countdown:** The Hz readout in the Control Deck is replaced by a giant hollow ticking countdown timer (e.g., `19:59`) in Space Grotesk `Display/Massive`.
+- **Sprite Metronome:** The `1-Bit Sprite Container` docks to the top-left of the expanded WebGL canvas.
+- **Interval Chime Cue:** The entire WebGL canvas background flashes pure `accent-industrial` (#FF3333) momentarily on specific audio chime milestones.
+
+### Screen 8: V2 Roadmap Modal - Biometric Sync
 
 - **Architecture:** 500x400 modal dead center over the Main Deck.
 - **Content:** Fill `bg-surface-light`, 4px border, `Shadow-Brutalist`. Text: `AWAITING BIOMETRIC SYNC // BLE` with a raw sine wave vector graphic.
