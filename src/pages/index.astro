@@ -51,6 +51,12 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
 
       <!-- Preset list: statically rendered so all styles bind directly -->
       <div class="deck__presets-list" id="preset-list">
+        <!-- User Custom Specifications Section (Dynamically hydrated from localStorage) -->
+        <div class="preset-group" id="user-presets-group" style="display: none;">
+          <div class="preset-category">--- [ USER SPECIFICATIONS ] ---</div>
+          <div id="user-presets-container"></div>
+        </div>
+
         {groupedPresets.map((group) => (
           <div class="preset-group">
             <div class="preset-category">{group.title}</div>
@@ -76,8 +82,17 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
         ))}
       </div>
 
-      <!-- Chunky REC button at bottom (Screen 1 / Screen 5 trigger) -->
+      <!-- Action buttons & Chunky REC button at bottom -->
       <div class="deck__presets-footer">
+        <div class="deck__preset-mgmt-row">
+          <button class="btn-preset-mgmt" id="btn-new-preset" type="button" title="Create Custom Neuroacoustic Preset (Hotkey: P)">
+            [ + NEW PRESET ]
+          </button>
+          <button class="btn-preset-mgmt" id="btn-import-preset" type="button" title="Import .anahat Profile">
+            [ IMPORT ]
+          </button>
+          <input type="file" id="input-import-preset" accept=".anahat,.json" style="display: none;" />
+        </div>
         <button class="btn-brutalist btn-rec" id="btn-rec" type="button">
           [ REC SESSION ]
         </button>
@@ -148,6 +163,16 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
                 <button class="btn-gain-step" id="btn-gain-step" type="button" title="Cycle Mic Sensitivity Gain">1.4X</button>
               </div>
             </div>
+
+            <span class="deck__toggle-sep">|</span>
+
+            <!-- Visualizer Style Tuning (Palette & Density Deck) -->
+            <button class="deck__toggle" id="btn-palette-toggle" type="button" title="Cycle Visualizer Color Palette (Hotkey: C)">
+              <span id="canvas-palette-label">PAL: [ PASTEL ]</span>
+            </button>
+            <button class="deck__toggle" id="btn-density-toggle" type="button" title="Cycle Geometry Density (Hotkey: D)">
+              <span id="canvas-density-label">DET: [ HIGH ]</span>
+            </button>
           </div>
 
           <button class="btn-theater" id="btn-theater" type="button">
@@ -325,6 +350,11 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
         <button class="btn-biometric" id="btn-biometric" type="button">
           [ BIOMETRIC SYNC // V2 ]
         </button>
+
+        <!-- Export Active Preset Button (.anahat Profile) -->
+        <button class="btn-export-profile" id="btn-export-profile" type="button" title="Export Active Neuroacoustic Specification as .anahat Profile">
+          [ EXPORT .ANAHAT PROFILE ]
+        </button>
       </div>
     </aside>
   </main>
@@ -346,6 +376,8 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
         <span class="theater-engine__icon">▾</span>
       </button>
       <button class="theater-nav-arrow" id="theater-engine-next" type="button" title="Next Engine (Hotkey: ])">▶</button>
+      <button class="theater-nav-arrow" id="theater-btn-palette" type="button" title="Cycle Palette (Hotkey: C)" style="margin-left: 8px; width: auto; padding: 0 10px; font-size: 10px; font-weight: 700;">PAL: PASTEL</button>
+      <button class="theater-nav-arrow" id="theater-btn-detail" type="button" title="Cycle Detail (Hotkey: D)" style="width: auto; padding: 0 10px; font-size: 10px; font-weight: 700;">DET: HIGH</button>
     </div>
     <div class="theater-canvas-container" id="theater-canvas"></div>
     <div class="theater-hud">
@@ -354,6 +386,91 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
       <span class="theater-hud__hz" id="theater-hz">{Number(initialPreset.target_hz).toFixed(1)} HZ</span>
       <span class="theater-hud__phase" id="theater-phase">CADENCE: IDLE</span>
       <span class="theater-hud__source" id="theater-source">SRC: DSP</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SCREEN: CUSTOM PRESET SPEC-BUILDER (.ANAHAT SPECIFICATION)
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="modal-backdrop" id="modal-new-preset">
+    <div class="modal-box modal-box--preset-creator">
+      <div class="modal-header">
+        <span>CUSTOM NEUROACOUSTIC PRESET // SPEC-BUILDER</span>
+        <button class="modal-close-btn" id="btn-close-new-preset">✕</button>
+      </div>
+      <div class="modal-body modal-preset-body">
+        <div class="preset-form-grid">
+          <div class="preset-form-field">
+            <label class="preset-form-label" for="inp-preset-code">PRESET CODE</label>
+            <input class="preset-form-input" id="inp-preset-code" type="text" value="USR-001" placeholder="USR-001" />
+          </div>
+          <div class="preset-form-field">
+            <label class="preset-form-label" for="inp-preset-name">PRESET TITLE / CLINICAL NAME</label>
+            <input class="preset-form-input" id="inp-preset-name" type="text" placeholder="Deep Alpha Coherence" />
+          </div>
+
+          <div class="preset-form-field">
+            <label class="preset-form-label" for="inp-preset-target">TARGET BEAT HZ</label>
+            <input class="preset-form-input" id="inp-preset-target" type="number" step="0.1" value="10.0" />
+          </div>
+          <div class="preset-form-field">
+            <label class="preset-form-label" for="inp-preset-carrier">CARRIER HZ</label>
+            <input class="preset-form-input" id="inp-preset-carrier" type="number" step="0.5" value="216.0" />
+          </div>
+          <div class="preset-form-field">
+            <label class="preset-form-label" for="inp-preset-offset">BINAURAL OFFSET HZ</label>
+            <input class="preset-form-input" id="inp-preset-offset" type="number" step="0.1" value="10.0" />
+          </div>
+
+          <div class="preset-form-field">
+            <label class="preset-form-label" for="inp-preset-waveform">WAVEFORM ARCHITECTURE</label>
+            <select class="preset-form-select" id="inp-preset-waveform">
+              <option value="binaural">Binaural Phase Shift</option>
+              <option value="sine">Pure Monophonic Sine</option>
+              <option value="isochronic">Isochronic Pulse</option>
+            </select>
+          </div>
+
+          <div class="preset-form-field">
+            <label class="preset-form-label" for="inp-preset-n">CHLADNI HARMONIC N (1-12)</label>
+            <input class="preset-form-input" id="inp-preset-n" type="number" min="1" max="12" value="3" />
+          </div>
+          <div class="preset-form-field">
+            <label class="preset-form-label" for="inp-preset-m">CHLADNI HARMONIC M (1-12)</label>
+            <input class="preset-form-input" id="inp-preset-m" type="number" min="1" max="12" value="4" />
+          </div>
+
+          <div class="preset-form-field">
+            <label class="preset-form-label" for="inp-preset-noise">STOCHASTIC NOISE MASKING</label>
+            <select class="preset-form-select" id="inp-preset-noise">
+              <option value="brown">Brown Noise (1/f² 6dB/oct Leaky)</option>
+              <option value="pink">Pink Noise (1/f Voss-McCartney)</option>
+              <option value="white">White Noise (Flat Spectral Density)</option>
+              <option value="none">Muted / Disabled</option>
+            </select>
+          </div>
+          <div class="preset-form-field">
+            <label class="preset-form-label" for="inp-preset-noise-ratio">NOISE BLEND RATIO (0-100%)</label>
+            <input class="preset-form-input" id="inp-preset-noise-ratio" type="number" min="0" max="100" value="25" />
+          </div>
+
+          <div class="preset-form-field preset-form-field--full">
+            <label class="preset-form-label" for="inp-preset-abstract">RESEARCH ABSTRACT & CLINICAL INTENT</label>
+            <textarea class="preset-form-textarea" id="inp-preset-abstract" rows="2" placeholder="Sensory gating and parietal alpha entrainment protocol for deep restorative focus."></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer modal-footer--flex">
+        <button class="btn-brutalist btn-brutalist--sm" id="btn-save-preset">
+          [ SAVE & ACTIVATE ]
+        </button>
+        <button class="btn-brutalist btn-brutalist--sm" id="btn-export-from-modal">
+          [ EXPORT .ANAHAT ]
+        </button>
+        <button class="btn-brutalist btn-brutalist--sm" id="btn-cancel-new-preset">
+          [ CANCEL ]
+        </button>
+      </div>
     </div>
   </div>
 
@@ -515,6 +632,41 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
               <div class="info-card__title">[ 1-BIT METRONOMIC COMPANION ]</div>
               <div class="info-card__desc">
                 Lightweight 60 FPS pixel-art metronome (<code>TABBY_01</code>) providing intuitive cadence rhythm with zero layout shifts and complete visibility control.
+              </div>
+            </div>
+
+            <div class="info-card">
+              <div class="info-card__title">[ 10-MODE VISUALIZER SUITE ]</div>
+              <div class="info-card__desc">
+                High-definition mathematical engines: 01 Chladni Nodes, 02 Faraday Fluid, 03 Winamp Oscillo, 04 Polar Radar, 05 3D Waterfall, 06 Torus Vortex, 07 Voxel Matrix, 08 Harmonograph, 09 Warp Tunnel, and 10 Vector CRT with instant hotkey switching (1–0).
+              </div>
+            </div>
+
+            <div class="info-card">
+              <div class="info-card__title">[ LIVE MIC INGEST // ZERO FEEDBACK ]</div>
+              <div class="info-card__desc">
+                Real-time acoustic microphone and line-in capture routed exclusively to the FFT Analyser with zero speaker feedback. Visualizes Spotify, vinyl, instruments, and room acoustics in 60 FPS.
+              </div>
+            </div>
+
+            <div class="info-card">
+              <div class="info-card__title">[ HARDWARE DAC ROUTING MATRIX ]</div>
+              <div class="info-card__desc">
+                Direct hardware device enumeration and runtime sink hot-swapping via native Rust CPAL. Seamlessly route continuous audio to high-end USB DACs, audiophile headphone amps, or spatial setups.
+              </div>
+            </div>
+
+            <div class="info-card">
+              <div class="info-card__title">[ CUSTOM PRESET BUILDER & .ANAHAT ]</div>
+              <div class="info-card__desc">
+                Interactive specification builder to author custom carrier Hz, binaural offsets, harmonic parameters, and noise spectra. Persisted locally with exportable/importable .anahat profile JSON files.
+              </div>
+            </div>
+
+            <div class="info-card">
+              <div class="info-card__title">[ STYLE TUNING: PALETTES & DENSITY ]</div>
+              <div class="info-card__desc">
+                5 distinct visual palettes (Pastel Spectrum, Monochrome Brutalist, Amber CRT 589nm, Green CRT P1, Cyber Blue) paired with stepped geometry density modes (Low, Mid, High, Ultra).
               </div>
             </div>
 
@@ -2059,6 +2211,137 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     max-height: 88vh;
   }
 
+  .modal-box--preset-creator {
+    width: 780px;
+    max-width: 92vw;
+    max-height: 88vh;
+    box-shadow: 8px 8px 0px 0px #000000;
+  }
+
+  .modal-preset-body {
+    padding: 16px;
+    overflow-y: auto;
+  }
+
+  .preset-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .preset-form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .preset-form-field--full {
+    grid-column: 1 / -1;
+  }
+
+  .preset-form-label {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--color-text-secondary);
+    letter-spacing: 0.05em;
+  }
+
+  .preset-form-input,
+  .preset-form-select,
+  .preset-form-textarea {
+    border: 2px solid var(--color-border-heavy);
+    background: var(--color-bg-concrete);
+    color: var(--color-text-primary);
+    padding: 8px 10px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 0 !important;
+    outline: none;
+  }
+
+  .preset-form-input:focus,
+  .preset-form-select:focus,
+  .preset-form-textarea:focus {
+    border-color: var(--color-accent-industrial);
+    background: #FFFFFF;
+  }
+
+  .deck__preset-mgmt-row {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+
+  .btn-preset-mgmt {
+    flex: 1;
+    padding: 6px 4px;
+    font-size: 9px;
+    text-align: center;
+    background: var(--color-bg-surface-light);
+    border: 2px solid var(--color-border-heavy);
+    color: var(--color-text-primary);
+    font-family: var(--font-mono);
+    font-weight: 700;
+    cursor: pointer;
+    border-radius: 0 !important;
+  }
+
+  .btn-preset-mgmt:hover {
+    background: var(--color-bg-surface-dark);
+    color: var(--color-bg-surface-light);
+    border-color: var(--color-accent-industrial);
+  }
+
+  .btn-export-profile {
+    margin-top: 8px;
+    width: 100%;
+    height: 34px;
+    background: var(--color-bg-concrete);
+    border: 2px solid var(--color-border-heavy);
+    color: var(--color-text-primary);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0 !important;
+  }
+
+  .btn-export-profile:hover {
+    background: var(--color-bg-surface-dark);
+    color: var(--color-bg-surface-light);
+    border-color: var(--color-accent-industrial);
+  }
+
+  .user-preset-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+    padding-left: 6px;
+  }
+
+  .user-preset-btn {
+    border: 1px solid var(--color-border-heavy);
+    background: transparent;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 5px;
+    cursor: pointer;
+    border-radius: 0 !important;
+  }
+
+  .user-preset-btn:hover {
+    background: var(--color-accent-industrial);
+    color: #FFFFFF;
+  }
+
   .modal-header {
     height: 40px;
     background: var(--color-bg-surface-dark);
@@ -2314,7 +2597,13 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
 </style>
 
 <script>
-  import { ChladniCanvas, VISUALIZER_ENGINES, type VisualizerMode } from "../components/logic/ChladniCanvas";
+  import {
+    ChladniCanvas,
+    VISUALIZER_ENGINES,
+    type VisualizerMode,
+    type VisualPalette,
+    type GeometryDetail,
+  } from "../components/logic/ChladniCanvas";
   import { audioEngine, type AudioSourceMode } from "../components/logic/AudioEngine";
   import { spriteMetronome, type CadenceType } from "../components/logic/SpriteMetronome";
   import { listen } from "@tauri-apps/api/event";
@@ -2623,6 +2912,15 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
         if (modalRouting?.classList.contains("modal-backdrop--active")) {
           document.getElementById("btn-route-audio")?.dispatchEvent(new Event("click"));
         }
+      } else if (e.key.toLowerCase() === "c" && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        cyclePaletteUI();
+      } else if (e.key.toLowerCase() === "d" && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        cycleDetailUI();
+      } else if (e.key.toLowerCase() === "p" && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        openNewPresetModal();
       }
     });
   }
@@ -2864,10 +3162,21 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
       });
     });
 
+    // Custom Preset Builder Modal
+    const modalNewPreset = document.getElementById("modal-new-preset");
+    const btnCloseNewPreset = document.getElementById("btn-close-new-preset");
+    const btnCancelNewPreset = document.getElementById("btn-cancel-new-preset");
+
+    [btnCloseNewPreset, btnCancelNewPreset].forEach((el) => {
+      el?.addEventListener("click", () => {
+        modalNewPreset?.classList.remove("modal-backdrop--active");
+      });
+    });
+
     const modalEngines = document.getElementById("modal-engines");
 
     // Close any modal when clicking its dark backdrop
-    [modalRoute, modalBio, modalInfo, modalEngines].forEach((backdrop) => {
+    [modalRoute, modalBio, modalInfo, modalEngines, modalNewPreset].forEach((backdrop) => {
       backdrop?.addEventListener("click", (e) => {
         if (e.target === backdrop) {
           backdrop.classList.remove("modal-backdrop--active");
@@ -3246,6 +3555,311 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
   }
 
   // ═══════════════════════════════════════════════════════════
+  // USER PRESETS & .ANAHAT PROFILE SYSTEM (Option 3)
+  // ═══════════════════════════════════════════════════════════
+
+  const STORAGE_KEY = "anahat_user_presets";
+  let userPresets: any[] = [];
+
+  function loadUserPresets(): any[] {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {
+      console.warn("[UserPresets] Failed to load presets:", e);
+    }
+    return [];
+  }
+
+  function saveUserPresets(presets: any[]): void {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(presets));
+    } catch (e) {
+      console.error("[UserPresets] Failed to save presets:", e);
+    }
+  }
+
+  function exportPresetAsAnahat(preset: any): void {
+    if (!preset) return;
+    const payload = {
+      anahat_signature: "ANAHAT_NEUROACOUSTIC_PROFILE_V1",
+      exported_at: new Date().toISOString(),
+      preset: preset,
+    };
+    const jsonStr = JSON.stringify(payload, null, 2);
+    const blob = new Blob([jsonStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const codeSlug = (preset.code || "PRESET").toLowerCase().replace(/[^a-z0-9]/g, "_");
+    const nameSlug = (preset.displayName || preset.name || "custom").toLowerCase().replace(/[^a-z0-9]/g, "_");
+    a.href = url;
+    a.download = `${codeSlug}_${nameSlug}.anahat`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function renderUserPresets(): void {
+    const groupEl = document.getElementById("user-presets-group");
+    const container = document.getElementById("user-presets-container");
+    if (!groupEl || !container) return;
+
+    if (userPresets.length === 0) {
+      groupEl.style.display = "none";
+      container.innerHTML = "";
+      return;
+    }
+
+    groupEl.style.display = "flex";
+    container.innerHTML = "";
+
+    userPresets.forEach((preset, index) => {
+      const btn = document.createElement("button");
+      const isCurrentActive = currentPreset && (currentPreset.id === preset.id || currentPreset.code === preset.code);
+      btn.className = `preset-item ${isCurrentActive ? "preset-item--active" : ""}`;
+      btn.type = "button";
+      btn.dataset.presetId = preset.id;
+      btn.dataset.presetJson = JSON.stringify(preset);
+
+      btn.innerHTML = `
+        <div class="preset-item__meta">
+          <span class="preset-item__code">[${preset.code || `USR-${index + 1}`}]</span>
+          <span class="preset-item__name">${preset.displayName || preset.name}</span>
+          <span class="preset-item__cursor terminal-blink">█</span>
+        </div>
+        <span class="preset-item__hz">${Number(preset.target_hz).toFixed(1)} Hz</span>
+        <div class="user-preset-actions" onclick="event.stopPropagation();">
+          <button class="user-preset-btn" title="Export .anahat profile" type="button" data-idx="${index}">EXP</button>
+          <button class="user-preset-btn" title="Delete preset" type="button" data-del-idx="${index}">✕</button>
+        </div>
+      `;
+
+      btn.addEventListener("click", () => {
+        selectPreset(preset, btn);
+      });
+
+      const expBtn = btn.querySelector("[data-idx]");
+      expBtn?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        exportPresetAsAnahat(preset);
+      });
+
+      const delBtn = btn.querySelector("[data-del-idx]");
+      delBtn?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (confirm(`Delete custom preset "${preset.displayName || preset.name}"?`)) {
+          userPresets.splice(index, 1);
+          saveUserPresets(userPresets);
+          renderUserPresets();
+        }
+      });
+
+      container.appendChild(btn);
+    });
+  }
+
+  function openNewPresetModal(prefill?: any): void {
+    const modal = document.getElementById("modal-new-preset");
+    if (!modal) return;
+
+    const inpCode = document.getElementById("inp-preset-code") as HTMLInputElement;
+    const inpName = document.getElementById("inp-preset-name") as HTMLInputElement;
+    const inpTarget = document.getElementById("inp-preset-target") as HTMLInputElement;
+    const inpCarrier = document.getElementById("inp-preset-carrier") as HTMLInputElement;
+    const inpOffset = document.getElementById("inp-preset-offset") as HTMLInputElement;
+    const inpWf = document.getElementById("inp-preset-waveform") as HTMLSelectElement;
+    const inpN = document.getElementById("inp-preset-n") as HTMLInputElement;
+    const inpM = document.getElementById("inp-preset-m") as HTMLInputElement;
+    const inpNoise = document.getElementById("inp-preset-noise") as HTMLSelectElement;
+    const inpNoiseRatio = document.getElementById("inp-preset-noise-ratio") as HTMLInputElement;
+    const inpAbstract = document.getElementById("inp-preset-abstract") as HTMLTextAreaElement;
+
+    const nextCode = `USR-${String(userPresets.length + 1).padStart(3, "0")}`;
+    if (inpCode) inpCode.value = prefill?.code || nextCode;
+    if (inpName) inpName.value = prefill?.displayName || prefill?.name || "";
+    if (inpTarget) inpTarget.value = String(prefill?.target_hz ?? 10.0);
+    if (inpCarrier) inpCarrier.value = String(prefill?.carrier_hz ?? 216.0);
+    if (inpOffset) inpOffset.value = String(prefill?.offset_hz ?? 10.0);
+    if (inpWf) inpWf.value = prefill?.waveform || "binaural";
+    if (inpN) inpN.value = String(prefill?.harmonic_n ?? 3);
+    if (inpM) inpM.value = String(prefill?.harmonic_m ?? 4);
+    if (inpNoise) inpNoise.value = prefill?.noise_masking_type || "brown";
+    if (inpNoiseRatio) inpNoiseRatio.value = String(Math.round((prefill?.noise_blend_ratio ?? 0.25) * 100));
+    if (inpAbstract) inpAbstract.value = prefill?.therapeutic_use_case || "";
+
+    modal.classList.add("modal-backdrop--active");
+  }
+
+  function closeNewPresetModal(): void {
+    document.getElementById("modal-new-preset")?.classList.remove("modal-backdrop--active");
+  }
+
+  function buildPresetFromInputs(): any {
+    const inpCode = (document.getElementById("inp-preset-code") as HTMLInputElement)?.value.trim() || `USR-${userPresets.length + 1}`;
+    const inpName = (document.getElementById("inp-preset-name") as HTMLInputElement)?.value.trim() || "Untitled Custom Protocol";
+    const targetHz = parseFloat((document.getElementById("inp-preset-target") as HTMLInputElement)?.value || "10.0");
+    const carrierHz = parseFloat((document.getElementById("inp-preset-carrier") as HTMLInputElement)?.value || "216.0");
+    const offsetHz = parseFloat((document.getElementById("inp-preset-offset") as HTMLInputElement)?.value || "10.0");
+    const waveform = (document.getElementById("inp-preset-waveform") as HTMLSelectElement)?.value || "binaural";
+    const n = parseInt((document.getElementById("inp-preset-n") as HTMLInputElement)?.value || "3", 10);
+    const m = parseInt((document.getElementById("inp-preset-m") as HTMLInputElement)?.value || "4", 10);
+    const noise = (document.getElementById("inp-preset-noise") as HTMLSelectElement)?.value || "brown";
+    const noiseRatio = parseInt((document.getElementById("inp-preset-noise-ratio") as HTMLInputElement)?.value || "25", 10) / 100.0;
+    const abstract = (document.getElementById("inp-preset-abstract") as HTMLTextAreaElement)?.value.trim() || "User authored neuroacoustic protocol.";
+
+    return {
+      id: `usr-${Date.now()}`,
+      code: inpCode,
+      name: inpName,
+      displayName: inpName,
+      era: "User Custom",
+      target_hz: targetHz,
+      carrier_hz: carrierHz,
+      offset_hz: offsetHz,
+      harmonic_n: n,
+      harmonic_m: m,
+      waveform: waveform,
+      noise_masking_type: noise,
+      noise_blend_ratio: noiseRatio,
+      neurological_target: `Acoustic frequency modulation: ${targetHz.toFixed(1)} Hz beat`,
+      therapeutic_use_case: abstract,
+      evidence_level: "Custom Clinical Protocol",
+      evidence_rating: 5,
+      citation: "User Authored Protocol // Anahat V1.0",
+      doi: `LOCAL/${inpCode}`,
+    };
+  }
+
+  function wirePresetCreator(): void {
+    userPresets = loadUserPresets();
+    renderUserPresets();
+
+    const btnNew = document.getElementById("btn-new-preset");
+    const btnImport = document.getElementById("btn-import-preset");
+    const inputImport = document.getElementById("input-import-preset") as HTMLInputElement;
+    const btnSave = document.getElementById("btn-save-preset");
+    const btnExportModal = document.getElementById("btn-export-from-modal");
+    const btnExportProv = document.getElementById("btn-export-profile");
+
+    btnNew?.addEventListener("click", () => openNewPresetModal());
+
+    btnImport?.addEventListener("click", () => inputImport?.click());
+
+    inputImport?.addEventListener("change", async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+        const preset = data.preset || data;
+        if (!preset.target_hz || !preset.name) {
+          alert("Invalid .anahat profile file: missing target_hz or name.");
+          return;
+        }
+
+        // Assign unique code if collision
+        if (!preset.code || userPresets.some((p) => p.code === preset.code)) {
+          preset.code = `USR-${String(userPresets.length + 1).padStart(3, "0")}`;
+        }
+        preset.era = "User Custom";
+
+        userPresets.push(preset);
+        saveUserPresets(userPresets);
+        renderUserPresets();
+
+        // Select imported preset
+        const container = document.getElementById("user-presets-container");
+        const newlyAdded = container?.lastElementChild as HTMLElement;
+        if (newlyAdded) {
+          selectPreset(preset, newlyAdded);
+        }
+      } catch (err) {
+        console.error("Failed to parse .anahat file:", err);
+        alert("Could not load file. Make sure it is a valid .anahat JSON file.");
+      } finally {
+        inputImport.value = "";
+      }
+    });
+
+    btnSave?.addEventListener("click", () => {
+      const newPreset = buildPresetFromInputs();
+      userPresets.push(newPreset);
+      saveUserPresets(userPresets);
+      renderUserPresets();
+      closeNewPresetModal();
+
+      const container = document.getElementById("user-presets-container");
+      const newlyAdded = container?.lastElementChild as HTMLElement;
+      if (newlyAdded) {
+        selectPreset(newPreset, newlyAdded);
+      }
+    });
+
+    btnExportModal?.addEventListener("click", () => {
+      const preset = buildPresetFromInputs();
+      exportPresetAsAnahat(preset);
+    });
+
+    btnExportProv?.addEventListener("click", () => {
+      if (currentPreset) {
+        exportPresetAsAnahat(currentPreset);
+      }
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // VISUALIZER STYLE TUNING: PALETTES & DENSITY (Option 4)
+  // ═══════════════════════════════════════════════════════════
+
+  function cyclePaletteUI(): void {
+    if (!visualizer) return;
+    const nextPalette = visualizer.cyclePalette();
+    theaterVisualizer?.setPalette(nextPalette);
+
+    const canvasPaletteLabel = document.getElementById("canvas-palette-label");
+    const theaterBtnPalette = document.getElementById("theater-btn-palette");
+
+    const nameMap: Record<VisualPalette, string> = {
+      pastel: "PASTEL",
+      monochrome: "MONO",
+      amber_crt: "AMBER CRT",
+      green_crt: "GREEN CRT",
+      cyber_blue: "CYBER BLUE",
+    };
+
+    const disp = nameMap[nextPalette] || nextPalette.toUpperCase();
+    if (canvasPaletteLabel) canvasPaletteLabel.textContent = `PAL: [ ${disp} ]`;
+    if (theaterBtnPalette) theaterBtnPalette.textContent = `PAL: ${disp}`;
+  }
+
+  function cycleDetailUI(): void {
+    if (!visualizer) return;
+    const nextDetail = visualizer.cycleDetail();
+    theaterVisualizer?.setDetail(nextDetail);
+
+    const canvasDensityLabel = document.getElementById("canvas-density-label");
+    const theaterBtnDetail = document.getElementById("theater-btn-detail");
+
+    const disp = nextDetail.toUpperCase();
+    if (canvasDensityLabel) canvasDensityLabel.textContent = `DET: [ ${disp} ]`;
+    if (theaterBtnDetail) theaterBtnDetail.textContent = `DET: ${disp}`;
+  }
+
+  function wireVisualizerStyleTuning(): void {
+    const btnPalette = document.getElementById("btn-palette-toggle");
+    const btnDetail = document.getElementById("btn-density-toggle");
+    const theaterBtnPalette = document.getElementById("theater-btn-palette");
+    const theaterBtnDetail = document.getElementById("theater-btn-detail");
+
+    btnPalette?.addEventListener("click", cyclePaletteUI);
+    btnDetail?.addEventListener("click", cycleDetailUI);
+    theaterBtnPalette?.addEventListener("click", cyclePaletteUI);
+    theaterBtnDetail?.addEventListener("click", cycleDetailUI);
+  }
+
+  // ═══════════════════════════════════════════════════════════
   // BOOT
   // ═══════════════════════════════════════════════════════════
 
@@ -3260,4 +3874,6 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
   wireMeditationSession();
   wireInputSource();
   wireAudioRouting();
+  wirePresetCreator();
+  wireVisualizerStyleTuning();
 </script>

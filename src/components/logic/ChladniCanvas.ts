@@ -28,6 +28,9 @@ export type VisualizerMode =
   | "tunnel"
   | "vector_crt";
 
+export type VisualPalette = "pastel" | "monochrome" | "amber_crt" | "green_crt" | "cyber_blue";
+export type GeometryDetail = "low" | "mid" | "high" | "ultra";
+
 export interface EngineMeta {
   id: VisualizerMode;
   code: string;
@@ -85,6 +88,12 @@ export class ChladniCanvas {
   private burstTime = 0.0;
   private burstActive = 0.0;
   private particleMaterial: THREE.ShaderMaterial | null = null;
+
+  // Visual Styling & Density Engine
+  private currentPalette: VisualPalette = "pastel";
+  private currentDetail: GeometryDetail = "high";
+  private visualGain = 1.0;
+  private cameraDriftEnabled = true;
 
   // Particle System
   private particleCount = 12000;
@@ -245,6 +254,7 @@ export class ChladniCanvas {
         u_m: { value: this.uM },
         u_burst_time: { value: 0.0 },
         u_burst_active: { value: 0.0 },
+        u_palette: { value: 0 },
       },
       vertexShader: `
         uniform float u_time;
@@ -252,25 +262,50 @@ export class ChladniCanvas {
         uniform float u_m;
         uniform float u_burst_time;
         uniform float u_burst_active;
+        uniform int u_palette;
         varying vec3 vColor;
         varying float vNodal;
 
-        // Ethereal pastel spectrum palette: Coral -> Rose -> Lavender -> Sky -> Mint -> Amber
-        vec3 pastelSpectrum(float t) {
+        // Dynamic multi-palette shader engine
+        vec3 getPaletteColor(float t) {
           t = fract(t);
-          vec3 c0 = vec3(1.0, 0.48, 0.38); // Vibrant Pastel Coral
-          vec3 c1 = vec3(0.96, 0.38, 0.72); // Vibrant Pastel Rose
-          vec3 c2 = vec3(0.66, 0.46, 0.98); // Vibrant Pastel Lavender
-          vec3 c3 = vec3(0.30, 0.68, 0.98); // Vibrant Pastel Sky
-          vec3 c4 = vec3(0.18, 0.84, 0.60); // Vibrant Pastel Seafoam Mint
-          vec3 c5 = vec3(1.0, 0.82, 0.38); // Vibrant Pastel Amber Gold
-
-          float seg = t * 5.0;
-          if (seg < 1.0) return mix(c0, c1, seg);
-          if (seg < 2.0) return mix(c1, c2, seg - 1.0);
-          if (seg < 3.0) return mix(c2, c3, seg - 2.0);
-          if (seg < 4.0) return mix(c3, c4, seg - 3.0);
-          return mix(c4, c5, seg - 4.0);
+          if (u_palette == 1) {
+            // Monochrome Brutalist
+            float w = smoothstep(0.4, 0.6, sin(t * 6.28318));
+            return mix(vec3(0.92, 0.92, 0.92), vec3(1.0, 0.2, 0.2), w * 0.5);
+          } else if (u_palette == 2) {
+            // Amber CRT Phosphor (589nm)
+            vec3 c0 = vec3(0.85, 0.40, 0.0);
+            vec3 c1 = vec3(1.0, 0.70, 0.0);
+            vec3 c2 = vec3(1.0, 0.92, 0.45);
+            return mix(mix(c0, c1, smoothstep(0.0, 0.5, t)), c2, smoothstep(0.5, 1.0, t));
+          } else if (u_palette == 3) {
+            // Green CRT Phosphor (P1 525nm)
+            vec3 c0 = vec3(0.0, 0.55, 0.15);
+            vec3 c1 = vec3(0.15, 0.95, 0.35);
+            vec3 c2 = vec3(0.75, 1.0, 0.75);
+            return mix(mix(c0, c1, smoothstep(0.0, 0.5, t)), c2, smoothstep(0.5, 1.0, t));
+          } else if (u_palette == 4) {
+            // Cyber Blue
+            vec3 c0 = vec3(0.0, 0.30, 0.85);
+            vec3 c1 = vec3(0.0, 0.80, 1.0);
+            vec3 c2 = vec3(0.70, 0.98, 1.0);
+            return mix(mix(c0, c1, smoothstep(0.0, 0.5, t)), c2, smoothstep(0.5, 1.0, t));
+          } else {
+            // Vibrant Pastel Spectrum
+            vec3 c0 = vec3(1.0, 0.48, 0.38); // Coral
+            vec3 c1 = vec3(0.96, 0.38, 0.72); // Rose
+            vec3 c2 = vec3(0.66, 0.46, 0.98); // Lavender
+            vec3 c3 = vec3(0.30, 0.68, 0.98); // Sky
+            vec3 c4 = vec3(0.18, 0.84, 0.60); // Mint
+            vec3 c5 = vec3(1.0, 0.82, 0.38); // Amber Gold
+            float seg = t * 5.0;
+            if (seg < 1.0) return mix(c0, c1, seg);
+            if (seg < 2.0) return mix(c1, c2, seg - 1.0);
+            if (seg < 3.0) return mix(c2, c3, seg - 2.0);
+            if (seg < 4.0) return mix(c3, c4, seg - 3.0);
+            return mix(c4, c5, seg - 4.0);
+          }
         }
 
         void main() {
@@ -293,10 +328,10 @@ export class ChladniCanvas {
           float wave = sin(u_n * pi * p.x) * sin(u_m * pi * p.y) - sin(u_m * pi * p.x) * sin(u_n * pi * p.y);
           vNodal = abs(wave);
 
-          // Pastel spectrum gradient phase mapped across space and harmonic standing wave
+          // Spectrum gradient phase mapped across space and harmonic standing wave
           float angle = atan(p.y, p.x) / (2.0 * pi) + 0.5;
           float t = dist * 0.6 + angle * 0.35 + wave * 0.28 + u_time * 0.05;
-          vColor = pastelSpectrum(t);
+          vColor = getPaletteColor(t);
         }
       `,
       fragmentShader: `
@@ -340,6 +375,7 @@ export class ChladniCanvas {
         u_breath_scale: { value: 1.0 },
         u_burst_time: { value: 0.0 },
         u_burst_active: { value: 0.0 },
+        u_palette: { value: 0 },
       },
       vertexShader: `
         uniform float u_time;
@@ -349,26 +385,51 @@ export class ChladniCanvas {
         uniform float u_breath_scale;
         uniform float u_burst_time;
         uniform float u_burst_active;
+        uniform int u_palette;
         varying vec2 vUv;
         varying float vHeight;
         varying float vDist;
         varying vec3 vPastelColor;
 
-        vec3 pastelSpectrum(float t) {
+        vec3 getPaletteColor(float t) {
           t = fract(t);
-          vec3 c0 = vec3(1.0, 0.52, 0.42); // Vibrant Pastel Coral
-          vec3 c1 = vec3(0.96, 0.44, 0.76); // Vibrant Pastel Rose
-          vec3 c2 = vec3(0.68, 0.52, 0.98); // Vibrant Pastel Lavender
-          vec3 c3 = vec3(0.36, 0.70, 0.98); // Vibrant Pastel Sky
-          vec3 c4 = vec3(0.24, 0.85, 0.65); // Vibrant Pastel Mint
-          vec3 c5 = vec3(1.0, 0.84, 0.45); // Vibrant Pastel Amber Gold
-
-          float seg = t * 5.0;
-          if (seg < 1.0) return mix(c0, c1, seg);
-          if (seg < 2.0) return mix(c1, c2, seg - 1.0);
-          if (seg < 3.0) return mix(c2, c3, seg - 2.0);
-          if (seg < 4.0) return mix(c3, c4, seg - 3.0);
-          return mix(c4, c5, seg - 4.0);
+          if (u_palette == 1) {
+            // Monochrome Brutalist
+            float w = smoothstep(0.4, 0.6, sin(t * 6.28318));
+            return mix(vec3(0.92, 0.92, 0.92), vec3(1.0, 0.2, 0.2), w * 0.5);
+          } else if (u_palette == 2) {
+            // Amber CRT Phosphor (589nm)
+            vec3 c0 = vec3(0.85, 0.40, 0.0);
+            vec3 c1 = vec3(1.0, 0.70, 0.0);
+            vec3 c2 = vec3(1.0, 0.92, 0.45);
+            return mix(mix(c0, c1, smoothstep(0.0, 0.5, t)), c2, smoothstep(0.5, 1.0, t));
+          } else if (u_palette == 3) {
+            // Green CRT Phosphor (P1 525nm)
+            vec3 c0 = vec3(0.0, 0.55, 0.15);
+            vec3 c1 = vec3(0.15, 0.95, 0.35);
+            vec3 c2 = vec3(0.75, 1.0, 0.75);
+            return mix(mix(c0, c1, smoothstep(0.0, 0.5, t)), c2, smoothstep(0.5, 1.0, t));
+          } else if (u_palette == 4) {
+            // Cyber Blue
+            vec3 c0 = vec3(0.0, 0.30, 0.85);
+            vec3 c1 = vec3(0.0, 0.80, 1.0);
+            vec3 c2 = vec3(0.70, 0.98, 1.0);
+            return mix(mix(c0, c1, smoothstep(0.0, 0.5, t)), c2, smoothstep(0.5, 1.0, t));
+          } else {
+            // Vibrant Pastel Spectrum
+            vec3 c0 = vec3(1.0, 0.52, 0.42); // Coral
+            vec3 c1 = vec3(0.96, 0.44, 0.76); // Rose
+            vec3 c2 = vec3(0.68, 0.52, 0.98); // Lavender
+            vec3 c3 = vec3(0.36, 0.70, 0.98); // Sky
+            vec3 c4 = vec3(0.24, 0.85, 0.65); // Mint
+            vec3 c5 = vec3(1.0, 0.84, 0.45); // Amber Gold
+            float seg = t * 5.0;
+            if (seg < 1.0) return mix(c0, c1, seg);
+            if (seg < 2.0) return mix(c1, c2, seg - 1.0);
+            if (seg < 3.0) return mix(c2, c3, seg - 2.0);
+            if (seg < 4.0) return mix(c3, c4, seg - 3.0);
+            return mix(c4, c5, seg - 4.0);
+          }
         }
 
         void main() {
@@ -394,9 +455,9 @@ export class ChladniCanvas {
           displaced.xy *= u_breath_scale;
           displaced.z += h;
 
-          // Shimmering pastel spectrum across standing ripples
+          // Shimmering color spectrum across standing ripples
           float t = h * 3.4 + dist * 1.6 + u_time * 0.06;
-          vPastelColor = pastelSpectrum(t);
+          vPastelColor = getPaletteColor(t);
 
           gl_Position = projectionMatrix * modelViewMatrix * vec4(displaced, 1.0);
         }
@@ -723,11 +784,34 @@ export class ChladniCanvas {
   }
 
   // ═══════════════════════════════════════════════════════════
-  // PASTEL SPECTRUM COLOR SAMPLER
+  // MULTI-PALETTE SPECTRUM COLOR SAMPLER
   // ═══════════════════════════════════════════════════════════
 
-  private samplePastelSpectrum(t: number): THREE.Color {
+  samplePalette(t: number): THREE.Color {
     t = ((t % 1) + 1) % 1;
+    if (this.currentPalette === "monochrome") {
+      const w = Math.sin(t * Math.PI * 2.0) * 0.5 + 0.5;
+      return new THREE.Color(0.88, 0.88, 0.88).lerp(new THREE.Color(1.0, 0.2, 0.2), w > 0.65 ? 0.6 : 0.0);
+    }
+    if (this.currentPalette === "amber_crt") {
+      const c0 = new THREE.Color(0.85, 0.40, 0.0);
+      const c1 = new THREE.Color(1.0, 0.70, 0.0);
+      const c2 = new THREE.Color(1.0, 0.92, 0.45);
+      return t < 0.5 ? c0.clone().lerp(c1, t * 2.0) : c1.clone().lerp(c2, (t - 0.5) * 2.0);
+    }
+    if (this.currentPalette === "green_crt") {
+      const c0 = new THREE.Color(0.0, 0.55, 0.15);
+      const c1 = new THREE.Color(0.15, 0.95, 0.35);
+      const c2 = new THREE.Color(0.75, 1.0, 0.75);
+      return t < 0.5 ? c0.clone().lerp(c1, t * 2.0) : c1.clone().lerp(c2, (t - 0.5) * 2.0);
+    }
+    if (this.currentPalette === "cyber_blue") {
+      const c0 = new THREE.Color(0.0, 0.30, 0.85);
+      const c1 = new THREE.Color(0.0, 0.80, 1.0);
+      const c2 = new THREE.Color(0.70, 0.98, 1.0);
+      return t < 0.5 ? c0.clone().lerp(c1, t * 2.0) : c1.clone().lerp(c2, (t - 0.5) * 2.0);
+    }
+    // Pastel default
     const c0 = new THREE.Color(1.0, 0.52, 0.42); // Coral
     const c1 = new THREE.Color(0.96, 0.44, 0.76); // Rose
     const c2 = new THREE.Color(0.68, 0.52, 0.98); // Lavender
@@ -741,6 +825,10 @@ export class ChladniCanvas {
     if (seg < 3.0) return c2.clone().lerp(c3, seg - 2.0);
     if (seg < 4.0) return c3.clone().lerp(c4, seg - 3.0);
     return c4.clone().lerp(c5, seg - 4.0);
+  }
+
+  private samplePastelSpectrum(t: number): THREE.Color {
+    return this.samplePalette(t);
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -995,6 +1083,7 @@ export class ChladniCanvas {
         u_breath_scale: { value: 1.0 },
         u_audio_peak: { value: 0.0 },
         u_is_dark: { value: this.isDark ? 1.0 : 0.0 },
+        u_palette: { value: 0 },
       },
       vertexShader: `
         uniform float u_time;
@@ -1003,22 +1092,45 @@ export class ChladniCanvas {
         uniform float u_amplitude;
         uniform float u_breath_scale;
         uniform float u_audio_peak;
+        uniform int u_palette;
         varying vec2 vUv;
         varying float vHeight;
         varying vec3 vColor;
 
-        vec3 spectralPalette(float t) {
+        vec3 getPaletteColor(float t) {
           t = fract(t);
-          vec3 c0 = vec3(1.0, 0.20, 0.25); // Intense Crimson
-          vec3 c1 = vec3(1.0, 0.55, 0.15); // Deep Amber Gold
-          vec3 c2 = vec3(0.05, 0.65, 0.95); // Royal Cyan Blue
-          vec3 c3 = vec3(0.55, 0.20, 0.95); // Deep Violet
-          vec3 c4 = vec3(0.05, 0.85, 0.45); // Deep Emerald
-          float s = t * 4.0;
-          if (s < 1.0) return mix(c0, c1, s);
-          if (s < 2.0) return mix(c1, c2, s - 1.0);
-          if (s < 3.0) return mix(c2, c3, s - 2.0);
-          return mix(c3, c4, s - 3.0);
+          if (u_palette == 1) {
+            float w = smoothstep(0.4, 0.6, sin(t * 6.28318));
+            return mix(vec3(0.92, 0.92, 0.92), vec3(1.0, 0.2, 0.2), w * 0.5);
+          } else if (u_palette == 2) {
+            vec3 c0 = vec3(0.85, 0.40, 0.0);
+            vec3 c1 = vec3(1.0, 0.70, 0.0);
+            vec3 c2 = vec3(1.0, 0.92, 0.45);
+            return mix(mix(c0, c1, smoothstep(0.0, 0.5, t)), c2, smoothstep(0.5, 1.0, t));
+          } else if (u_palette == 3) {
+            vec3 c0 = vec3(0.0, 0.55, 0.15);
+            vec3 c1 = vec3(0.15, 0.95, 0.35);
+            vec3 c2 = vec3(0.75, 1.0, 0.75);
+            return mix(mix(c0, c1, smoothstep(0.0, 0.5, t)), c2, smoothstep(0.5, 1.0, t));
+          } else if (u_palette == 4) {
+            vec3 c0 = vec3(0.0, 0.30, 0.85);
+            vec3 c1 = vec3(0.0, 0.80, 1.0);
+            vec3 c2 = vec3(0.70, 0.98, 1.0);
+            return mix(mix(c0, c1, smoothstep(0.0, 0.5, t)), c2, smoothstep(0.5, 1.0, t));
+          } else {
+            vec3 c0 = vec3(1.0, 0.48, 0.38);
+            vec3 c1 = vec3(0.96, 0.38, 0.72);
+            vec3 c2 = vec3(0.66, 0.46, 0.98);
+            vec3 c3 = vec3(0.30, 0.68, 0.98);
+            vec3 c4 = vec3(0.18, 0.84, 0.60);
+            vec3 c5 = vec3(1.0, 0.82, 0.38);
+            float seg = t * 5.0;
+            if (seg < 1.0) return mix(c0, c1, seg);
+            if (seg < 2.0) return mix(c1, c2, seg - 1.0);
+            if (seg < 3.0) return mix(c2, c3, seg - 2.0);
+            if (seg < 4.0) return mix(c3, c4, seg - 3.0);
+            return mix(c4, c5, seg - 4.0);
+          }
         }
 
         void main() {
@@ -1042,7 +1154,7 @@ export class ChladniCanvas {
 
           vec3 pos = position;
           pos.z += h;
-          vColor = spectralPalette(h * 2.2 + uv.x * 0.6 + u_time * 0.05);
+          vColor = getPaletteColor(h * 2.2 + uv.x * 0.6 + u_time * 0.05);
 
           gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
         }
@@ -1917,7 +2029,7 @@ export class ChladniCanvas {
     if (this.audioProvider) {
       const liveAmp = this.audioProvider();
       if (liveAmp > 0.01) {
-        this.uAmplitude = Math.max(0.2, Math.min(1.5, liveAmp * 2.5));
+        this.uAmplitude = Math.max(0.2, Math.min(1.5, liveAmp * 2.5 * this.visualGain));
         if (this.fluidMaterial) {
           this.fluidMaterial.uniforms.u_amplitude.value = this.uAmplitude;
         }
@@ -1964,6 +2076,132 @@ export class ChladniCanvas {
     this.isPaused = false;
     this.clock.start();
     this.animate();
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // STYLE TUNING: PALETTE & DENSITY CONTROLS
+  // ═══════════════════════════════════════════════════════════
+
+  setPalette(palette: VisualPalette): void {
+    this.currentPalette = palette;
+    const paletteMap: Record<VisualPalette, number> = {
+      pastel: 0,
+      monochrome: 1,
+      amber_crt: 2,
+      green_crt: 3,
+      cyber_blue: 4,
+    };
+    const val = paletteMap[palette] ?? 0;
+    if (this.particleMaterial?.uniforms.u_palette) {
+      this.particleMaterial.uniforms.u_palette.value = val;
+    }
+    if (this.fluidMaterial?.uniforms.u_palette) {
+      this.fluidMaterial.uniforms.u_palette.value = val;
+    }
+    if (this.waterfallMaterial?.uniforms.u_palette) {
+      this.waterfallMaterial.uniforms.u_palette.value = val;
+    }
+    this.updateStaticMaterialsForPalette();
+  }
+
+  getPalette(): VisualPalette {
+    return this.currentPalette;
+  }
+
+  cyclePalette(): VisualPalette {
+    const list: VisualPalette[] = ["pastel", "monochrome", "amber_crt", "green_crt", "cyber_blue"];
+    const idx = (list.indexOf(this.currentPalette) + 1) % list.length;
+    this.setPalette(list[idx]);
+    return this.currentPalette;
+  }
+
+  setDetail(detail: GeometryDetail): void {
+    this.currentDetail = detail;
+    if (this.particlePoints) {
+      const maxCount = this.particleCount;
+      const countMap: Record<GeometryDetail, number> = {
+        low: Math.round(maxCount * 0.25),
+        mid: Math.round(maxCount * 0.5),
+        high: Math.round(maxCount * 0.85),
+        ultra: maxCount,
+      };
+      this.particlePoints.geometry.setDrawRange(0, countMap[detail] || maxCount);
+    }
+  }
+
+  getDetail(): GeometryDetail {
+    return this.currentDetail;
+  }
+
+  cycleDetail(): GeometryDetail {
+    const list: GeometryDetail[] = ["low", "mid", "high", "ultra"];
+    const idx = (list.indexOf(this.currentDetail) + 1) % list.length;
+    this.setDetail(list[idx]);
+    return this.currentDetail;
+  }
+
+  setVisualGain(gain: number): void {
+    this.visualGain = Math.max(0.2, Math.min(4.0, gain));
+  }
+
+  getVisualGain(): number {
+    return this.visualGain;
+  }
+
+  toggleCameraDrift(): boolean {
+    this.cameraDriftEnabled = !this.cameraDriftEnabled;
+    return this.cameraDriftEnabled;
+  }
+
+  private updateStaticMaterialsForPalette(): void {
+    const pal = this.currentPalette;
+    let primary = new THREE.Color(1.0, 0.2, 0.2);
+    let secondary = new THREE.Color(0.0, 0.33, 0.8);
+    let accent = new THREE.Color(0.96, 0.44, 0.76);
+
+    if (pal === "amber_crt") {
+      primary = new THREE.Color(1.0, 0.65, 0.0);
+      secondary = new THREE.Color(0.85, 0.40, 0.0);
+      accent = new THREE.Color(1.0, 0.90, 0.35);
+    } else if (pal === "green_crt") {
+      primary = new THREE.Color(0.1, 0.95, 0.3);
+      secondary = new THREE.Color(0.0, 0.55, 0.15);
+      accent = new THREE.Color(0.7, 1.0, 0.7);
+    } else if (pal === "cyber_blue") {
+      primary = new THREE.Color(0.0, 0.80, 1.0);
+      secondary = new THREE.Color(0.0, 0.30, 0.85);
+      accent = new THREE.Color(0.65, 0.95, 1.0);
+    } else if (pal === "monochrome") {
+      primary = new THREE.Color(1.0, 0.2, 0.2);
+      secondary = new THREE.Color(0.85, 0.85, 0.85);
+      accent = new THREE.Color(0.4, 0.4, 0.4);
+    }
+
+    // Radar
+    if (this.radarBarsLine) (this.radarBarsLine.material as THREE.LineBasicMaterial).color.copy(primary);
+    if (this.radarSweepLine) (this.radarSweepLine.material as THREE.LineBasicMaterial).color.copy(accent);
+
+    // Torus streamlines
+    this.torusStreamlines.forEach((loop, idx) => {
+      const mat = loop.material as THREE.LineBasicMaterial;
+      if (idx % 3 === 0) mat.color.copy(primary);
+      else if (idx % 3 === 1) mat.color.copy(secondary);
+      else mat.color.copy(accent);
+    });
+
+    // Warp tunnel
+    if (this.tunnelGroup) {
+      this.tunnelGroup.traverse((child) => {
+        if ((child as any).material && (child as any).material.color) {
+          ((child as any).material as THREE.LineBasicMaterial).color.copy(primary);
+        }
+      });
+    }
+
+    // Vector CRT
+    if (this.crtBeamLine) {
+      (this.crtBeamLine.material as THREE.LineBasicMaterial).color.copy(primary);
+    }
   }
 
   setClearColor(hex: number, alpha = 1.0): void {

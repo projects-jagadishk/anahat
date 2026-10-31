@@ -204,5 +204,37 @@
   - [x] Titlebar hardware status pill dynamically reflecting the active DAC/output name (e.g. `OUT: [ DEFAULT SYSTEM.. ]`).
   - [x] Keyboard shortcuts: key `[O]` opens the Hardware Routing Matrix, and `Escape` closes any open modal.
 
+---
+
+### Step 8: Custom Preset Creator & Local Save/Export (`.anahat` Profiles)
+- [x] **Neuroacoustic Spec-Builder Modal (`#modal-new-preset`)**:
+  - [x] Authoring inputs for Preset Code, Title, Target Resonance Beat Hz, Carrier Hz, Binaural Offset Hz, Harmonics $n$ & $m$, Waveform architecture (Binaural, Monophonic Sine, Isochronic Pulse), Stochastic Noise Masking (Brown, Pink, White, None) with blend ratio (0–100%), and Clinical Abstract.
+  - [x] Direct `[ SAVE & ACTIVATE ]` action persisting to `localStorage['anahat_user_presets']`, updating preset navigator, and instantly hydrating audio synthesis and visualizer.
+- [x] **`.anahat` Profile Export & Import**:
+  - [x] Full JSON specification schema including signature verification, timestamp, and acoustic telemetry.
+  - [x] Export trigger in modal, inline preset button `[EXP]`, and Provenance Card `[ EXPORT .ANAHAT PROFILE ]`.
+  - [x] Native file input ingestion (`#input-import-preset`) supporting drag-and-drop / file selector with duplicate code resolution and instant hydration.
+  - [x] Preset management row in Left Column: `[ + NEW PRESET ]` and `[ IMPORT ]` with hotkey `[P]`.
+  - [x] Deletion of custom user presets with confirmation and automatic fallback.
+
+---
+
+### Step 9: Visualizer Style Tuning (Color Palette & Density Deck)
+- [x] **Multi-Palette Color Engine (`ChladniCanvas.ts`)**:
+  - [x] Added `VisualPalette` union: `"pastel"` | `"monochrome"` | `"amber_crt"` | `"green_crt"` | `"cyber_blue"`.
+  - [x] GLSL shader `getPaletteColor(t)` engine in `particleMaterial`, `fluidMaterial`, and `waterfallMaterial` responding dynamically to `u_palette` uniform.
+  - [x] TypeScript mathematical color interpolation `samplePalette(t)` driving Voxel Matrix, Harmonograph ribbons, Oscilloscope traces, and Polar Radar.
+  - [x] Vector line and geometry re-theming for Torus magnetic streamlines, Polar Radar reticles, Warp Tunnel spaceframe ribs, and Vector CRT phosphor beams.
+- [x] **Geometry Density & Detail Levels**:
+  - [x] Added `GeometryDetail` union: `"low"` | `"mid"` | `"high"` | `"ultra"`.
+  - [x] Dynamic particle draw range partitioning (3,000 / 6,000 / 10,200 / 12,000 particles).
+  - [x] Sensitivity gain scaling for audio amplitude modulation (`setVisualGain`).
+- [x] **Deck & Theater Controls**:
+  - [x] Canvas toolbar quick toggles: `PAL: [ PASTEL ]` and `DET: [ HIGH ]`.
+  - [x] Theater Mode toolbar HUD buttons: `PAL: PASTEL` and `DET: HIGH`.
+  - [x] Global keyboard shortcuts: `[C]` cycles color palette, `[D]` cycles geometry density.
+- [x] **System Specification & Clinical Disclaimers Update**:
+  - [x] Refreshed `#modal-info` documentation covering all 10 visualizers, live audio ingest, hardware DAC routing, `.anahat` preset profiles, and visual styling engines.
+
 
 
