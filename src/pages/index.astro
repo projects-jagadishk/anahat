@@ -134,6 +134,20 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
             <button class="deck__toggle deck__toggle--active" id="toggle-companion" type="button" title="Toggle 1-Bit Metronome Companion">
               [X] COMPANION
             </button>
+
+            <span class="deck__toggle-sep">|</span>
+
+            <!-- Audio Ingest Source Monitor & Meter -->
+            <div class="deck__source-pill" id="deck-source-pill">
+              <button class="deck__toggle" id="btn-canvas-source" type="button" title="Switch Input Source: Internal Algorithmic DSP vs External Microphone">
+                <span class="source-dot" id="canvas-source-dot">●</span>
+                <span id="canvas-source-label">SRC: DSP</span>
+              </button>
+              <div class="deck__mic-meter" id="deck-mic-meter" style="display: none;">
+                <span class="meter-bar" id="mic-meter-bar">[░░░░░░░░░░]</span>
+                <button class="btn-gain-step" id="btn-gain-step" type="button" title="Cycle Mic Sensitivity Gain">1.4X</button>
+              </div>
+            </div>
           </div>
 
           <button class="btn-theater" id="btn-theater" type="button">
@@ -339,6 +353,7 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
       <span class="theater-hud__code" id="theater-code">{initialPreset.code || "PRE-001"}</span>
       <span class="theater-hud__hz" id="theater-hz">{Number(initialPreset.target_hz).toFixed(1)} HZ</span>
       <span class="theater-hud__phase" id="theater-phase">CADENCE: IDLE</span>
+      <span class="theater-hud__source" id="theater-source">SRC: DSP</span>
     </div>
   </div>
 
@@ -354,10 +369,17 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
       <div class="modal-body modal-grid-2">
         <div class="modal-col">
           <span class="modal-subheading">PHYSICAL AUDIO OUTPUT:</span>
-          <div class="brutalist-select-box">
+          <div class="brutalist-select-box" id="routing-output-devices">
             <div class="brutalist-select-item brutalist-select-item--active">[X] DEFAULT SYSTEM OUTPUT (DAC)</div>
-            <div class="brutalist-select-item">[ ] HEADPHONES (EXTERNAL OUT)</div>
-            <div class="brutalist-select-item">[ ] MULTI-CHANNEL SPATIAL RIG</div>
+          </div>
+          <div class="modal-spec-text" id="routing-output-status" style="margin-top: 6px; color: var(--color-red, #ff3333); font-weight: 700; letter-spacing: 0.05em;">
+            ACTIVE SINK: DEFAULT SYSTEM OUTPUT (DAC)
+          </div>
+
+          <span class="modal-subheading" style="margin-top: 16px;">ACOUSTIC INGEST SOURCE:</span>
+          <div class="brutalist-select-box" id="routing-source-select">
+            <div class="brutalist-select-item brutalist-select-item--active" id="routing-src-dsp" data-src="internal_dsp">[X] INTERNAL ALGORITHMIC DSP</div>
+            <div class="brutalist-select-item" id="routing-src-mic" data-src="mic_ingest">[ ] LIVE MICROPHONE / SYSTEM INGEST</div>
           </div>
 
           <span class="modal-subheading" style="margin-top: 20px;">SYNTHESIS BUFFER:</span>
@@ -672,7 +694,7 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
         </div>
 
         <div class="engine-matrix-footer-bar">
-          <span>SHORTCUTS: KEYS [1 - 9, 0] DIRECT SELECT // [ [ / ] ] CYCLE // [M] MATRIX // [ESC] DISMISS</span>
+          <span>SHORTCUTS: KEYS [1 - 9, 0] SELECT // [ [ / ] ] CYCLE // [M] MATRIX // [I] INPUT SRC // [ESC] DISMISS</span>
         </div>
       </div>
     </div>
@@ -1048,6 +1070,69 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
   .deck__toggle-sep {
     color: #555;
     font-size: 9px;
+  }
+
+  .deck__source-pill {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: #141414;
+    border: 1px solid #333333;
+    height: 22px;
+    padding: 0 6px;
+  }
+
+  .source-dot {
+    color: #44CC44;
+    font-size: 8px;
+    margin-right: 3px;
+  }
+
+  .source-dot--mic {
+    color: var(--color-accent-industrial) !important;
+  }
+
+  .deck__mic-meter {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--font-mono);
+    font-size: 8px;
+  }
+
+  .meter-bar {
+    color: var(--color-accent-industrial);
+    letter-spacing: -0.05em;
+    font-weight: 700;
+  }
+
+  .btn-gain-step {
+    appearance: none;
+    border: 1px solid #444;
+    background: #222;
+    color: #FFF;
+    font-family: var(--font-mono);
+    font-size: 8px;
+    font-weight: 700;
+    padding: 1px 4px;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+
+  .btn-gain-step:hover {
+    border-color: var(--color-accent-industrial);
+    color: var(--color-accent-industrial);
+    background: #2a1515;
+  }
+
+  .theater-hud__source {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: #AAA;
+    background: #181818;
+    padding: 3px 6px;
+    border: 1px solid #333;
   }
 
   .btn-theater {
@@ -2230,7 +2315,7 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
 
 <script>
   import { ChladniCanvas, VISUALIZER_ENGINES, type VisualizerMode } from "../components/logic/ChladniCanvas";
-  import { audioEngine } from "../components/logic/AudioEngine";
+  import { audioEngine, type AudioSourceMode } from "../components/logic/AudioEngine";
   import { spriteMetronome, type CadenceType } from "../components/logic/SpriteMetronome";
   import { listen } from "@tauri-apps/api/event";
 
@@ -2527,6 +2612,17 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
         }
       } else if (e.key === "Escape") {
         closeEngineMatrix();
+        document.querySelectorAll(".modal-backdrop--active").forEach((m) => m.classList.remove("modal-backdrop--active"));
+      } else if (e.key.toLowerCase() === "i" && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        audioEngine.toggleInputSource();
+      } else if (e.key.toLowerCase() === "o" && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        const modalRouting = document.getElementById("modal-routing");
+        modalRouting?.classList.toggle("modal-backdrop--active");
+        if (modalRouting?.classList.contains("modal-backdrop--active")) {
+          document.getElementById("btn-route-audio")?.dispatchEvent(new Event("click"));
+        }
       }
     });
   }
@@ -2952,6 +3048,204 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
   }
 
   // ═══════════════════════════════════════════════════════════
+  // ACOUSTIC INGEST (MIC INGEST / INTERNAL DSP SWITCHER)
+  // ═══════════════════════════════════════════════════════════
+
+  function wireInputSource() {
+    const btnInputSource = document.getElementById("btn-input-source");
+    const titlebarSourceLabel = document.getElementById("titlebar-source-label");
+    const btnCanvasSource = document.getElementById("btn-canvas-source");
+    const canvasSourceLabel = document.getElementById("canvas-source-label");
+    const canvasSourceDot = document.getElementById("canvas-source-dot");
+    const deckMicMeter = document.getElementById("deck-mic-meter");
+    const micMeterBar = document.getElementById("mic-meter-bar");
+    const btnGainStep = document.getElementById("btn-gain-step");
+    const theaterSource = document.getElementById("theater-source");
+
+    const routingSrcDsp = document.getElementById("routing-src-dsp");
+    const routingSrcMic = document.getElementById("routing-src-mic");
+
+    const gainSteps = [0.5, 1.0, 1.4, 2.0, 3.0];
+    let currentGainIdx = 2; // Default 1.4X
+
+    const syncSourceUI = (mode: AudioSourceMode) => {
+      const isMic = mode === "mic_ingest";
+
+      // Titlebar Button
+      if (titlebarSourceLabel) {
+        titlebarSourceLabel.textContent = isMic ? "SRC: [ MIC ]" : "SRC: [ DSP ]";
+      }
+      btnInputSource?.classList.toggle("titlebar__route-btn--active", isMic);
+
+      // Canvas Toolbar Pill
+      if (canvasSourceLabel) {
+        canvasSourceLabel.textContent = isMic ? "SRC: MIC" : "SRC: DSP";
+      }
+      btnCanvasSource?.classList.toggle("deck__toggle--active", isMic);
+      if (canvasSourceDot) {
+        canvasSourceDot.classList.toggle("source-dot--mic", isMic);
+        canvasSourceDot.classList.toggle("terminal-blink", isMic);
+      }
+
+      // Mic meter visibility
+      if (deckMicMeter) {
+        deckMicMeter.style.display = isMic ? "flex" : "none";
+      }
+
+      // Theater HUD indicator
+      if (theaterSource) {
+        theaterSource.textContent = isMic ? "SRC: MIC INGEST [LIVE]" : "SRC: INTERNAL DSP";
+        theaterSource.style.color = isMic ? "var(--color-accent-industrial)" : "#AAA";
+      }
+
+      // Routing Modal
+      if (routingSrcDsp && routingSrcMic) {
+        if (isMic) {
+          routingSrcDsp.textContent = "[ ] INTERNAL ALGORITHMIC DSP";
+          routingSrcDsp.classList.remove("brutalist-select-item--active");
+          routingSrcMic.textContent = "[X] LIVE MICROPHONE / SYSTEM INGEST";
+          routingSrcMic.classList.add("brutalist-select-item--active");
+        } else {
+          routingSrcDsp.textContent = "[X] INTERNAL ALGORITHMIC DSP";
+          routingSrcDsp.classList.add("brutalist-select-item--active");
+          routingSrcMic.textContent = "[ ] LIVE MICROPHONE / SYSTEM INGEST";
+          routingSrcMic.classList.remove("brutalist-select-item--active");
+        }
+      }
+    };
+
+    // Toggle trigger
+    const handleToggle = async () => {
+      const newMode = await audioEngine.toggleInputSource();
+      syncSourceUI(newMode);
+    };
+
+    btnInputSource?.addEventListener("click", handleToggle);
+    btnCanvasSource?.addEventListener("click", handleToggle);
+
+    routingSrcDsp?.addEventListener("click", () => {
+      if (audioEngine.getSourceMode() !== "internal_dsp") {
+        audioEngine.disableMicIngest();
+        syncSourceUI("internal_dsp");
+      }
+    });
+
+    routingSrcMic?.addEventListener("click", async () => {
+      if (audioEngine.getSourceMode() !== "mic_ingest") {
+        const ok = await audioEngine.enableMicIngest();
+        syncSourceUI(ok ? "mic_ingest" : "internal_dsp");
+      }
+    });
+
+    // Sensitivity gain stepper
+    btnGainStep?.addEventListener("click", () => {
+      currentGainIdx = (currentGainIdx + 1) % gainSteps.length;
+      const g = gainSteps[currentGainIdx];
+      audioEngine.setMicSensitivity(g);
+      if (btnGainStep) btnGainStep.textContent = `${g.toFixed(1)}X`;
+    });
+
+    // Audio Engine state listener
+    audioEngine.onSourceModeChange(syncSourceUI);
+
+    // Initial state sync
+    syncSourceUI(audioEngine.getSourceMode());
+
+    // 60FPS Input Level Meter RAF Loop
+    const updateMeter = () => {
+      if (audioEngine.getSourceMode() === "mic_ingest" && micMeterBar) {
+        const rms = audioEngine.getRMSLevel();
+        const segments = 10;
+        const filled = Math.min(segments, Math.max(0, Math.round(rms * 16)));
+        micMeterBar.textContent = `[${"█".repeat(filled)}${"░".repeat(segments - filled)}]`;
+      }
+      requestAnimationFrame(updateMeter);
+    };
+    requestAnimationFrame(updateMeter);
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // HARDWARE OUTPUT ROUTING (DAC / Device Switcher)
+  // ═══════════════════════════════════════════════════════════
+
+  function wireAudioRouting() {
+    const routingContainer = document.getElementById("routing-output-devices");
+    const routingStatus = document.getElementById("routing-output-status");
+    const titlebarRouteLabel = document.getElementById("titlebar-route-label");
+    const btnRoute = document.getElementById("btn-route-audio");
+
+    let isRefreshing = false;
+
+    const refreshOutputDevices = async () => {
+      if (!routingContainer || isRefreshing) return;
+      isRefreshing = true;
+
+      try {
+        const devices = await audioEngine.listOutputDevices();
+        const currentActive = audioEngine.getActiveOutputDevice();
+
+        routingContainer.innerHTML = "";
+        devices.forEach((dev) => {
+          const item = document.createElement("div");
+          const isActive = dev.name === currentActive || (currentActive === "Default System Output" && dev.is_default);
+          item.className = `brutalist-select-item ${isActive ? "brutalist-select-item--active" : ""}`;
+          item.textContent = `[${isActive ? "X" : " "}] ${dev.name.toUpperCase()}`;
+          item.dataset.deviceName = dev.name;
+
+          item.addEventListener("click", async () => {
+            if (routingStatus) {
+              routingStatus.textContent = `SWITCHING TO: ${dev.name.toUpperCase()}...`;
+            }
+            // Update selection immediately in UI
+            routingContainer.querySelectorAll(".brutalist-select-item").forEach((el) => {
+              el.classList.remove("brutalist-select-item--active");
+              const text = el.textContent || "";
+              el.textContent = text.replace("[X]", "[ ]");
+            });
+            item.classList.add("brutalist-select-item--active");
+            item.textContent = `[X] ${dev.name.toUpperCase()}`;
+
+            await audioEngine.setOutputDevice(dev.name);
+            await refreshOutputDevices();
+          });
+
+          routingContainer.appendChild(item);
+        });
+
+        if (routingStatus) {
+          routingStatus.textContent = `ACTIVE SINK: ${currentActive.toUpperCase()}`;
+        }
+
+        if (titlebarRouteLabel) {
+          const shortName = currentActive.length > 15 ? currentActive.substring(0, 13) + ".." : currentActive;
+          titlebarRouteLabel.textContent = `OUT: [ ${shortName.toUpperCase()} ]`;
+        }
+      } catch (err) {
+        console.warn("[wireAudioRouting] Failed to refresh audio output devices:", err);
+      } finally {
+        isRefreshing = false;
+      }
+    };
+
+    btnRoute?.addEventListener("click", () => {
+      refreshOutputDevices();
+    });
+
+    audioEngine.onOutputDeviceChange((devName) => {
+      if (routingStatus) {
+        routingStatus.textContent = `ACTIVE SINK: ${devName.toUpperCase()}`;
+      }
+      if (titlebarRouteLabel) {
+        const shortName = devName.length > 15 ? devName.substring(0, 13) + ".." : devName;
+        titlebarRouteLabel.textContent = `OUT: [ ${shortName.toUpperCase()} ]`;
+      }
+    });
+
+    // Populate initial device list
+    refreshOutputDevices();
+  }
+
+  // ═══════════════════════════════════════════════════════════
   // BOOT
   // ═══════════════════════════════════════════════════════════
 
@@ -2964,4 +3258,6 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
   wireModals();
   wireTrayEvents();
   wireMeditationSession();
+  wireInputSource();
+  wireAudioRouting();
 </script>

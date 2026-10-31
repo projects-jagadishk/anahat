@@ -2,7 +2,16 @@ use std::num::NonZero;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
+use rodio::cpal::traits::{DeviceTrait, HostTrait};
 use rodio::{DeviceSinkBuilder, MixerDeviceSink, Source};
+use serde::Serialize;
+
+#[derive(Clone, Serialize)]
+pub struct AudioDeviceInfo {
+    pub id: String,
+    pub name: String,
+    pub is_default: bool,
+}
 
 /// Thread-safe shared parameters for real-time DSP synthesis
 #[derive(Clone)]
@@ -298,7 +307,8 @@ pub struct AudioController {
     pub is_playing: Arc<AtomicBool>,
     pub is_recording: Arc<AtomicBool>,
     pub recorded_buffer: Arc<Mutex<Vec<f32>>>,
-    _sink: Option<MixerDeviceSink>,
+    sink: Arc<Mutex<Option<MixerDeviceSink>>>,
+    pub active_device_name: Arc<Mutex<String>>,
 }
 
 impl AudioController {
@@ -307,6 +317,12 @@ impl AudioController {
         let is_playing = Arc::new(AtomicBool::new(true)); // Default playing on boot
         let is_recording = Arc::new(AtomicBool::new(false));
         let recorded_buffer = Arc::new(Mutex::new(Vec::with_capacity(48000 * 2 * 60))); // 1 min initial cap
+
+        let default_name = rodio::cpal::default_host()
+            .default_output_device()
+            .and_then(|d| d.description().ok().map(|desc| desc.name().to_string()))
+            .unwrap_or_else(|| "Default System Output".to_string());
+        let active_device_name = Arc::new(Mutex::new(default_name));
 
         match DeviceSinkBuilder::open_default_sink() {
             Ok(sink) => {
@@ -325,7 +341,8 @@ impl AudioController {
                     is_playing,
                     is_recording,
                     recorded_buffer,
-                    _sink: Some(sink),
+                    sink: Arc::new(Mutex::new(Some(sink))),
+                    active_device_name,
                 })
             }
             Err(e) => {
@@ -335,10 +352,79 @@ impl AudioController {
                     is_playing,
                     is_recording,
                     recorded_buffer,
-                    _sink: None,
+                    sink: Arc::new(Mutex::new(None)),
+                    active_device_name,
                 })
             }
         }
+    }
+
+    pub fn list_output_devices(&self) -> Vec<AudioDeviceInfo> {
+        let mut result = Vec::new();
+        let host = rodio::cpal::default_host();
+        let default_name = host.default_output_device().and_then(|d| d.description().ok().map(|desc| desc.name().to_string()));
+        let active_name = self.active_device_name.lock().unwrap().clone();
+
+        if let Ok(devices) = host.output_devices() {
+            for (idx, dev) in devices.enumerate() {
+                if let Ok(desc) = dev.description() {
+                    let name = desc.name().to_string();
+                    let is_active = if !active_name.is_empty() {
+                        active_name == name
+                    } else {
+                        default_name.as_ref().map(|d| d == &name).unwrap_or(false)
+                    };
+                    result.push(AudioDeviceInfo {
+                        id: format!("device-{}", idx),
+                        name,
+                        is_default: is_active,
+                    });
+                }
+            }
+        }
+        result
+    }
+
+    pub fn set_output_device(&self, device_name: &str) -> Result<String, String> {
+        let host = rodio::cpal::default_host();
+        let output_devices = host.output_devices().map_err(|e| e.to_string())?;
+
+        let mut target_device = None;
+        for dev in output_devices {
+            if let Ok(desc) = dev.description() {
+                if desc.name() == device_name {
+                    target_device = Some(dev);
+                    break;
+                }
+            }
+        }
+
+        let device = target_device.ok_or_else(|| format!("Device '{}' not found", device_name))?;
+
+        let builder = DeviceSinkBuilder::from_device(device).map_err(|e| format!("{:?}", e))?;
+        let new_sink = builder.open_stream().map_err(|e| format!("{:?}", e))?;
+
+        let source = NeuroacousticSource::new(
+            48000,
+            self.params.clone(),
+            self.is_playing.clone(),
+            self.is_recording.clone(),
+            self.recorded_buffer.clone(),
+        );
+
+        new_sink.mixer().add(source);
+
+        let mut sink_lock = self.sink.lock().unwrap();
+        *sink_lock = Some(new_sink);
+
+        let mut name_lock = self.active_device_name.lock().unwrap();
+        *name_lock = device_name.to_string();
+
+        Ok(device_name.to_string())
+    }
+
+    pub fn get_active_device_name(&self) -> String {
+        self.active_device_name.lock().unwrap().clone()
     }
 
     pub fn play(&self) {

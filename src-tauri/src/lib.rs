@@ -103,6 +103,19 @@ fn audio_get_status(audio: tauri::State<'_, Arc<AudioController>>) -> AudioStatu
     }
 }
 
+#[tauri::command]
+fn audio_list_devices(audio: tauri::State<'_, Arc<AudioController>>) -> Vec<audio::AudioDeviceInfo> {
+    audio.list_output_devices()
+}
+
+#[tauri::command]
+fn audio_set_device(
+    device_name: String,
+    audio: tauri::State<'_, Arc<AudioController>>,
+) -> Result<String, String> {
+    audio.set_output_device(&device_name)
+}
+
 // ═══════════════════════════════════════════════════════════
 // TRAY ICON SETUP
 // ═══════════════════════════════════════════════════════════
@@ -175,6 +188,8 @@ pub fn run() {
             audio_start_recording,
             audio_stop_and_save,
             audio_get_status,
+            audio_list_devices,
+            audio_set_device,
         ])
         .setup(move |app| {
             // Set up system tray icon

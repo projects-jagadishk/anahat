@@ -21,14 +21,19 @@
 
   <div class="titlebar__flex" data-tauri-drag-region></div>
 
+  <!-- Audio Input Source Switcher in titlebar -->
+  <button class="titlebar__route-btn" id="btn-input-source" title="Toggle Audio Input Source: Internal DSP vs Live Mic Ingest">
+    <span id="titlebar-source-label">SRC: [ DSP ]</span>
+  </button>
+
   <!-- Info button in titlebar -->
   <button class="titlebar__route-btn titlebar__info-btn" id="btn-info" title="System Specification & Clinical Disclaimers">
     [ INFO // ? ]
   </button>
 
   <!-- Route Audio button in titlebar -->
-  <button class="titlebar__route-btn" id="btn-route-audio">
-    [ ROUTE AUDIO ]
+  <button class="titlebar__route-btn" id="btn-route-audio" title="Hardware Audio Routing Matrix & DAC Selection">
+    <span id="titlebar-route-label">[ ROUTE AUDIO ]</span>
   </button>
 
   <!-- Window controls (Windows/Linux — hidden on macOS) -->
@@ -99,6 +104,12 @@
   .titlebar__route-btn:hover {
     background: var(--color-bg-surface-light);
     color: var(--color-bg-surface-dark);
+  }
+
+  .titlebar__route-btn--active {
+    background: var(--color-accent-industrial) !important;
+    color: #ffffff !important;
+    border-color: var(--color-accent-industrial) !important;
   }
 
   .titlebar__controls {

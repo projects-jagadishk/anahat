@@ -165,4 +165,44 @@
   - [x] Global Keyboard Hotkeys: Direct jump with keys `[1 - 9, 0]`, cycle with `[ [ / ] ]`, matrix toggle with `[M]`, theater toggle with `[T]`.
   - [x] Theater Mode Auto-Fade: Floating HUD bar auto-fades after 2.5s of mouse inactivity.
 
+---
+
+### Step 6: Live Audio Input & External Mic Ingest Mode
+- [x] **Acoustic Ingest Pipeline (`AudioEngine.ts`)**:
+  - [x] `AudioSourceMode = "internal_dsp" | "mic_ingest"`.
+  - [x] `getUserMedia` raw capture with zero acoustic feedback (mic connects exclusively to `AnalyserNode`, never to `ctx.destination`).
+  - [x] Automatic pause and mute of internal synthesis when mic is active to eliminate harmonic clashing.
+  - [x] Stepped digital sensitivity gain (`0.5X` to `3.0X`).
+  - [x] Live RMS decibel level calculation from byte time-domain data.
+- [x] **Native macOS Entitlements (`src-tauri/Info.plist` & `tauri.conf.json`)**:
+  - [x] Created `Info.plist` with `NSMicrophoneUsageDescription`.
+  - [x] Wired `bundle.macOS.infoPlist` for seamless OS permission granting.
+- [x] **Brutalist UI & Interaction Deck (`TitleBar.astro` & `src/pages/index.astro`)**:
+  - [x] TitleBar quick toggle: `SRC: [ DSP ]` / `SRC: [ MIC ]` with red active state.
+  - [x] Canvas Toolbar monitor pill: `SRC: MIC` with pulsing red dot, live 10-segment ASCII meter `[██████░░░░]`, and sensitivity stepper button `1.4X`.
+  - [x] Synchronized `#modal-routing` hardware patch bay selector and Theater Mode HUD indicator.
+  - [x] Global keyboard shortcut: key `[I]` toggles between Internal DSP and Microphone Ingest.
+- [x] **Universal 10-Engine Visualizer Coupling**:
+  - [x] All 10 visualizers immediately visualize external audio, voice, instruments, and Spotify in 60 FPS without modifying shaders.
+
+---
+
+### Step 7: Real Hardware Output Routing (DAC / Device Switcher)
+- [x] **Native Rust Rodio/CPAL Device Enumeration & Dynamic Sink Hot-Swapping (`src-tauri/src/audio.rs` & `src-tauri/src/lib.rs`)**:
+  - [x] Added `AudioDeviceInfo` struct with `serde::Serialize` / `serde::Deserialize`.
+  - [x] Implemented `AudioController::list_output_devices()` enumerating all physical and virtual CoreAudio output devices via `cpal::traits::HostTrait` and `cpal::traits::DeviceTrait` with `.description()`.
+  - [x] Implemented `AudioController::set_output_device(&self, device_name: &str)` allowing runtime migration of the continuous `NeuroacousticSource` to external USB DACs, audiophile headphones, multi-channel interfaces, and Bluetooth sinks with zero audio glitches.
+  - [x] Added and registered Tauri IPC commands `audio_list_devices` and `audio_set_device`.
+- [x] **Frontend Audio Device Controller (`src/components/logic/AudioEngine.ts`)**:
+  - [x] Added `AudioOutputDevice` interface.
+  - [x] Implemented `listOutputDevices(): Promise<AudioOutputDevice[]>` with native Tauri query and Web Audio `MediaDevices.enumerateDevices()` fallback.
+  - [x] Implemented `setOutputDevice(deviceName: string)` switching both native Rust Rodio sink and Web Audio `setSinkId` (on supported engines) in unified lockstep.
+  - [x] Added `onOutputDeviceChange` reactive event listener hook.
+- [x] **Brutalist Hardware Patch Bay (`#modal-routing` & `TitleBar.astro`)**:
+  - [x] Dynamic hardware patch bay list in `#modal-routing` populated with real system audio output devices.
+  - [x] Interactive one-click output switching with immediate visual selection (`[X]` indicator) and active sink status readout.
+  - [x] Titlebar hardware status pill dynamically reflecting the active DAC/output name (e.g. `OUT: [ DEFAULT SYSTEM.. ]`).
+  - [x] Keyboard shortcuts: key `[O]` opens the Hardware Routing Matrix, and `Escape` closes any open modal.
+
+
 

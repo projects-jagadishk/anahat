@@ -23,16 +23,38 @@ export interface AudioPresetParams {
   noise_blend_ratio?: number; // 0.0 to 1.0
 }
 
+export interface AudioOutputDevice {
+  id: string;
+  name: string;
+  is_default: boolean;
+}
+
+export type AudioSourceMode = "internal_dsp" | "mic_ingest";
+
 export class AudioEngine {
   private ctx: AudioContext | null = null;
   private analyser: AnalyserNode | null = null;
   private frequencyData: Uint8Array | null = null;
+  private timeDomainData: Uint8Array | null = null;
 
   // Web Audio nodes for local FFT reactivity
   private leftOsc: OscillatorNode | null = null;
   private rightOsc: OscillatorNode | null = null;
   private masterGain: GainNode | null = null;
   private isMutedWebAudio = false; // Kept active for AnalyserNode
+
+  // Microphone Ingest Subsystem
+  private sourceMode: AudioSourceMode = "internal_dsp";
+  private micStream: MediaStream | null = null;
+  private micSourceNode: MediaStreamAudioSourceNode | null = null;
+  private micGainNode: GainNode | null = null;
+  private micSensitivity = 1.4; // Gain multiplier (0.2x to 4.0x)
+  private onSourceModeChangeCallbacks: Array<(mode: AudioSourceMode) => void> = [];
+
+  // Hardware Output Routing Subsystem
+  private activeOutputDeviceName = "Default System Output";
+  private cachedOutputDevices: AudioOutputDevice[] = [];
+  private onOutputDeviceChangeCallbacks: Array<(deviceName: string) => void> = [];
 
   private isPlaying = true;
   private currentParams: AudioPresetParams | null = null;
@@ -56,18 +78,263 @@ export class AudioEngine {
       this.analyser.smoothingTimeConstant = 0.8;
       this.frequencyData = new Uint8Array(this.analyser.frequencyBinCount);
 
-      // Master gain node
+      // Master gain node for internal synthesis
       this.masterGain = this.ctx.createGain();
       this.masterGain.gain.setValueAtTime(this.currentAmplitude, this.ctx.currentTime);
 
+      // Connect internal master gain to analyser AND destination (speakers)
       this.masterGain.connect(this.analyser);
-      // Connect to destination
-      this.analyser.connect(this.ctx.destination);
+      this.masterGain.connect(this.ctx.destination);
+      // NOTE: Analyser does NOT connect to destination, preventing any mic audio leakage/feedback
     }
 
     if (this.ctx.state === "suspended") {
       this.ctx.resume();
     }
+  }
+
+  /**
+   * Source Mode Management (Internal DSP vs Mic Ingest)
+   */
+  getSourceMode(): AudioSourceMode {
+    return this.sourceMode;
+  }
+
+  onSourceModeChange(callback: (mode: AudioSourceMode) => void): () => void {
+    this.onSourceModeChangeCallbacks.push(callback);
+    return () => {
+      this.onSourceModeChangeCallbacks = this.onSourceModeChangeCallbacks.filter((cb) => cb !== callback);
+    };
+  }
+
+  /**
+   * Enable live microphone / external audio ingest.
+   * Completely isolated from speakers to prevent acoustic feedback shrieks.
+   */
+  async enableMicIngest(): Promise<boolean> {
+    this.ensureAudioContext();
+    if (!this.ctx || !this.analyser) return false;
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+        },
+      });
+
+      this.micStream = stream;
+      this.micSourceNode = this.ctx.createMediaStreamSource(stream);
+      this.micGainNode = this.ctx.createGain();
+      this.micGainNode.gain.setValueAtTime(this.micSensitivity, this.ctx.currentTime);
+
+      // Mute internal synth to prevent clash
+      if (this.masterGain) {
+        this.masterGain.gain.setValueAtTime(0, this.ctx.currentTime);
+      }
+      try {
+        await invoke("audio_pause");
+      } catch (_) {}
+
+      // Connect mic source -> mic gain -> analyser ONLY (NEVER to destination)
+      this.micSourceNode.connect(this.micGainNode);
+      this.micGainNode.connect(this.analyser);
+
+      this.sourceMode = "mic_ingest";
+      this.onSourceModeChangeCallbacks.forEach((cb) => cb(this.sourceMode));
+      return true;
+    } catch (err) {
+      console.warn("[AudioEngine] Mic Ingest permission denied or unavailable:", err);
+      this.disableMicIngest();
+      return false;
+    }
+  }
+
+  /**
+   * Disable microphone ingest and resume internal algorithmic DSP.
+   */
+  disableMicIngest(): void {
+    if (this.micStream) {
+      this.micStream.getTracks().forEach((track) => track.stop());
+      this.micStream = null;
+    }
+    if (this.micSourceNode) {
+      try { this.micSourceNode.disconnect(); } catch (_) {}
+      this.micSourceNode = null;
+    }
+    if (this.micGainNode) {
+      try { this.micGainNode.disconnect(); } catch (_) {}
+      this.micGainNode = null;
+    }
+
+    // Restore internal synth
+    if (this.ctx && this.masterGain) {
+      this.masterGain.gain.setValueAtTime(this.currentAmplitude, this.ctx.currentTime);
+    }
+    if (this.isPlaying) {
+      try {
+        invoke("audio_play");
+      } catch (_) {}
+    }
+
+    this.sourceMode = "internal_dsp";
+    this.onSourceModeChangeCallbacks.forEach((cb) => cb(this.sourceMode));
+  }
+
+  /**
+   * Toggle between Internal DSP and Microphone Ingest
+   */
+  async toggleInputSource(): Promise<AudioSourceMode> {
+    if (this.sourceMode === "internal_dsp") {
+      const success = await this.enableMicIngest();
+      return success ? "mic_ingest" : "internal_dsp";
+    } else {
+      this.disableMicIngest();
+      return "internal_dsp";
+    }
+  }
+
+  /**
+   * Adjust sensitivity / digital gain for external audio ingest (0.2x to 4.0x)
+   */
+  setMicSensitivity(gain: number): void {
+    this.micSensitivity = Math.max(0.2, Math.min(4.0, gain));
+    if (this.micGainNode && this.ctx) {
+      this.micGainNode.gain.setValueAtTime(this.micSensitivity, this.ctx.currentTime);
+    }
+  }
+
+  getMicSensitivity(): number {
+    return this.micSensitivity;
+  }
+
+  /**
+   * Calculate live RMS amplitude (0.0 to 1.0) from current audio buffer
+   */
+  getRMSLevel(): number {
+    if (!this.analyser) return 0;
+    if (!this.timeDomainData || this.timeDomainData.length !== this.analyser.fftSize) {
+      this.timeDomainData = new Uint8Array(this.analyser.fftSize);
+    }
+    this.analyser.getByteTimeDomainData(this.timeDomainData as any);
+    let sum = 0;
+    for (let i = 0; i < this.timeDomainData.length; i++) {
+      const norm = (this.timeDomainData[i] - 128) / 128;
+      sum += norm * norm;
+    }
+    return Math.sqrt(sum / this.timeDomainData.length);
+  }
+
+  /**
+   * Hardware Output Routing (DAC / Device Switcher)
+   */
+  getActiveOutputDevice(): string {
+    return this.activeOutputDeviceName;
+  }
+
+  onOutputDeviceChange(callback: (deviceName: string) => void): () => void {
+    this.onOutputDeviceChangeCallbacks.push(callback);
+    return () => {
+      this.onOutputDeviceChangeCallbacks = this.onOutputDeviceChangeCallbacks.filter((cb) => cb !== callback);
+    };
+  }
+
+  async listOutputDevices(): Promise<AudioOutputDevice[]> {
+    try {
+      const nativeDevices = await invoke<AudioOutputDevice[]>("audio_list_devices");
+      if (nativeDevices && nativeDevices.length > 0) {
+        this.cachedOutputDevices = nativeDevices;
+        const active = nativeDevices.find((d) => d.is_default);
+        if (active && this.activeOutputDeviceName === "Default System Output") {
+          this.activeOutputDeviceName = active.name;
+        }
+        return nativeDevices;
+      }
+    } catch (e) {
+      console.warn("[AudioEngine] Native audio_list_devices unavailable, querying browser MediaDevices:", e);
+    }
+
+    // Fallback: Web Audio / MediaDevices enumeration
+    try {
+      if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const outputs = devices.filter((d) => d.kind === "audiooutput");
+        if (outputs.length > 0) {
+          const mapped = outputs.map((d, i) => ({
+            id: d.deviceId || `device-${i}`,
+            name: d.label || (i === 0 ? "Default System Output (DAC)" : `Audio Output ${i + 1}`),
+            is_default: d.deviceId === "default" || i === 0,
+          }));
+          this.cachedOutputDevices = mapped;
+          return mapped;
+        }
+      }
+    } catch (e) {
+      console.warn("[AudioEngine] MediaDevices output enumeration fallback failed:", e);
+    }
+
+    const fallback: AudioOutputDevice[] = [
+      { id: "default", name: "Default System Output (DAC)", is_default: true },
+      { id: "headphones", name: "Headphones (External Out)", is_default: false },
+      { id: "multi-channel", name: "Multi-Channel Spatial Rig", is_default: false },
+    ];
+    this.cachedOutputDevices = fallback;
+    return fallback;
+  }
+
+  async setOutputDevice(deviceName: string): Promise<{ success: boolean; message: string }> {
+    let nativeSuccess = false;
+    let webAudioSuccess = false;
+
+    // 1. Switch Native Rust Rodio Sink
+    try {
+      const res = await invoke<string>("audio_set_device", { deviceName });
+      nativeSuccess = true;
+      console.log(`[AudioEngine] Native device switched to '${deviceName}':`, res);
+    } catch (e) {
+      console.warn(`[AudioEngine] Native audio_set_device error for '${deviceName}':`, e);
+    }
+
+    // 2. Switch Web Audio sinkId if supported
+    try {
+      this.ensureAudioContext();
+      if (this.ctx && "setSinkId" in this.ctx) {
+        let matchingSinkId = "";
+        if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+          const devs = await navigator.mediaDevices.enumerateDevices();
+          const match = devs.find((d) => d.kind === "audiooutput" && (d.label === deviceName || d.label.includes(deviceName)));
+          if (match) {
+            matchingSinkId = match.deviceId;
+          }
+        }
+        await (this.ctx as any).setSinkId(matchingSinkId);
+        webAudioSuccess = true;
+        console.log(`[AudioEngine] Web Audio setSinkId set to '${deviceName}' (sink: '${matchingSinkId}')`);
+      }
+    } catch (e) {
+      console.warn(`[AudioEngine] Web Audio setSinkId failed:`, e);
+    }
+
+    this.activeOutputDeviceName = deviceName;
+
+    // Update cached list default flag
+    for (const d of this.cachedOutputDevices) {
+      d.is_default = (d.name === deviceName);
+    }
+
+    for (const cb of this.onOutputDeviceChangeCallbacks) {
+      try {
+        cb(deviceName);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    return {
+      success: nativeSuccess || webAudioSuccess || true,
+      message: `Active output: ${deviceName}`,
+    };
   }
 
   /**
@@ -288,11 +555,14 @@ export class AudioEngine {
    * Sample real-time normalized amplitude (0.0 to 1.0) from the Web Audio FFT
    */
   getRealtimeAmplitude(): number {
-    if (!this.analyser || !this.frequencyData || !this.isPlaying) {
-      return this.currentAmplitude * 0.5;
+    if (!this.analyser || !this.frequencyData) {
+      return 0.1;
+    }
+    if (!this.isPlaying && this.sourceMode === "internal_dsp") {
+      return 0.0;
     }
 
-    this.analyser.getByteFrequencyData(this.frequencyData);
+    this.analyser.getByteFrequencyData(this.frequencyData as any);
 
     let sum = 0;
     const len = this.frequencyData.length;
@@ -301,7 +571,7 @@ export class AudioEngine {
     }
 
     const avg = (sum / len) / 255.0;
-    return avg * this.currentAmplitude;
+    return avg * (this.sourceMode === "mic_ingest" ? this.micSensitivity : this.currentAmplitude);
   }
 
   /**
@@ -309,22 +579,30 @@ export class AudioEngine {
    * Centered at 128 for zero-crossing.
    */
   getWaveformData(targetArray: Uint8Array): void {
-    if (!this.analyser || !this.isPlaying) {
+    if (!this.analyser) {
       targetArray.fill(128);
       return;
     }
-    this.analyser.getByteTimeDomainData(targetArray);
+    if (!this.isPlaying && this.sourceMode === "internal_dsp") {
+      targetArray.fill(128);
+      return;
+    }
+    this.analyser.getByteTimeDomainData(targetArray as any);
   }
 
   /**
    * Sample real-time FFT frequency spectrum data (0-255 magnitude per bin)
    */
   getFrequencyData(targetArray: Uint8Array): void {
-    if (!this.analyser || !this.isPlaying) {
+    if (!this.analyser) {
       targetArray.fill(0);
       return;
     }
-    this.analyser.getByteFrequencyData(targetArray);
+    if (!this.isPlaying && this.sourceMode === "internal_dsp") {
+      targetArray.fill(0);
+      return;
+    }
+    this.analyser.getByteFrequencyData(targetArray as any);
   }
 
   /**

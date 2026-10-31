@@ -804,7 +804,7 @@ export class ChladniCanvas {
         dbPos[i * 3 + 2] = -0.01;
       }
       dbGeo.setAttribute("position", new THREE.BufferAttribute(dbPos, 3));
-      this.radarGroup.add(new THREE.Line(dbGeo, dbMat));
+      this.radarGroup?.add(new THREE.Line(dbGeo, dbMat));
     });
 
     // 3. Central Core Hub (r = 0.28) & Laboratory Crosshairs
@@ -1637,7 +1637,7 @@ export class ChladniCanvas {
         ringPos[i * 3 + 2] = -0.03;
       }
       ringGeo.setAttribute("position", new THREE.BufferAttribute(ringPos, 3));
-      this.vectorCrtGroup.add(new THREE.Line(ringGeo, graticuleMat));
+      this.vectorCrtGroup?.add(new THREE.Line(ringGeo, graticuleMat));
     });
 
     // 36 Outer Rim Degree Calibration Ticks
