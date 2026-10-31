@@ -24,12 +24,15 @@ export type VisualizerMode =
   | "waterfall"
   | "torus"
   | "voxel_grid"
-  | "harmonograph"
   | "tunnel"
-  | "vector_crt";
+  | "digital_scope"
+  | "wire_tunnel"
+  | "fractal";
 
-export type VisualPalette = "pastel" | "monochrome" | "amber_crt" | "green_crt" | "cyber_blue";
+export type VisualPalette = "pastel" | "stark" | "monochrome" | "amber_crt" | "green_crt" | "cyber_blue";
 export type GeometryDetail = "low" | "mid" | "high" | "ultra";
+export type ThicknessLevel = "fine" | "normal" | "bold" | "chunky";
+export type CameraPreset = "front" | "isometric" | "top" | "custom";
 
 export interface EngineMeta {
   id: VisualizerMode;
@@ -49,9 +52,10 @@ export const VISUALIZER_ENGINES: EngineMeta[] = [
   { id: "waterfall", code: "ENG_05", num: "05", name: "3D WATERFALL", category: "SONOGRAM", description: "Rolling FFT topographic frequency terrain", hotkey: "5" },
   { id: "torus", code: "ENG_06", num: "06", name: "TORUS VORTEX", category: "FLUX FIELD", description: "Toroidal electromagnetic circulation", hotkey: "6" },
   { id: "voxel_grid", code: "ENG_07", num: "07", name: "VOXEL MATRIX", category: "EQUALIZER", description: "3D architectural equalizer tower city", hotkey: "7" },
-  { id: "harmonograph", code: "ENG_08", num: "08", name: "HARMONOGRAPH", category: "CYMATICS", description: "Multi-pendulum acoustic knot trajectory", hotkey: "8" },
-  { id: "tunnel", code: "ENG_09", num: "09", name: "WARP TUNNEL", category: "PERSPECTIVE", description: "Infinite 3D acoustic perspective corridor", hotkey: "9" },
-  { id: "vector_crt", code: "ENG_10", num: "10", name: "VECTOR CRT", category: "ANALOG LAB", description: "Phosphor beam X-Y phase scope", hotkey: "0" },
+  { id: "tunnel", code: "ENG_08", num: "08", name: "WARP TUNNEL", category: "PERSPECTIVE", description: "Infinite 3D acoustic perspective corridor", hotkey: "8" },
+  { id: "digital_scope", code: "ENG_09", num: "09", name: "DIGITAL SCOPE", category: "LABORATORY", description: "Precision DSO lab oscilloscope with edge trigger", hotkey: "9" },
+  { id: "wire_tunnel", code: "ENG_10", num: "10", name: "NEON WIRE TUNNEL", category: "CYBERSPACE", description: "Retro-futuristic wireframe tunnel with neon conduits", hotkey: "0" },
+  { id: "fractal", code: "ENG_11", num: "11", name: "FRACTAL FLUX", category: "CHAOS THEORY", description: "Recursive Mandelbrot & Julia fractal dynamics", hotkey: "-" },
 ];
 
 export interface VisualizerUniforms {
@@ -92,8 +96,19 @@ export class ChladniCanvas {
   // Visual Styling & Density Engine
   private currentPalette: VisualPalette = "pastel";
   private currentDetail: GeometryDetail = "high";
+  private currentThickness: ThicknessLevel = "normal";
   private visualGain = 1.0;
-  private cameraDriftEnabled = true;
+
+  // 3D Camera Engine (Static, non-orbiting)
+  private cameraSpeed = 0.0;
+  private cameraPreset: CameraPreset = "front";
+  private cameraDistance = 2.4;
+  private cameraElevation = 0.0;
+  private cameraAzimuth = 0.0;
+  private isDragging = false;
+  private lastPointerX = 0;
+  private lastPointerY = 0;
+  public onCameraPresetChange?: (preset: CameraPreset) => void;
 
   // Particle System
   private particleCount = 12000;
@@ -148,12 +163,7 @@ export class ChladniCanvas {
   private voxelCapMesh: THREE.InstancedMesh | null = null;
   private voxelPeaks: Float32Array = new Float32Array(256);
 
-  // 08 // Harmonograph (Multi-Pendulum Knot Trajectory)
-  private harmonographGroup: THREE.Group | null = null;
-  private harmonographLines: THREE.Line[] = [];
-  private harmonographPos: Float32Array[] = [];
-
-  // 09 // Warp Tunnel (3D Acoustic Perspective Corridor)
+  // 08 // Warp Tunnel (3D Acoustic Perspective Corridor)
   private tunnelGroup: THREE.Group | null = null;
   private tunnelRings: THREE.LineLoop[] = [];
   private tunnelRingPos: Float32Array[] = [];
@@ -161,11 +171,32 @@ export class ChladniCanvas {
   private tunnelRibsLine: THREE.LineSegments | null = null;
   private tunnelRibsPos: Float32Array | null = null;
 
-  // 10 // Analog Vector CRT Vectorscope
-  private vectorCrtGroup: THREE.Group | null = null;
-  private crtBeamLine: THREE.Line | null = null;
-  private crtGhostLine: THREE.Line | null = null;
-  private crtGhostPositions: Float32Array | null = null;
+  // 09 // Laboratory Digital Storage Oscilloscope (DSO with Edge Trigger)
+  private digitalScopeGroup: THREE.Group | null = null;
+  private dsoScreenMesh: THREE.Mesh | null = null;
+  private dsoCh1Line: THREE.Line | null = null;
+  private dsoCh1GhostLine: THREE.Line | null = null;
+  private dsoCh2Line: THREE.Line | null = null;
+  private dsoGhostPos: Float32Array = new Float32Array(0);
+  private dsoTriggerMarker: THREE.Line | null = null;
+
+  // 11 // Neon Wire Tunnel (Retro-Futuristic Cyber Conduit Corridor)
+  private wireTunnelGroup: THREE.Group | null = null;
+  private wireRings: THREE.LineLoop[] = [];
+  private wireRingZ: number[] = [];
+  private wireRingRadius: number[] = [];
+  private wireConduitsLine: THREE.LineSegments | null = null;
+  private wireConduitsPos: Float32Array = new Float32Array(0);
+  private wireLatticeLine: THREE.LineSegments | null = null;
+  private wireLatticePos: Float32Array = new Float32Array(0);
+  private readonly wireRingCount = 30;
+  private readonly wireSides = 12;
+
+  // 11 // Fractal Flux (Recursive Mandelbrot & Julia Chaos Dynamics)
+  private fractalGroup: THREE.Group | null = null;
+  private fractalMesh: THREE.Mesh | null = null;
+  private fractalWireMesh: THREE.Mesh | null = null;
+  private fractalMaterial: THREE.ShaderMaterial | null = null;
 
   mount(container: HTMLElement): void {
     this.container = container;
@@ -190,7 +221,7 @@ export class ChladniCanvas {
     this.camera.position.set(0, 0, 2.4);
     this.camera.lookAt(0, 0, 0);
 
-    // Initialize all 10 Visualizer Engines
+    // Initialize all 11 Visualizer Engines
     this.initParticles();    // 01 // Chladni Nodes
     this.initFluid();        // 02 // Faraday Fluid
     this.initOscilloscope(); // 03 // Winamp Oscilloscope
@@ -198,15 +229,19 @@ export class ChladniCanvas {
     this.initWaterfall();    // 05 // 3D Waterfall
     this.initTorus();        // 06 // Torus Vortex
     this.initVoxelGrid();    // 07 // Voxel Matrix
-    this.initHarmonograph(); // 08 // Harmonograph
-    this.initTunnel();       // 09 // Warp Tunnel
-    this.initVectorCrt();    // 10 // Vector CRT
+    this.initTunnel();       // 08 // Warp Tunnel
+    this.initDigitalScope(); // 09 // Digital Scope
+    this.initWireTunnel();   // 10 // Neon Wire Tunnel
+    this.initFractal();      // 11 // Fractal Flux
 
     // Initialize visible shockwave ring
     this.initShockwave();
 
     // Set initial mode visibility
     this.applyMode();
+
+    // Initialize interactive 3D pointer controls
+    this.initCameraControls();
 
     // Resize observer
     this.resizeObserver = new ResizeObserver(() => this.handleResize());
@@ -255,6 +290,7 @@ export class ChladniCanvas {
         u_burst_time: { value: 0.0 },
         u_burst_active: { value: 0.0 },
         u_palette: { value: 0 },
+        u_point_size: { value: 3.8 },
       },
       vertexShader: `
         uniform float u_time;
@@ -263,6 +299,7 @@ export class ChladniCanvas {
         uniform float u_burst_time;
         uniform float u_burst_active;
         uniform int u_palette;
+        uniform float u_point_size;
         varying vec3 vColor;
         varying float vNodal;
 
@@ -291,14 +328,28 @@ export class ChladniCanvas {
             vec3 c1 = vec3(0.0, 0.80, 1.0);
             vec3 c2 = vec3(0.70, 0.98, 1.0);
             return mix(mix(c0, c1, smoothstep(0.0, 0.5, t)), c2, smoothstep(0.5, 1.0, t));
+          } else if (u_palette == 5) {
+            // Stark Chromatic Spectrum (high saturation, high contrast)
+            vec3 c0 = vec3(1.0, 0.08, 0.20); // Stark Crimson Red
+            vec3 c1 = vec3(1.0, 0.05, 0.78); // Hot Electric Magenta
+            vec3 c2 = vec3(0.55, 0.05, 1.0);  // Deep Laser Violet
+            vec3 c3 = vec3(0.0, 0.90, 1.0);   // Electric Stark Cyan
+            vec3 c4 = vec3(0.08, 1.0, 0.32);  // Acid Neon Green
+            vec3 c5 = vec3(1.0, 0.76, 0.0);   // Intense Pure Amber Gold
+            float seg = t * 5.0;
+            if (seg < 1.0) return mix(c0, c1, seg);
+            if (seg < 2.0) return mix(c1, c2, seg - 1.0);
+            if (seg < 3.0) return mix(c2, c3, seg - 2.0);
+            if (seg < 4.0) return mix(c3, c4, seg - 3.0);
+            return mix(c4, c5, seg - 4.0);
           } else {
-            // Vibrant Pastel Spectrum
-            vec3 c0 = vec3(1.0, 0.48, 0.38); // Coral
-            vec3 c1 = vec3(0.96, 0.38, 0.72); // Rose
-            vec3 c2 = vec3(0.66, 0.46, 0.98); // Lavender
-            vec3 c3 = vec3(0.30, 0.68, 0.98); // Sky
-            vec3 c4 = vec3(0.18, 0.84, 0.60); // Mint
-            vec3 c5 = vec3(1.0, 0.82, 0.38); // Amber Gold
+            // Vibrant Pastel Spectrum (Coral, Rose, Lavender, Sky, Mint, Gold)
+            vec3 c0 = vec3(1.0, 0.52, 0.42); // Coral
+            vec3 c1 = vec3(0.96, 0.44, 0.76); // Rose
+            vec3 c2 = vec3(0.68, 0.52, 0.98); // Lavender
+            vec3 c3 = vec3(0.36, 0.70, 0.98); // Sky
+            vec3 c4 = vec3(0.24, 0.85, 0.65); // Mint
+            vec3 c5 = vec3(1.0, 0.84, 0.45); // Amber Gold
             float seg = t * 5.0;
             if (seg < 1.0) return mix(c0, c1, seg);
             if (seg < 2.0) return mix(c1, c2, seg - 1.0);
@@ -320,7 +371,7 @@ export class ChladniCanvas {
           }
 
           vec4 mvPosition = modelViewMatrix * vec4(p, 1.0);
-          gl_PointSize = 4.2;
+          gl_PointSize = u_point_size;
           gl_Position = projectionMatrix * mvPosition;
 
           // Compute Chladni nodal standing wave pattern
@@ -415,8 +466,22 @@ export class ChladniCanvas {
             vec3 c1 = vec3(0.0, 0.80, 1.0);
             vec3 c2 = vec3(0.70, 0.98, 1.0);
             return mix(mix(c0, c1, smoothstep(0.0, 0.5, t)), c2, smoothstep(0.5, 1.0, t));
+          } else if (u_palette == 5) {
+            // Stark Chromatic Spectrum (high saturation, high contrast)
+            vec3 c0 = vec3(1.0, 0.08, 0.20); // Stark Crimson Red
+            vec3 c1 = vec3(1.0, 0.05, 0.78); // Hot Electric Magenta
+            vec3 c2 = vec3(0.55, 0.05, 1.0);  // Deep Laser Violet
+            vec3 c3 = vec3(0.0, 0.90, 1.0);   // Electric Stark Cyan
+            vec3 c4 = vec3(0.08, 1.0, 0.32);  // Acid Neon Green
+            vec3 c5 = vec3(1.0, 0.76, 0.0);   // Intense Pure Amber Gold
+            float seg = t * 5.0;
+            if (seg < 1.0) return mix(c0, c1, seg);
+            if (seg < 2.0) return mix(c1, c2, seg - 1.0);
+            if (seg < 3.0) return mix(c2, c3, seg - 2.0);
+            if (seg < 4.0) return mix(c3, c4, seg - 3.0);
+            return mix(c4, c5, seg - 4.0);
           } else {
-            // Vibrant Pastel Spectrum
+            // Vibrant Pastel Spectrum (Coral, Rose, Lavender, Sky, Mint, Gold)
             vec3 c0 = vec3(1.0, 0.52, 0.42); // Coral
             vec3 c1 = vec3(0.96, 0.44, 0.76); // Rose
             vec3 c2 = vec3(0.68, 0.52, 0.98); // Lavender
@@ -523,9 +588,10 @@ export class ChladniCanvas {
     if (this.waterfallMesh) this.waterfallMesh.visible = this.mode === "waterfall";
     if (this.torusGroup) this.torusGroup.visible = this.mode === "torus";
     if (this.voxelGroup) this.voxelGroup.visible = this.mode === "voxel_grid";
-    if (this.harmonographGroup) this.harmonographGroup.visible = this.mode === "harmonograph";
     if (this.tunnelGroup) this.tunnelGroup.visible = this.mode === "tunnel";
-    if (this.vectorCrtGroup) this.vectorCrtGroup.visible = this.mode === "vector_crt";
+    if (this.digitalScopeGroup) this.digitalScopeGroup.visible = this.mode === "digital_scope";
+    if (this.wireTunnelGroup) this.wireTunnelGroup.visible = this.mode === "wire_tunnel";
+    if (this.fractalGroup) this.fractalGroup.visible = this.mode === "fractal";
   }
 
   updateUniforms(uniforms: Partial<VisualizerUniforms>): void {
@@ -774,13 +840,6 @@ export class ChladniCanvas {
       const attr = line.geometry.getAttribute("position") as THREE.BufferAttribute;
       attr.needsUpdate = true;
     }
-
-    // Subtle 3D camera float for Winamp immersion
-    if (this.camera) {
-      this.camera.position.x = Math.sin(elapsedTime * 0.3) * 0.12;
-      this.camera.position.y = Math.cos(elapsedTime * 0.25) * 0.08;
-      this.camera.lookAt(0, 0, 0);
-    }
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -811,7 +870,23 @@ export class ChladniCanvas {
       const c2 = new THREE.Color(0.70, 0.98, 1.0);
       return t < 0.5 ? c0.clone().lerp(c1, t * 2.0) : c1.clone().lerp(c2, (t - 0.5) * 2.0);
     }
-    // Pastel default
+    if (this.currentPalette === "stark") {
+      // Stark Chromatic Spectrum (high saturation, high contrast)
+      const c0 = new THREE.Color(1.0, 0.08, 0.20); // Stark Crimson Red
+      const c1 = new THREE.Color(1.0, 0.05, 0.78); // Hot Electric Magenta
+      const c2 = new THREE.Color(0.55, 0.05, 1.0);  // Deep Laser Violet
+      const c3 = new THREE.Color(0.0, 0.90, 1.0);   // Electric Stark Cyan
+      const c4 = new THREE.Color(0.08, 1.0, 0.32);  // Acid Neon Green
+      const c5 = new THREE.Color(1.0, 0.76, 0.0);   // Intense Pure Amber Gold
+
+      const seg = t * 5.0;
+      if (seg < 1.0) return c0.clone().lerp(c1, seg);
+      if (seg < 2.0) return c1.clone().lerp(c2, seg - 1.0);
+      if (seg < 3.0) return c2.clone().lerp(c3, seg - 2.0);
+      if (seg < 4.0) return c3.clone().lerp(c4, seg - 3.0);
+      return c4.clone().lerp(c5, seg - 4.0);
+    }
+    // Vibrant Pastel Spectrum (Coral, Rose, Lavender, Sky, Mint, Gold)
     const c0 = new THREE.Color(1.0, 0.52, 0.42); // Coral
     const c1 = new THREE.Color(0.96, 0.44, 0.76); // Rose
     const c2 = new THREE.Color(0.68, 0.52, 0.98); // Lavender
@@ -1117,13 +1192,28 @@ export class ChladniCanvas {
             vec3 c1 = vec3(0.0, 0.80, 1.0);
             vec3 c2 = vec3(0.70, 0.98, 1.0);
             return mix(mix(c0, c1, smoothstep(0.0, 0.5, t)), c2, smoothstep(0.5, 1.0, t));
+          } else if (u_palette == 5) {
+            // Stark Chromatic Spectrum (high saturation, high contrast)
+            vec3 c0 = vec3(1.0, 0.08, 0.20); // Stark Crimson Red
+            vec3 c1 = vec3(1.0, 0.05, 0.78); // Hot Electric Magenta
+            vec3 c2 = vec3(0.55, 0.05, 1.0);  // Deep Laser Violet
+            vec3 c3 = vec3(0.0, 0.90, 1.0);   // Electric Stark Cyan
+            vec3 c4 = vec3(0.08, 1.0, 0.32);  // Acid Neon Green
+            vec3 c5 = vec3(1.0, 0.76, 0.0);   // Intense Pure Amber Gold
+            float seg = t * 5.0;
+            if (seg < 1.0) return mix(c0, c1, seg);
+            if (seg < 2.0) return mix(c1, c2, seg - 1.0);
+            if (seg < 3.0) return mix(c2, c3, seg - 2.0);
+            if (seg < 4.0) return mix(c3, c4, seg - 3.0);
+            return mix(c4, c5, seg - 4.0);
           } else {
-            vec3 c0 = vec3(1.0, 0.48, 0.38);
-            vec3 c1 = vec3(0.96, 0.38, 0.72);
-            vec3 c2 = vec3(0.66, 0.46, 0.98);
-            vec3 c3 = vec3(0.30, 0.68, 0.98);
-            vec3 c4 = vec3(0.18, 0.84, 0.60);
-            vec3 c5 = vec3(1.0, 0.82, 0.38);
+            // Vibrant Pastel Spectrum (Coral, Rose, Lavender, Sky, Mint, Gold)
+            vec3 c0 = vec3(1.0, 0.52, 0.42); // Coral
+            vec3 c1 = vec3(0.96, 0.44, 0.76); // Rose
+            vec3 c2 = vec3(0.68, 0.52, 0.98); // Lavender
+            vec3 c3 = vec3(0.36, 0.70, 0.98); // Sky
+            vec3 c4 = vec3(0.24, 0.85, 0.65); // Mint
+            vec3 c5 = vec3(1.0, 0.84, 0.45); // Amber Gold
             float seg = t * 5.0;
             if (seg < 1.0) return mix(c0, c1, seg);
             if (seg < 2.0) return mix(c1, c2, seg - 1.0);
@@ -1329,10 +1419,16 @@ export class ChladniCanvas {
   private initVoxelGrid(): void {
     this.voxelGroup = new THREE.Group();
 
-    // 16x16 grid = 256 instanced columns
-    const boxGeo = new THREE.BoxGeometry(0.072, 1.0, 0.072);
+    // 16x16 grid = 256 instanced columns with optical translucency for rich 3D overlaps
+    const boxGeo = new THREE.BoxGeometry(0.082, 1.0, 0.082);
     boxGeo.translate(0, 0.5, 0); // Origin at bottom base so scaling scales up from ground
-    const boxMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const boxMat = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.58,
+      depthWrite: false,
+      blending: THREE.NormalBlending,
+    });
     this.voxelMesh = new THREE.InstancedMesh(boxGeo, boxMat, 256);
 
     const capGeo = new THREE.BoxGeometry(0.076, 0.015, 0.076);
@@ -1395,6 +1491,14 @@ export class ChladniCanvas {
     const breath = this.currentBreathScale;
     const amp = this.uAmplitude;
 
+    const voxelScaleMap: Record<ThicknessLevel, number> = {
+      fine: 0.72,
+      normal: 1.0,
+      bold: 1.25,
+      chunky: 1.45,
+    };
+    const colScale = voxelScaleMap[this.currentThickness] || 1.0;
+
     for (let row = 0; row < 16; row++) {
       for (let col = 0; col < 16; col++) {
         const idx = row * 16 + col;
@@ -1412,13 +1516,13 @@ export class ChladniCanvas {
 
         // Voxel column matrix
         dummy.position.set(x, 0, z);
-        dummy.scale.set(1, targetHeight, 1);
+        dummy.scale.set(colScale, targetHeight, colScale);
         dummy.updateMatrix();
         this.voxelMesh.setMatrixAt(idx, dummy.matrix);
 
         // Top peak cap matrix
         dummy.position.set(x, this.voxelPeaks[idx], z);
-        dummy.scale.set(1, 1, 1);
+        dummy.scale.set(colScale, 1, colScale);
         dummy.updateMatrix();
         this.voxelCapMesh.setMatrixAt(idx, dummy.matrix);
 
@@ -1451,113 +1555,7 @@ export class ChladniCanvas {
   }
 
   // ═══════════════════════════════════════════════════════════
-  // 08 // GEOMETRIC HARMONOGRAPH (3-PENDULUM RESONANCE RIBBON)
-  // ═══════════════════════════════════════════════════════════
-
-  private initHarmonograph(): void {
-    this.harmonographGroup = new THREE.Group();
-    const ptCount = 1400;
-
-    // Primary resonant trajectory ribbon
-    const geo1 = new THREE.BufferGeometry();
-    const pos1 = new Float32Array(ptCount * 3);
-    const col1 = new Float32Array(ptCount * 3);
-    geo1.setAttribute("position", new THREE.BufferAttribute(pos1, 3));
-    geo1.setAttribute("color", new THREE.BufferAttribute(col1, 3));
-    const mat1 = new THREE.LineBasicMaterial({
-      vertexColors: true,
-      linewidth: 2.0,
-      transparent: true,
-      opacity: 0.95,
-    });
-    const line1 = new THREE.Line(geo1, mat1);
-    this.harmonographGroup.add(line1);
-
-    // Secondary orthogonal echo shadow
-    const geo2 = new THREE.BufferGeometry();
-    const pos2 = new Float32Array(ptCount * 3);
-    const col2 = new Float32Array(ptCount * 3);
-    geo2.setAttribute("position", new THREE.BufferAttribute(pos2, 3));
-    geo2.setAttribute("color", new THREE.BufferAttribute(col2, 3));
-    const mat2 = new THREE.LineBasicMaterial({
-      vertexColors: true,
-      linewidth: 1.0,
-      transparent: true,
-      opacity: 0.35,
-    });
-    const line2 = new THREE.Line(geo2, mat2);
-    this.harmonographGroup.add(line2);
-
-    this.harmonographLines = [line1, line2];
-    this.harmonographPos = [pos1, pos2];
-
-    this.scene?.add(this.harmonographGroup);
-  }
-
-  private updateHarmonograph(delta: number, time: number): void {
-    if (!this.harmonographGroup || this.harmonographLines.length < 2) return;
-
-    if (this.freqProvider) {
-      this.freqProvider(this.freqDataBuffer);
-    }
-
-    const breath = this.currentBreathScale;
-    const amp = this.uAmplitude;
-
-    const bass = (this.freqDataBuffer[2] || 0) / 255.0;
-    const mid = (this.freqDataBuffer[24] || 0) / 255.0;
-    const high = (this.freqDataBuffer[64] || 0) / 255.0;
-
-    const f1 = 2.001 + bass * 0.05;
-    const f2 = 3.003 + mid * 0.08;
-    const f3 = 5.002 + high * 0.12;
-    const f4 = 2.998;
-
-    const p1 = time * 0.6;
-    const p2 = time * 0.4 + Math.PI * 0.33;
-    const p3 = time * 0.75 + Math.PI * 0.66;
-    const p4 = time * 0.3;
-
-    const ptCount = 1400;
-
-    for (let L = 0; L < 2; L++) {
-      const line = this.harmonographLines[L];
-      const pos = this.harmonographPos[L];
-      const colAttr = line.geometry.getAttribute("color") as THREE.BufferAttribute;
-      const colArr = colAttr.array as Float32Array;
-      const phaseOffset = L === 0 ? 0 : Math.PI * 0.5;
-      const scaleMul = L === 0 ? 0.95 : 0.75;
-
-      for (let i = 0; i < ptCount; i++) {
-        const t = (i / ptCount) * Math.PI * 12.0;
-        const decay = Math.exp(-0.06 * (t / (Math.PI * 12.0)));
-        const idx = i * 3;
-
-        const x = (Math.sin(f1 * t + p1 + phaseOffset) + 0.45 * Math.sin(f2 * t + p2)) * decay * scaleMul * breath;
-        const y = (Math.cos(f3 * t + p3 + phaseOffset) + 0.45 * Math.cos(f4 * t + p4)) * decay * scaleMul * breath;
-        const z = (Math.sin((f1 + f2) * 0.5 * t + p1 * 0.5) * 0.5) * decay * scaleMul * breath * (1.0 + amp * 0.5);
-
-        pos[idx] = x;
-        pos[idx + 1] = y;
-        pos[idx + 2] = z;
-
-        const colorT = ((i / ptCount) * 1.5 + time * 0.08) % 1.0;
-        const color = this.samplePastelSpectrum(colorT);
-        colArr[idx] = color.r;
-        colArr[idx + 1] = color.g;
-        colArr[idx + 2] = color.b;
-      }
-
-      (line.geometry.getAttribute("position") as THREE.BufferAttribute).needsUpdate = true;
-      colAttr.needsUpdate = true;
-    }
-
-    this.harmonographGroup.rotation.y = time * 0.22;
-    this.harmonographGroup.rotation.x = Math.PI * 0.15 + Math.sin(time * 0.3) * 0.1;
-  }
-
-  // ═══════════════════════════════════════════════════════════
-  // 09 // WARP TUNNEL (3D ACOUSTIC PERSPECTIVE CORRIDOR)
+  // 08 // WARP TUNNEL (3D ACOUSTIC PERSPECTIVE CORRIDOR)
   // ═══════════════════════════════════════════════════════════
 
   private initTunnel(): void {
@@ -1726,118 +1724,138 @@ export class ChladniCanvas {
   }
 
   // ═══════════════════════════════════════════════════════════
-  // 09 // VECTOR CRT (ANALOG PHOSPHOR BEAM VECTORSCOPE)
+  // 10 // DIGITAL OSCILLOSCOPE (LABORATORY DSO WITH EDGE TRIGGER)
   // ═══════════════════════════════════════════════════════════
 
-  private initVectorCrt(): void {
-    this.vectorCrtGroup = new THREE.Group();
+  private initDigitalScope(): void {
+    this.digitalScopeGroup = new THREE.Group();
 
-    // 1. Dark Circular CRT Faceplate Screen Disc (Dark green phosphor tint)
-    // Ensures perfect, high-contrast visibility on both white canvas and dark theater mode!
-    const faceplateGeo = new THREE.CircleGeometry(0.96, 64);
-    const faceplateMat = new THREE.MeshBasicMaterial({
-      color: 0x09140E,
+    // 1. Oscilloscope CRT/LCD Chassis Screen (Aspect 16:10, dark lab phosphor chassis)
+    const screenGeo = new THREE.PlaneGeometry(1.88, 1.24);
+    const screenMat = new THREE.MeshBasicMaterial({
+      color: 0x05080A,
       depthWrite: false,
     });
-    const faceplateMesh = new THREE.Mesh(faceplateGeo, faceplateMat);
-    faceplateMesh.position.z = -0.05;
-    this.vectorCrtGroup.add(faceplateMesh);
+    this.dsoScreenMesh = new THREE.Mesh(screenGeo, screenMat);
+    this.dsoScreenMesh.position.z = -0.05;
+    this.digitalScopeGroup.add(this.dsoScreenMesh);
 
-    // 2. Bezel & Calibration Reticle Rings (r = 0.3, 0.6, 0.92)
+    // 2. Bezel Frame Line
+    const bezelGeo = new THREE.BufferGeometry();
+    const bx = 0.94;
+    const by = 0.62;
+    const bezelPos = new Float32Array([
+      -bx, -by, -0.04,   bx, -by, -0.04,
+       bx, -by, -0.04,   bx,  by, -0.04,
+       bx,  by, -0.04,  -bx,  by, -0.04,
+      -bx,  by, -0.04,  -bx, -by, -0.04,
+    ]);
+    bezelGeo.setAttribute("position", new THREE.BufferAttribute(bezelPos, 3));
+    const bezelMat = new THREE.LineBasicMaterial({ color: 0x1E3330 });
+    this.digitalScopeGroup.add(new THREE.LineSegments(bezelGeo, bezelMat));
+
+    // 3. Precision Graticule Grid (10 horizontal divisions, 8 vertical divisions)
+    const graticulePos: number[] = [];
+    // 10 Divs X from -0.85 to +0.85 (step 0.17)
+    for (let c = 0; c <= 10; c++) {
+      const gx = -0.85 + c * 0.17;
+      graticulePos.push(gx, -0.55, -0.03, gx, 0.55, -0.03);
+    }
+    // 8 Divs Y from -0.55 to +0.55 (step 0.1375)
+    for (let r = 0; r <= 8; r++) {
+      const gy = -0.55 + r * 0.1375;
+      graticulePos.push(-0.85, gy, -0.03, 0.85, gy, -0.03);
+    }
+    // Center crosshairs tick marks (subdivisions)
+    for (let s = -25; s <= 25; s++) {
+      const sx = (s / 25) * 0.85;
+      graticulePos.push(sx, -0.012, -0.03, sx, 0.012, -0.03);
+    }
+    for (let s = -20; s <= 20; s++) {
+      const sy = (s / 20) * 0.55;
+      graticulePos.push(-0.015, sy, -0.03, 0.015, sy, -0.03);
+    }
+
+    const graticuleGeo = new THREE.BufferGeometry();
+    graticuleGeo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(graticulePos), 3));
     const graticuleMat = new THREE.LineBasicMaterial({
-      color: 0x1A442E,
+      color: 0x0E2420,
+      transparent: true,
+      opacity: 0.75,
+    });
+    this.digitalScopeGroup.add(new THREE.LineSegments(graticuleGeo, graticuleMat));
+
+    // 4. CH1 Primary Signal Waveform (Vector Trace)
+    const ptCount = 256;
+    const ch1Geo = new THREE.BufferGeometry();
+    const ch1Pos = new Float32Array(ptCount * 3);
+    ch1Geo.setAttribute("position", new THREE.BufferAttribute(ch1Pos, 3));
+    const ch1Mat = new THREE.LineBasicMaterial({
+      color: 0x00FFCC, // Electric Cyan-Green
+      transparent: true,
+      opacity: 0.95,
+      blending: THREE.NormalBlending,
+    });
+    this.dsoCh1Line = new THREE.Line(ch1Geo, ch1Mat);
+    this.digitalScopeGroup.add(this.dsoCh1Line);
+
+    // 5. CH1 Digital Phosphor Persistence (Ghost Trail)
+    this.dsoGhostPos = new Float32Array(ptCount * 3);
+    const ghostGeo = new THREE.BufferGeometry();
+    ghostGeo.setAttribute("position", new THREE.BufferAttribute(this.dsoGhostPos, 3));
+    const ghostMat = new THREE.LineBasicMaterial({
+      color: 0x006655,
+      transparent: true,
+      opacity: 0.45,
+      blending: THREE.NormalBlending,
+    });
+    this.dsoCh1GhostLine = new THREE.Line(ghostGeo, ghostMat);
+    this.digitalScopeGroup.add(this.dsoCh1GhostLine);
+
+    // 6. CH2 Math / Harmonic Inverted Waveform (Amber / Secondary)
+    const ch2Geo = new THREE.BufferGeometry();
+    const ch2Pos = new Float32Array(ptCount * 3);
+    ch2Geo.setAttribute("position", new THREE.BufferAttribute(ch2Pos, 3));
+    const ch2Mat = new THREE.LineBasicMaterial({
+      color: 0xFF9933,
       transparent: true,
       opacity: 0.65,
     });
+    this.dsoCh2Line = new THREE.Line(ch2Geo, ch2Mat);
+    this.digitalScopeGroup.add(this.dsoCh2Line);
 
-    [0.32, 0.64, 0.92].forEach((radius) => {
-      const ringGeo = new THREE.BufferGeometry();
-      const segs = 96;
-      const ringPos = new Float32Array((segs + 1) * 3);
-      for (let i = 0; i <= segs; i++) {
-        const th = (i / segs) * Math.PI * 2.0;
-        ringPos[i * 3] = Math.cos(th) * radius;
-        ringPos[i * 3 + 1] = Math.sin(th) * radius;
-        ringPos[i * 3 + 2] = -0.03;
-      }
-      ringGeo.setAttribute("position", new THREE.BufferAttribute(ringPos, 3));
-      this.vectorCrtGroup?.add(new THREE.Line(ringGeo, graticuleMat));
-    });
-
-    // 36 Outer Rim Degree Calibration Ticks
-    const tickGeo = new THREE.BufferGeometry();
-    const tickPos = new Float32Array(36 * 2 * 3);
-    for (let i = 0; i < 36; i++) {
-      const th = (i / 36) * Math.PI * 2.0;
-      const r1 = i % 9 === 0 ? 0.85 : 0.89;
-      const r2 = 0.92;
-      const idx = i * 6;
-      tickPos[idx] = Math.cos(th) * r1;
-      tickPos[idx + 1] = Math.sin(th) * r1;
-      tickPos[idx + 2] = -0.03;
-      tickPos[idx + 3] = Math.cos(th) * r2;
-      tickPos[idx + 4] = Math.sin(th) * r2;
-      tickPos[idx + 5] = -0.03;
-    }
-    tickGeo.setAttribute("position", new THREE.BufferAttribute(tickPos, 3));
-    this.vectorCrtGroup.add(new THREE.LineSegments(tickGeo, graticuleMat));
-
-    // Crosshair axes with hash ticks
-    const crossGeo = new THREE.BufferGeometry();
-    const crossPos = new Float32Array([
-      -0.92, 0, -0.03,  0.92, 0, -0.03,
-      0, -0.92, -0.03,  0, 0.92, -0.03,
+    // 7. Trigger Marker [T] at left margin
+    const trigGeo = new THREE.BufferGeometry();
+    const trigPos = new Float32Array([
+      -0.88, 0.02, -0.02,  -0.85, 0.0, -0.02,
+      -0.85, 0.0, -0.02,   -0.88, -0.02, -0.02,
+      -0.88, -0.02, -0.02, -0.88, 0.02, -0.02,
     ]);
-    crossGeo.setAttribute("position", new THREE.BufferAttribute(crossPos, 3));
-    this.vectorCrtGroup.add(new THREE.LineSegments(crossGeo, graticuleMat));
+    trigGeo.setAttribute("position", new THREE.BufferAttribute(trigPos, 3));
+    const trigMat = new THREE.LineBasicMaterial({ color: 0x00FFCC });
+    this.dsoTriggerMarker = new THREE.Line(trigGeo, trigMat);
+    this.digitalScopeGroup.add(this.dsoTriggerMarker);
 
-    // 3. Primary CRT Phosphor Beam (Electric Phosphor Cyan-Green)
-    const count = 256;
-    const beamGeo = new THREE.BufferGeometry();
-    const beamPos = new Float32Array(count * 3);
-    beamGeo.setAttribute("position", new THREE.BufferAttribute(beamPos, 3));
-
-    const beamMat = new THREE.LineBasicMaterial({
-      color: 0x00FFAA, // Electric Phosphor
-      transparent: true,
-      opacity: 0.95,
-      blending: THREE.NormalBlending, // Crisp vector line on dark screen disc
-    });
-    this.crtBeamLine = new THREE.Line(beamGeo, beamMat);
-    this.vectorCrtGroup.add(this.crtBeamLine);
-
-    // 4. Persistent Phosphor Ghost Trail (Decay Emerald)
-    const ghostGeo = new THREE.BufferGeometry();
-    this.crtGhostPositions = new Float32Array(count * 3);
-    ghostGeo.setAttribute("position", new THREE.BufferAttribute(this.crtGhostPositions, 3));
-
-    const ghostMat = new THREE.LineBasicMaterial({
-      color: 0x007744, // Decay Emerald
-      transparent: true,
-      opacity: 0.55,
-      blending: THREE.NormalBlending,
-    });
-    this.crtGhostLine = new THREE.Line(ghostGeo, ghostMat);
-    this.vectorCrtGroup.add(this.crtGhostLine);
-
-    this.scene?.add(this.vectorCrtGroup);
+    this.scene?.add(this.digitalScopeGroup);
   }
 
-  private updateVectorCrt(delta: number, time: number): void {
-    if (!this.crtBeamLine || !this.crtGhostLine || !this.crtGhostPositions) return;
+  private updateDigitalScope(delta: number, time: number): void {
+    if (!this.dsoCh1Line || !this.dsoCh1GhostLine || !this.dsoCh2Line || !this.dsoGhostPos) return;
+
     this.waveProvider?.(this.waveDataBuffer);
 
-    const count = 256;
-    const beamAttr = this.crtBeamLine.geometry.getAttribute("position") as THREE.BufferAttribute;
-    const beamPos = beamAttr.array as Float32Array;
+    const ptCount = 256;
+    const ch1Attr = this.dsoCh1Line.geometry.getAttribute("position") as THREE.BufferAttribute;
+    const ch1Pos = ch1Attr.array as Float32Array;
 
-    const ghostAttr = this.crtGhostLine.geometry.getAttribute("position") as THREE.BufferAttribute;
+    const ghostAttr = this.dsoCh1GhostLine.geometry.getAttribute("position") as THREE.BufferAttribute;
     const ghostPos = ghostAttr.array as Float32Array;
 
-    const n = Math.max(1, Math.min(8, Math.round(this.uN)));
-    const m = Math.max(1, Math.min(8, Math.round(this.uM)));
+    const ch2Attr = this.dsoCh2Line.geometry.getAttribute("position") as THREE.BufferAttribute;
+    const ch2Pos = ch2Attr.array as Float32Array;
+
+    const gain = this.visualGain;
     const breath = this.currentBreathScale;
-    const amp = this.uAmplitude;
 
     // Detect if live audio has actual waveform energy
     let hasAudio = false;
@@ -1848,40 +1866,436 @@ export class ChladniCanvas {
       }
     }
 
-    const phase = time * 1.5;
-
-    for (let i = 0; i < count; i++) {
-      const theta = (i / count) * Math.PI * 2.0;
-
-      // Harmonic Lissajous basis functions (ensures active, defined Lissajous figure at all times)
-      const baseLissajousX = Math.sin(theta * n + phase);
-      const baseLissajousY = Math.cos(theta * m + phase * 0.7);
-
-      let xSample = 0;
-      let ySample = 0;
-      if (hasAudio) {
-        xSample = (this.waveDataBuffer[i] - 128) / 128.0;
-        ySample = (this.waveDataBuffer[(i + n * 8) % count] - 128) / 128.0;
+    // Hardware Auto-Trigger (Positive-slope zero crossing search)
+    // Stabilizes the waveform so it stands rock-solid like a real laboratory DSO!
+    let triggerIdx = 0;
+    if (hasAudio) {
+      for (let i = 0; i < 120; i++) {
+        if (this.waveDataBuffer[i] <= 128 && this.waveDataBuffer[i + 1] > 128) {
+          triggerIdx = i;
+          break;
+        }
       }
-
-      // Coupled audio-harmonic modulation
-      const radiusScale = 0.65 * breath * (1.0 + amp * 0.2);
-      const x = (baseLissajousX * 0.75 + xSample * 0.45) * radiusScale;
-      const y = (baseLissajousY * 0.75 + ySample * 0.45) * radiusScale;
-
-      const idx = i * 3;
-      beamPos[idx] = x;
-      beamPos[idx + 1] = y;
-      beamPos[idx + 2] = 0.0;
-
-      // Ghost trail lags with damping
-      ghostPos[idx] = ghostPos[idx] * 0.88 + x * 0.12;
-      ghostPos[idx + 1] = ghostPos[idx + 1] * 0.88 + y * 0.12;
-      ghostPos[idx + 2] = -0.01;
     }
 
-    beamAttr.needsUpdate = true;
+    const n = Math.max(1, Math.round(this.uN));
+    const m = Math.max(1, Math.round(this.uM));
+
+    const col1 = this.samplePalette(0.1);
+    const col2 = this.samplePalette(0.6);
+    (this.dsoCh1Line.material as THREE.LineBasicMaterial).color.copy(col1);
+    (this.dsoCh2Line.material as THREE.LineBasicMaterial).color.copy(col2);
+
+    for (let i = 0; i < ptCount; i++) {
+      // Map horizontal x from -0.85 to +0.85 across graticule
+      const normX = i / (ptCount - 1);
+      const x = -0.85 + normX * 1.70;
+
+      let pcm = 0;
+      if (hasAudio) {
+        const sampleIdx = (triggerIdx + i) % this.waveDataBuffer.length;
+        pcm = (this.waveDataBuffer[sampleIdx] - 128) / 128.0;
+      } else {
+        // Synthesize reference calibration sine wave when idle
+        pcm = Math.sin(normX * Math.PI * 4.0 * n - time * 6.0) * 0.45;
+      }
+
+      // Vertical deflection in volts/div
+      const y1 = pcm * 0.44 * gain * breath;
+
+      // CH2: Harmonic math trace (inverted or frequency multiplied)
+      const harmonicTheta = normX * Math.PI * 2.0 * m;
+      const y2 = (pcm * 0.5 + Math.sin(harmonicTheta - time * 4.0) * 0.25) * 0.38 * gain;
+
+      const idx = i * 3;
+      ch1Pos[idx] = x;
+      ch1Pos[idx + 1] = y1;
+      ch1Pos[idx + 2] = 0.0;
+
+      // Exponential decay phosphor persistence
+      this.dsoGhostPos[idx] = x;
+      this.dsoGhostPos[idx + 1] = this.dsoGhostPos[idx + 1] * 0.85 + y1 * 0.15;
+      this.dsoGhostPos[idx + 2] = -0.01;
+
+      ch2Pos[idx] = x;
+      ch2Pos[idx + 1] = y2;
+      ch2Pos[idx + 2] = 0.0;
+    }
+
+    ch1Attr.needsUpdate = true;
     ghostAttr.needsUpdate = true;
+    ch2Attr.needsUpdate = true;
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 11 // NEON WIRE TUNNEL (CYBERSPACE CONDUIT CORRIDOR)
+  // ═══════════════════════════════════════════════════════════
+
+  private initWireTunnel(): void {
+    this.wireTunnelGroup = new THREE.Group();
+    const ringCount = this.wireRingCount;
+    const sides = this.wireSides;
+
+    this.wireRings = [];
+    this.wireRingZ = [];
+    this.wireRingRadius = [];
+
+    const ringMat = new THREE.LineBasicMaterial({
+      color: 0x00F0FF, // Neon Cyan
+      transparent: true,
+      opacity: 0.85,
+    });
+
+    for (let r = 0; r < ringCount; r++) {
+      const z = 1.0 - (r / (ringCount - 1)) * 16.0; // from +1.0 to -15.0
+      this.wireRingZ.push(z);
+      this.wireRingRadius.push(0.35 + (r / ringCount) * 0.85);
+
+      const geo = new THREE.BufferGeometry();
+      const pos = new Float32Array((sides + 1) * 3);
+      geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+
+      const ringLoop = new THREE.LineLoop(geo, ringMat.clone());
+      this.wireRings.push(ringLoop);
+      this.wireTunnelGroup.add(ringLoop);
+    }
+
+    // Longitudinal Neon Conduits (connecting vertex k across adjacent rings)
+    const conduitFloats = (ringCount - 1) * sides * 2 * 3;
+    this.wireConduitsPos = new Float32Array(conduitFloats);
+    const conduitGeo = new THREE.BufferGeometry();
+    conduitGeo.setAttribute("position", new THREE.BufferAttribute(this.wireConduitsPos, 3));
+    const conduitMat = new THREE.LineBasicMaterial({
+      color: 0xFF0077, // Neon Magenta / Electric Wire
+      transparent: true,
+      opacity: 0.90,
+    });
+    this.wireConduitsLine = new THREE.LineSegments(conduitGeo, conduitMat);
+    this.wireTunnelGroup.add(this.wireConduitsLine);
+
+    // Cross-Diagonal Cyber Lattice Braces (connecting vertex k to vertex k+1 on adjacent ring)
+    const latticeFloats = (ringCount - 1) * sides * 2 * 3;
+    this.wireLatticePos = new Float32Array(latticeFloats);
+    const latticeGeo = new THREE.BufferGeometry();
+    latticeGeo.setAttribute("position", new THREE.BufferAttribute(this.wireLatticePos, 3));
+    const latticeMat = new THREE.LineBasicMaterial({
+      color: 0x9900FF, // Electric Violet
+      transparent: true,
+      opacity: 0.40,
+    });
+    this.wireLatticeLine = new THREE.LineSegments(latticeGeo, latticeMat);
+    this.wireTunnelGroup.add(this.wireLatticeLine);
+
+    this.scene?.add(this.wireTunnelGroup);
+  }
+
+  private updateWireTunnel(delta: number, time: number): void {
+    if (!this.wireTunnelGroup || !this.wireConduitsLine || !this.wireLatticeLine) return;
+
+    if (this.freqProvider) {
+      this.freqProvider(this.freqDataBuffer);
+    }
+
+    let bass = 0;
+    for (let i = 0; i < 8; i++) bass += this.freqDataBuffer[i];
+    bass = (bass / 8) / 255.0;
+
+    const ringCount = this.wireRingCount;
+    const sides = this.wireSides;
+    const speed = 2.4 + bass * 4.5 * this.visualGain;
+    const breath = this.currentBreathScale;
+
+    // Advance rings forward along Z
+    for (let r = 0; r < ringCount; r++) {
+      this.wireRingZ[r] += speed * delta;
+      if (this.wireRingZ[r] > 1.2) {
+        this.wireRingZ[r] -= 16.0; // Wrap back to horizon
+      }
+    }
+
+    // Ring vertex coordinates store for wire conduits
+    const ringCoords: [number, number, number][][] = [];
+
+    // Update Rings
+    for (let r = 0; r < ringCount; r++) {
+      const z = this.wireRingZ[r];
+      const zNorm = THREE.MathUtils.clamp((z + 15.0) / 16.0, 0, 1);
+      const baseR = (0.28 + (1.0 - zNorm) * 1.05) * breath;
+      // Audio radial ripple
+      const ripple = Math.sin(z * 2.0 - time * 6.0) * bass * 0.35 * this.visualGain;
+      const radius = Math.max(0.1, baseR + ripple);
+
+      const ringLine = this.wireRings[r];
+      const posAttr = ringLine.geometry.getAttribute("position") as THREE.BufferAttribute;
+      const pos = posAttr.array as Float32Array;
+
+      const ringV: [number, number, number][] = [];
+      const palColor = this.samplePalette((zNorm + time * 0.05) % 1.0);
+      (ringLine.material as THREE.LineBasicMaterial).color.copy(palColor);
+
+      for (let s = 0; s < sides; s++) {
+        const theta = (s / sides) * Math.PI * 2.0;
+        // Spectrum frequency bin deflection on individual wires
+        const freqBin = Math.floor((s / sides) * 64);
+        const freqAmp = (this.freqDataBuffer[freqBin] / 255.0) * 0.22 * this.visualGain;
+        const rEff = radius + freqAmp;
+
+        const x = Math.cos(theta) * rEff;
+        const y = Math.sin(theta) * rEff;
+
+        pos[s * 3] = x;
+        pos[s * 3 + 1] = y;
+        pos[s * 3 + 2] = z;
+
+        ringV.push([x, y, z]);
+      }
+      // Close loop
+      pos[sides * 3] = pos[0];
+      pos[sides * 3 + 1] = pos[1];
+      pos[sides * 3 + 2] = pos[2];
+
+      posAttr.needsUpdate = true;
+      ringCoords.push(ringV);
+    }
+
+    // Connect Longitudinal Conduits and Lattice Braces in Z-sorted order
+    const sortedRings = Array.from({ length: ringCount }, (_, i) => i)
+      .sort((a, b) => this.wireRingZ[a] - this.wireRingZ[b]);
+
+    let cIdx = 0;
+    let lIdx = 0;
+
+    for (let i = 0; i < ringCount - 1; i++) {
+      const r1 = sortedRings[i];
+      const r2 = sortedRings[i + 1];
+      const z1 = this.wireRingZ[r1];
+      const z2 = this.wireRingZ[r2];
+
+      // Avoid connecting rings across boundary wrap jump
+      if (Math.abs(z2 - z1) > 2.5) continue;
+
+      const v1 = ringCoords[r1];
+      const v2 = ringCoords[r2];
+
+      for (let s = 0; s < sides; s++) {
+        const p1 = v1[s];
+        const p2 = v2[s];
+        const p2Next = v2[(s + 1) % sides];
+
+        // Conduit line (parallel wire)
+        this.wireConduitsPos[cIdx] = p1[0];
+        this.wireConduitsPos[cIdx + 1] = p1[1];
+        this.wireConduitsPos[cIdx + 2] = p1[2];
+        this.wireConduitsPos[cIdx + 3] = p2[0];
+        this.wireConduitsPos[cIdx + 4] = p2[1];
+        this.wireConduitsPos[cIdx + 5] = p2[2];
+        cIdx += 6;
+
+        // Diagonal cyber lattice brace
+        this.wireLatticePos[lIdx] = p1[0];
+        this.wireLatticePos[lIdx + 1] = p1[1];
+        this.wireLatticePos[lIdx + 2] = p1[2];
+        this.wireLatticePos[lIdx + 3] = p2Next[0];
+        this.wireLatticePos[lIdx + 4] = p2Next[1];
+        this.wireLatticePos[lIdx + 5] = p2Next[2];
+        lIdx += 6;
+      }
+    }
+
+    (this.wireConduitsLine.geometry.getAttribute("position") as THREE.BufferAttribute).needsUpdate = true;
+    (this.wireLatticeLine.geometry.getAttribute("position") as THREE.BufferAttribute).needsUpdate = true;
+
+    // Palette updates on conduits
+    const conduitCol = this.samplePalette(0.3);
+    (this.wireConduitsLine.material as THREE.LineBasicMaterial).color.copy(conduitCol);
+
+    // Subtle hypnotic corridor roll
+    this.wireTunnelGroup.rotation.z = time * 0.15;
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 11 // FRACTAL FLUX (RECURSIVE MANDELBROT & JULIA DYNAMICS)
+  // ═══════════════════════════════════════════════════════════
+
+  private initFractal(): void {
+    this.fractalGroup = new THREE.Group();
+
+    // 140x140 plane geometry for 3D topological displacement
+    const geo = new THREE.PlaneGeometry(2.4, 2.4, 140, 140);
+
+    this.fractalMaterial = new THREE.ShaderMaterial({
+      wireframe: false,
+      uniforms: {
+        u_time: { value: 0.0 },
+        u_n: { value: this.uN },
+        u_m: { value: this.uM },
+        u_amplitude: { value: this.uAmplitude },
+        u_breath_scale: { value: 1.0 },
+        u_palette: { value: 0 },
+        u_bass: { value: 0.0 },
+        u_mid: { value: 0.0 },
+      },
+      vertexShader: `
+        uniform float u_time;
+        uniform float u_n;
+        uniform float u_m;
+        uniform float u_amplitude;
+        uniform float u_breath_scale;
+        uniform float u_bass;
+        uniform float u_mid;
+        varying vec2 vUv;
+        varying float vElevation;
+        varying float vIter;
+
+        void main() {
+          vUv = uv;
+          vec3 p = position;
+
+          // Acoustic Julia fractal parameter calculation
+          vec2 c = vec2(
+            sin(u_time * 0.15 + u_n * 0.18) * 0.38 - 0.72 + u_bass * 0.08,
+            cos(u_time * 0.12 + u_m * 0.18) * 0.32 + 0.18 + u_mid * 0.08
+          );
+
+          vec2 z = (uv - 0.5) * 2.5 / max(0.4, u_breath_scale);
+          float iter = 0.0;
+          for (int i = 0; i < 28; i++) {
+            if (dot(z, z) > 4.0) break;
+            z = vec2(z.x * z.x - z.y * z.y, 2.0 * z.x * z.y) + c;
+            iter += 1.0;
+          }
+
+          // Smooth distance iteration
+          float smoothVal = iter - log2(max(1.0, log2(dot(z, z)) * 0.5));
+          vIter = smoothVal;
+
+          // 3D topological relief displacement
+          float elev = (smoothVal / 28.0) * 0.55 * u_amplitude * u_breath_scale;
+          p.z += elev;
+          vElevation = elev;
+
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform float u_time;
+        uniform int u_palette;
+        uniform float u_bass;
+        varying vec2 vUv;
+        varying float vElevation;
+        varying float vIter;
+
+        vec3 getPaletteColor(float t) {
+          t = fract(t);
+          if (u_palette == 1) {
+            float w = smoothstep(0.4, 0.6, sin(t * 6.28318));
+            return mix(vec3(0.92, 0.92, 0.92), vec3(1.0, 0.2, 0.2), w * 0.5);
+          } else if (u_palette == 2) {
+            vec3 c0 = vec3(0.85, 0.40, 0.0);
+            vec3 c1 = vec3(1.0, 0.70, 0.0);
+            vec3 c2 = vec3(1.0, 0.92, 0.45);
+            return mix(mix(c0, c1, smoothstep(0.0, 0.5, t)), c2, smoothstep(0.5, 1.0, t));
+          } else if (u_palette == 3) {
+            vec3 c0 = vec3(0.0, 0.55, 0.15);
+            vec3 c1 = vec3(0.15, 0.95, 0.35);
+            vec3 c2 = vec3(0.75, 1.0, 0.75);
+            return mix(mix(c0, c1, smoothstep(0.0, 0.5, t)), c2, smoothstep(0.5, 1.0, t));
+          } else if (u_palette == 4) {
+            vec3 c0 = vec3(0.0, 0.30, 0.85);
+            vec3 c1 = vec3(0.0, 0.80, 1.0);
+            vec3 c2 = vec3(0.70, 0.98, 1.0);
+            return mix(mix(c0, c1, smoothstep(0.0, 0.5, t)), c2, smoothstep(0.5, 1.0, t));
+          } else if (u_palette == 5) {
+            // Stark Chromatic Spectrum
+            vec3 c0 = vec3(1.0, 0.08, 0.20);
+            vec3 c1 = vec3(1.0, 0.05, 0.78);
+            vec3 c2 = vec3(0.55, 0.05, 1.0);
+            vec3 c3 = vec3(0.0, 0.90, 1.0);
+            vec3 c4 = vec3(0.08, 1.0, 0.32);
+            vec3 c5 = vec3(1.0, 0.76, 0.0);
+            float seg = t * 5.0;
+            if (seg < 1.0) return mix(c0, c1, seg);
+            if (seg < 2.0) return mix(c1, c2, seg - 1.0);
+            if (seg < 3.0) return mix(c2, c3, seg - 2.0);
+            if (seg < 4.0) return mix(c3, c4, seg - 3.0);
+            return mix(c4, c5, seg - 4.0);
+          } else {
+            // Vibrant Pastel Spectrum
+            vec3 c0 = vec3(1.0, 0.52, 0.42);
+            vec3 c1 = vec3(0.96, 0.44, 0.76);
+            vec3 c2 = vec3(0.68, 0.52, 0.98);
+            vec3 c3 = vec3(0.36, 0.70, 0.98);
+            vec3 c4 = vec3(0.24, 0.85, 0.65);
+            vec3 c5 = vec3(1.0, 0.84, 0.45);
+            float seg = t * 5.0;
+            if (seg < 1.0) return mix(c0, c1, seg);
+            if (seg < 2.0) return mix(c1, c2, seg - 1.0);
+            if (seg < 3.0) return mix(c2, c3, seg - 2.0);
+            if (seg < 4.0) return mix(c3, c4, seg - 3.0);
+            return mix(c4, c5, seg - 4.0);
+          }
+        }
+
+        void main() {
+          float t = (vIter / 28.0) * 3.0 + u_time * 0.06;
+          vec3 col = getPaletteColor(t);
+
+          // Dark core threshold for Mandelbrot interior
+          if (vIter >= 27.2) {
+            col = vec3(0.03, 0.04, 0.06);
+          }
+
+          // Shading contour relief
+          col += vec3(vElevation * 0.4);
+          gl_FragColor = vec4(col, 0.96);
+        }
+      `,
+      transparent: false,
+    });
+
+    this.fractalMesh = new THREE.Mesh(geo, this.fractalMaterial);
+    this.fractalGroup.add(this.fractalMesh);
+
+    // Subtle wireframe overlay for Brutalist cyber grid contour
+    const wireGeo = new THREE.PlaneGeometry(2.4, 2.4, 48, 48);
+    const wireMat = new THREE.MeshBasicMaterial({
+      color: 0x222222,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.35,
+    });
+    this.fractalWireMesh = new THREE.Mesh(wireGeo, wireMat);
+    this.fractalWireMesh.position.z = 0.01;
+    this.fractalGroup.add(this.fractalWireMesh);
+
+    this.scene?.add(this.fractalGroup);
+  }
+
+  private updateFractal(delta: number, time: number): void {
+    if (!this.fractalGroup || !this.fractalMaterial) return;
+
+    if (this.freqProvider) {
+      this.freqProvider(this.freqDataBuffer);
+    }
+
+    let bass = 0;
+    for (let i = 0; i < 8; i++) bass += this.freqDataBuffer[i];
+    bass = (bass / 8) / 255.0;
+
+    let mid = 0;
+    for (let i = 8; i < 48; i++) mid += this.freqDataBuffer[i];
+    mid = (mid / 40) / 255.0;
+
+    this.fractalMaterial.uniforms.u_time.value = time;
+    this.fractalMaterial.uniforms.u_n.value = this.uN;
+    this.fractalMaterial.uniforms.u_m.value = this.uM;
+    this.fractalMaterial.uniforms.u_amplitude.value = this.uAmplitude;
+    this.fractalMaterial.uniforms.u_breath_scale.value = this.currentBreathScale;
+    this.fractalMaterial.uniforms.u_bass.value = bass;
+    this.fractalMaterial.uniforms.u_mid.value = mid;
+
+    // Slow organic planar roll
+    this.fractalGroup.rotation.z = time * 0.04;
   }
 
   private chladni(x: number, y: number, n: number, m: number): number {
@@ -2062,12 +2476,31 @@ export class ChladniCanvas {
       this.updateTorus(delta, elapsedTime);
     } else if (this.mode === "voxel_grid") {
       this.updateVoxelGrid(delta, elapsedTime);
-    } else if (this.mode === "harmonograph") {
-      this.updateHarmonograph(delta, elapsedTime);
     } else if (this.mode === "tunnel") {
       this.updateTunnel(delta, elapsedTime);
-    } else if (this.mode === "vector_crt") {
-      this.updateVectorCrt(delta, elapsedTime);
+    } else if (this.mode === "digital_scope") {
+      this.updateDigitalScope(delta, elapsedTime);
+    } else if (this.mode === "wire_tunnel") {
+      this.updateWireTunnel(delta, elapsedTime);
+    } else if (this.mode === "fractal") {
+      this.updateFractal(delta, elapsedTime);
+    }
+
+    // 3D Camera kinematics (Static, no automatic orbital rotation)
+    if (this.camera) {
+      const cosElev = Math.cos(this.cameraElevation);
+      const sinElev = Math.sin(this.cameraElevation);
+      const x = this.cameraDistance * cosElev * Math.sin(this.cameraAzimuth);
+      const y = this.cameraDistance * sinElev;
+      const z = this.cameraDistance * cosElev * Math.cos(this.cameraAzimuth);
+
+      this.camera.position.set(x, y, z);
+      if (Math.abs(this.cameraElevation) > 1.4) {
+        this.camera.up.set(0, 0, -1);
+      } else {
+        this.camera.up.set(0, 1, 0);
+      }
+      this.camera.lookAt(0, 0, 0);
     }
 
     if (this.renderer && this.scene && this.camera) {
@@ -2102,6 +2535,7 @@ export class ChladniCanvas {
       amber_crt: 2,
       green_crt: 3,
       cyber_blue: 4,
+      stark: 5,
     };
     const val = paletteMap[palette] ?? 0;
     if (this.particleMaterial?.uniforms.u_palette) {
@@ -2113,6 +2547,9 @@ export class ChladniCanvas {
     if (this.waterfallMaterial?.uniforms.u_palette) {
       this.waterfallMaterial.uniforms.u_palette.value = val;
     }
+    if (this.fractalMaterial?.uniforms.u_palette) {
+      this.fractalMaterial.uniforms.u_palette.value = val;
+    }
     this.updateStaticMaterialsForPalette();
   }
 
@@ -2121,24 +2558,195 @@ export class ChladniCanvas {
   }
 
   cyclePalette(): VisualPalette {
-    const list: VisualPalette[] = ["pastel", "monochrome", "amber_crt", "green_crt", "cyber_blue"];
+    const list: VisualPalette[] = ["pastel", "stark", "monochrome", "amber_crt", "green_crt", "cyber_blue"];
     const idx = (list.indexOf(this.currentPalette) + 1) % list.length;
     this.setPalette(list[idx]);
     return this.currentPalette;
   }
 
+  private initCameraControls(): void {
+    if (!this.renderer) return;
+    const dom = this.renderer.domElement;
+    dom.style.cursor = "grab";
+
+    dom.addEventListener("pointerdown", (e: PointerEvent) => {
+      this.isDragging = true;
+      this.lastPointerX = e.clientX;
+      this.lastPointerY = e.clientY;
+      dom.style.cursor = "grabbing";
+      try { dom.setPointerCapture(e.pointerId); } catch {}
+    });
+
+    dom.addEventListener("pointermove", (e: PointerEvent) => {
+      if (!this.isDragging) return;
+      const dx = e.clientX - this.lastPointerX;
+      const dy = e.clientY - this.lastPointerY;
+      this.lastPointerX = e.clientX;
+      this.lastPointerY = e.clientY;
+
+      this.cameraAzimuth -= dx * 0.007;
+      this.cameraElevation = Math.max(-1.45, Math.min(1.45, this.cameraElevation + dy * 0.007));
+      if (this.cameraPreset !== "custom") {
+        this.cameraPreset = "custom";
+        this.onCameraPresetChange?.("custom");
+      }
+    });
+
+    const stopDrag = (e: PointerEvent) => {
+      if (this.isDragging) {
+        this.isDragging = false;
+        dom.style.cursor = "grab";
+        try { dom.releasePointerCapture(e.pointerId); } catch {}
+      }
+    };
+
+    dom.addEventListener("pointerup", stopDrag);
+    dom.addEventListener("pointercancel", stopDrag);
+
+    dom.addEventListener("wheel", (e: WheelEvent) => {
+      e.preventDefault();
+      const zoom = e.deltaY * 0.002;
+      this.cameraDistance = Math.max(0.8, Math.min(6.0, this.cameraDistance + zoom));
+    }, { passive: false });
+
+    dom.addEventListener("dblclick", () => {
+      this.resetCameraPreset();
+    });
+  }
+
+  setThickness(thick: ThicknessLevel): void {
+    this.currentThickness = thick;
+    const ptSizes: Record<ThicknessLevel, number> = {
+      fine: 2.0,
+      normal: 3.8,
+      bold: 6.2,
+      chunky: 9.5,
+    };
+    const dustSizes: Record<ThicknessLevel, number> = {
+      fine: 1.6,
+      normal: 2.8,
+      bold: 4.8,
+      chunky: 7.2,
+    };
+    const lineOpacities: Record<ThicknessLevel, number> = {
+      fine: 0.55,
+      normal: 0.75,
+      bold: 0.92,
+      chunky: 1.0,
+    };
+
+    if (this.particleMaterial?.uniforms?.u_point_size) {
+      this.particleMaterial.uniforms.u_point_size.value = ptSizes[thick];
+    }
+    if (this.fractalWireMesh) {
+      (this.fractalWireMesh.material as THREE.MeshBasicMaterial).opacity = lineOpacities[thick] * 0.45;
+    }
+    if (this.radarBarsLine) (this.radarBarsLine.material as THREE.LineBasicMaterial).opacity = lineOpacities[thick];
+    if (this.radarSweepLine) (this.radarSweepLine.material as THREE.LineBasicMaterial).opacity = lineOpacities[thick];
+    if (this.dsoCh1Line) (this.dsoCh1Line.material as THREE.LineBasicMaterial).opacity = lineOpacities[thick];
+    if (this.dsoCh2Line) (this.dsoCh2Line.material as THREE.LineBasicMaterial).opacity = lineOpacities[thick];
+    if (this.wireConduitsLine) (this.wireConduitsLine.material as THREE.LineBasicMaterial).opacity = lineOpacities[thick];
+    if (this.wireLatticeLine) (this.wireLatticeLine.material as THREE.LineBasicMaterial).opacity = lineOpacities[thick];
+    this.torusStreamlines.forEach((loop) => {
+      (loop.material as THREE.LineBasicMaterial).opacity = lineOpacities[thick];
+    });
+    this.tunnelRings.forEach((loop) => {
+      (loop.material as THREE.LineBasicMaterial).opacity = lineOpacities[thick];
+    });
+    this.wireRings.forEach((loop) => {
+      (loop.material as THREE.LineBasicMaterial).opacity = lineOpacities[thick];
+    });
+  }
+
+  getThickness(): ThicknessLevel {
+    return this.currentThickness;
+  }
+
+  cycleThickness(): ThicknessLevel {
+    const list: ThicknessLevel[] = ["fine", "normal", "bold", "chunky"];
+    const idx = (list.indexOf(this.currentThickness) + 1) % list.length;
+    this.setThickness(list[idx]);
+    return this.currentThickness;
+  }
+
+  setCameraSpeed(speed: number): void {
+    this.cameraSpeed = Math.max(0.0, Math.min(4.0, speed));
+  }
+
+  getCameraSpeed(): number {
+    return this.cameraSpeed;
+  }
+
+  cycleCameraSpeed(): number {
+    const speeds = [0.0, 0.5, 1.0, 2.0];
+    const currentIdx = speeds.findIndex((s) => Math.abs(s - this.cameraSpeed) < 0.05);
+    const nextIdx = (currentIdx + 1) % speeds.length;
+    this.setCameraSpeed(speeds[nextIdx]);
+    return this.cameraSpeed;
+  }
+
+  setCameraPreset(preset: CameraPreset): void {
+    this.cameraPreset = preset;
+    if (preset === "front") {
+      this.cameraElevation = 0.0;
+      this.cameraAzimuth = 0.0;
+      this.cameraDistance = 2.4;
+    } else if (preset === "isometric") {
+      this.cameraElevation = 0.52;
+      this.cameraAzimuth = 0.65;
+      this.cameraDistance = 2.4;
+    } else if (preset === "top") {
+      this.cameraElevation = 1.48;
+      this.cameraAzimuth = 0.0;
+      this.cameraDistance = 2.4;
+    }
+    this.onCameraPresetChange?.(this.cameraPreset);
+  }
+
+  getCameraPreset(): CameraPreset {
+    return this.cameraPreset;
+  }
+
+  cycleCameraPreset(): CameraPreset {
+    const presets: CameraPreset[] = ["front", "isometric", "top"];
+    const currentIdx = presets.indexOf(this.cameraPreset);
+    const nextIdx = (currentIdx + 1) % presets.length;
+    this.setCameraPreset(presets[nextIdx]);
+    return this.cameraPreset;
+  }
+
+  resetCameraPreset(): void {
+    this.setCameraPreset(this.cameraPreset === "custom" ? "front" : this.cameraPreset);
+  }
+
   setDetail(detail: GeometryDetail): void {
     this.currentDetail = detail;
+    const maxCount = this.particleCount;
+    const countMap: Record<GeometryDetail, number> = {
+      low: Math.round(maxCount * 0.25),
+      mid: Math.round(maxCount * 0.5),
+      high: Math.round(maxCount * 0.85),
+      ultra: maxCount,
+    };
     if (this.particlePoints) {
-      const maxCount = this.particleCount;
-      const countMap: Record<GeometryDetail, number> = {
-        low: Math.round(maxCount * 0.25),
-        mid: Math.round(maxCount * 0.5),
-        high: Math.round(maxCount * 0.85),
-        ultra: maxCount,
-      };
       this.particlePoints.geometry.setDrawRange(0, countMap[detail] || maxCount);
     }
+    // Dynamic stream line density for Torus Vortex
+    this.torusStreamlines.forEach((loop, idx) => {
+      if (detail === "low") loop.visible = idx % 3 === 0;
+      else if (detail === "mid") loop.visible = idx % 2 === 0;
+      else loop.visible = true;
+    });
+    // Ring density for Warp Tunnel
+    this.tunnelRings.forEach((ring, idx) => {
+      if (detail === "low") ring.visible = idx % 2 === 0;
+      else ring.visible = true;
+    });
+    // Wire rings density for Neon Wire Tunnel
+    this.wireRings.forEach((ring, idx) => {
+      if (detail === "low") ring.visible = idx % 2 === 0;
+      else ring.visible = true;
+    });
   }
 
   getDetail(): GeometryDetail {
@@ -2161,17 +2769,25 @@ export class ChladniCanvas {
   }
 
   toggleCameraDrift(): boolean {
-    this.cameraDriftEnabled = !this.cameraDriftEnabled;
-    return this.cameraDriftEnabled;
+    if (this.cameraSpeed > 0) {
+      this.setCameraSpeed(0);
+    } else {
+      this.setCameraSpeed(1.0);
+    }
+    return this.cameraSpeed > 0;
   }
 
   private updateStaticMaterialsForPalette(): void {
     const pal = this.currentPalette;
-    let primary = new THREE.Color(1.0, 0.2, 0.2);
-    let secondary = new THREE.Color(0.0, 0.33, 0.8);
-    let accent = new THREE.Color(0.96, 0.44, 0.76);
+    let primary = new THREE.Color(1.0, 0.08, 0.20); // Stark Crimson Red
+    let secondary = new THREE.Color(0.0, 0.90, 1.0); // Electric Stark Cyan
+    let accent = new THREE.Color(1.0, 0.05, 0.78);   // Hot Electric Magenta
 
-    if (pal === "amber_crt") {
+    if (pal === "pastel") {
+      primary = new THREE.Color(0.96, 0.38, 0.72); // Soft Pastel Rose
+      secondary = new THREE.Color(0.38, 0.75, 0.96); // Soft Pastel Sky
+      accent = new THREE.Color(0.45, 0.88, 0.72);   // Soft Mint
+    } else if (pal === "amber_crt") {
       primary = new THREE.Color(1.0, 0.65, 0.0);
       secondary = new THREE.Color(0.85, 0.40, 0.0);
       accent = new THREE.Color(1.0, 0.90, 0.35);
@@ -2210,9 +2826,28 @@ export class ChladniCanvas {
       });
     }
 
-    // Vector CRT
-    if (this.crtBeamLine) {
-      (this.crtBeamLine.material as THREE.LineBasicMaterial).color.copy(primary);
+    // Digital Oscilloscope
+    if (this.dsoCh1Line) {
+      (this.dsoCh1Line.material as THREE.LineBasicMaterial).color.copy(primary);
+    }
+    if (this.dsoCh2Line) {
+      (this.dsoCh2Line.material as THREE.LineBasicMaterial).color.copy(secondary);
+    }
+    if (this.dsoTriggerMarker) {
+      (this.dsoTriggerMarker.material as THREE.LineBasicMaterial).color.copy(accent);
+    }
+
+    // Neon Wire Tunnel
+    if (this.wireConduitsLine) {
+      (this.wireConduitsLine.material as THREE.LineBasicMaterial).color.copy(primary);
+    }
+    if (this.wireLatticeLine) {
+      (this.wireLatticeLine.material as THREE.LineBasicMaterial).color.copy(secondary);
+    }
+
+    // Fractal Wireframe
+    if (this.fractalWireMesh) {
+      (this.fractalWireMesh.material as THREE.MeshBasicMaterial).color.copy(accent);
     }
   }
 
@@ -2236,6 +2871,17 @@ export class ChladniCanvas {
       this.fluidMesh.geometry.dispose();
       this.fluidMaterial?.dispose();
       this.fluidMesh = null;
+    }
+
+    if (this.fractalMesh) {
+      this.fractalMesh.geometry.dispose();
+      this.fractalMaterial?.dispose();
+      this.fractalMesh = null;
+    }
+    if (this.fractalWireMesh) {
+      this.fractalWireMesh.geometry.dispose();
+      (this.fractalWireMesh.material as THREE.Material).dispose();
+      this.fractalWireMesh = null;
     }
 
     this.renderer?.dispose();

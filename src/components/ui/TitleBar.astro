@@ -1,41 +1,57 @@
----
-/**
- * TitleBar.astro — Matches Figma Screen-1 titlebar exactly.
- * 1200×40, bg-surface-dark. Includes [ ROUTE AUDIO ] button.
- * Uses data-tauri-drag-region for native window dragging.
- * macOS traffic lights get 78px left padding.
- */
----
-
-<header
-  data-tauri-drag-region
-  class="titlebar"
->
+<header data-tauri-drag-region class="titlebar">
   <!-- macOS traffic light spacer -->
   <div class="titlebar__traffic-spacer"></div>
 
   <!-- Drag region label — centered per Figma -->
   <span class="titlebar__label" data-tauri-drag-region>
-    [ DATA-TAURI-DRAG-REGION ] // ANAHAT ACOUSTIC DECK V1.0
+    ANAHAT // made with 🫨 ☕ ❤️ 🤖 by Jagadish, Kasi.
   </span>
 
   <div class="titlebar__flex" data-tauri-drag-region></div>
 
+  <!-- Hotkeys button in titlebar -->
+  <button
+    class="titlebar__route-btn titlebar__info-btn"
+    id="btn-hotkeys"
+    title="Keyboard Shortcuts & Operational Matrix (Hotkey: ? or H)"
+    data-tooltip="View complete keyboard shortcuts & operational matrix (Hotkey: ? or H)"
+  >
+    [ ⌨ HOTKEYS ]
+  </button>
+
   <!-- Info button in titlebar -->
-  <button class="titlebar__route-btn titlebar__info-btn" id="btn-info" title="System Specification & Clinical Disclaimers" data-tooltip="System architecture, clinical protocol, and medical safety disclaimers">
-    [ INFO // ? ]
+  <button
+    class="titlebar__route-btn titlebar__info-btn"
+    id="btn-info"
+    title="System Specification & Clinical Disclaimers"
+    data-tooltip="System architecture, clinical protocol, and medical safety disclaimers"
+  >
+    [ INFO ]
   </button>
 
   <!-- Route Audio button in titlebar -->
-  <button class="titlebar__route-btn" id="btn-route-audio" title="Hardware Audio Routing Matrix & DAC Selection" data-tooltip="Hardware Audio Patch Bay: select external USB DACs, headphones, or soundcards (Hotkey: O)">
+  <button
+    class="titlebar__route-btn"
+    id="btn-route-audio"
+    title="Hardware Audio Routing Matrix & DAC Selection"
+    data-tooltip="Hardware Audio Patch Bay: select external USB DACs, headphones, or soundcards (Hotkey: O)"
+  >
     <span id="titlebar-route-label">[ ROUTE AUDIO ]</span>
   </button>
 
   <!-- Window controls (Windows/Linux — hidden on macOS) -->
   <div class="titlebar__controls" id="window-controls">
-    <button class="titlebar__btn" id="btn-minimize" aria-label="Minimize">—</button>
-    <button class="titlebar__btn" id="btn-maximize" aria-label="Maximize">◻</button>
-    <button class="titlebar__btn titlebar__btn--close" id="btn-close" aria-label="Close">✕</button>
+    <button class="titlebar__btn" id="btn-minimize" aria-label="Minimize"
+      >—</button
+    >
+    <button class="titlebar__btn" id="btn-maximize" aria-label="Maximize"
+      >◻</button
+    >
+    <button
+      class="titlebar__btn titlebar__btn--close"
+      id="btn-close"
+      aria-label="Close">✕</button
+    >
   </div>
 </header>
 
@@ -85,7 +101,9 @@
     margin-right: 8px;
     cursor: pointer;
     text-transform: uppercase;
-    transition: background 0.15s ease, color 0.15s ease;
+    transition:
+      background 0.15s ease,
+      color 0.15s ease;
   }
 
   .titlebar__info-btn {
@@ -156,14 +174,16 @@
     appWindow.minimize();
   });
 
-  document.getElementById("btn-maximize")?.addEventListener("click", async () => {
-    const isMaximized = await appWindow.isMaximized();
-    if (isMaximized) {
-      appWindow.unmaximize();
-    } else {
-      appWindow.maximize();
-    }
-  });
+  document
+    .getElementById("btn-maximize")
+    ?.addEventListener("click", async () => {
+      const isMaximized = await appWindow.isMaximized();
+      if (isMaximized) {
+        appWindow.unmaximize();
+      } else {
+        appWindow.maximize();
+      }
+    });
 
   document.getElementById("btn-close")?.addEventListener("click", () => {
     appWindow.hide();

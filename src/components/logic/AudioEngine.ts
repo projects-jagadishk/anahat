@@ -56,7 +56,7 @@ export class AudioEngine {
   private cachedOutputDevices: AudioOutputDevice[] = [];
   private onOutputDeviceChangeCallbacks: Array<(deviceName: string) => void> = [];
 
-  private isPlaying = true;
+  private isPlaying = false;
   private currentParams: AudioPresetParams | null = null;
   private currentAmplitude = 0.7;
 

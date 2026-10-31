@@ -37,6 +37,40 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
 ---
 
 <BaseLayout title="ANAHAT // NEUROACOUSTIC DECK">
+  <!-- ═══════════════════════════════════════════════════════════
+       BOOT LOADING SPLASH SCREEN (Silent DSP Ingestion)
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="splash-screen" id="splash-screen" role="dialog" aria-modal="true" aria-label="Anahat System Boot">
+    <div class="splash-card">
+      <div class="splash-logo-container">
+        <img src="/logo.svg" alt="ANAHAT Emblem" class="splash-logo" />
+        <div class="splash-glow"></div>
+      </div>
+
+      <div class="splash-header">
+        <h1 class="splash-title">ANAHAT</h1>
+        <div class="splash-subtitle">// CYMATICS LAB</div>
+      </div>
+
+      <p class="splash-desc">
+        Real-Time Acoustic Resonance, Cymatic Waveforms & Mathematical Harmonics Synthesizer
+      </p>
+
+      <div class="splash-progress-box">
+        <div class="splash-progress-bar" id="splash-progress-bar"></div>
+      </div>
+
+      <div class="splash-meta-row">
+        <span class="splash-status-text" id="splash-status-text">INITIALIZING DSP KERNEL...</span>
+        <span class="splash-percent-text" id="splash-percent-text">12%</span>
+      </div>
+
+      <div class="splash-credits">
+        made with 🫨 ☕ ❤️ 🤖 by Jagadish, Kasi.
+      </div>
+    </div>
+  </div>
+
   <TitleBar />
 
   <main class="deck" id="main-deck">
@@ -139,6 +173,11 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
               <button class="engine-nav-arrow" id="btn-engine-next" type="button" data-tooltip="Switch to next visualizer engine (Hotkey: ])">▶</button>
             </div>
 
+            <!-- Random Auto-Cycle Control -->
+            <button class="deck__widget-btn" id="btn-engine-random" type="button" data-tooltip="Toggle random visualizer cycling interval: OFF, 15S, 30S, 60S (Hotkey: S)">
+              <span id="random-btn-label">⚄ RND: OFF</span>
+            </button>
+
             <span class="deck__toolbar-sep">|</span>
 
             <!-- 2. Intuitive Audio Ingest Mode: Carrier Tones vs Live Microphone -->
@@ -174,12 +213,26 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
               <!-- Direct Visualizer Palette Cycle Button -->
               <button class="deck__widget-btn" id="btn-palette-cycle" type="button" data-tooltip="Cycle through harmonic color palettes (Hotkey: C)">
                 <span class="style-widget__swatch" id="style-swatch-dot">●</span>
-                <span id="palette-btn-label">PAL: PASTEL</span>
+                <span id="palette-btn-label">PAL: STARK</span>
               </button>
 
               <!-- Direct Visualizer Detail / Density Cycle Button -->
-              <button class="deck__widget-btn" id="btn-detail-cycle" type="button" data-tooltip="Cycle mesh resolution and particle density: Low, Medium, High (Hotkey: D)">
+              <button class="deck__widget-btn" id="btn-detail-cycle" type="button" data-tooltip="Cycle particle and mesh geometry density: Low (25%), Mid (50%), High (85%), Ultra (100%) (Hotkey: D)">
                 <span id="detail-btn-label">DET: HIGH</span>
+              </button>
+
+              <span class="deck__toolbar-sep">|</span>
+
+              <!-- Particle & Line Thickness Cycle Button -->
+              <button class="deck__widget-btn" id="btn-thick-cycle" type="button" data-tooltip="Cycle particle point size and stroke thickness: Fine (2px), Normal (3px), Bold (6px), Chunky (9px) (Hotkey: K)">
+                <span id="thick-btn-label">THICK: 3PX</span>
+              </button>
+
+              <span class="deck__toolbar-sep">|</span>
+
+              <!-- Camera Angle View Preset Button -->
+              <button class="deck__widget-btn" id="btn-cam-angle-cycle" type="button" data-tooltip="Cycle 3D camera perspective: Front (0°), Isometric (35°), Top-Down (80°). Drag canvas to orbit freely, double-click or press R to reset (Hotkey: V)">
+                <span id="cam-angle-btn-label">VIEW: FRONT</span>
               </button>
             </div>
 
@@ -409,8 +462,11 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
         <span class="theater-engine__icon">▾</span>
       </button>
       <button class="theater-nav-arrow" id="theater-engine-next" type="button" data-tooltip="Next visualizer engine (Hotkey: ])">▶</button>
-      <button class="theater-nav-arrow" id="theater-btn-palette" type="button" data-tooltip="Cycle harmonic color palette (Hotkey: C)" style="margin-left: 8px; width: auto; padding: 0 10px; font-size: 10px; font-weight: 700;">PAL: PASTEL</button>
+      <button class="theater-nav-arrow" id="theater-btn-random" type="button" data-tooltip="Toggle random visualizer cycling interval: OFF, 15S, 30S, 60S (Hotkey: S)" style="margin-left: 8px; width: auto; padding: 0 10px; font-size: 10px; font-weight: 700;">⚄ RND: OFF</button>
+      <button class="theater-nav-arrow" id="theater-btn-palette" type="button" data-tooltip="Cycle harmonic color palette (Hotkey: C)" style="width: auto; padding: 0 10px; font-size: 10px; font-weight: 700;">PAL: PASTEL</button>
       <button class="theater-nav-arrow" id="theater-btn-detail" type="button" data-tooltip="Cycle geometry density and resolution (Hotkey: D)" style="width: auto; padding: 0 10px; font-size: 10px; font-weight: 700;">DET: HIGH</button>
+      <button class="theater-nav-arrow" id="theater-btn-thick" type="button" data-tooltip="Cycle particle and line stroke thickness (Hotkey: K)" style="width: auto; padding: 0 10px; font-size: 10px; font-weight: 700;">THICK: 3PX</button>
+      <button class="theater-nav-arrow" id="theater-btn-cam-angle" type="button" data-tooltip="Cycle 3D camera perspective angle (Hotkey: V)" style="width: auto; padding: 0 10px; font-size: 10px; font-weight: 700;">VIEW: FRONT</button>
     </div>
     <div class="theater-canvas-container" id="theater-canvas"></div>
     <div class="theater-hud">
@@ -662,9 +718,9 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
             </div>
 
             <div class="info-card">
-              <div class="info-card__title">[ 10-MODE VISUALIZER SUITE ]</div>
+              <div class="info-card__title">[ 11-MODE VISUALIZER SUITE & RANDOM CYCLE ]</div>
               <div class="info-card__desc">
-                High-definition mathematical engines: 01 Chladni Nodes, 02 Faraday Fluid, 03 Winamp Oscillo, 04 Polar Radar, 05 3D Waterfall, 06 Torus Vortex, 07 Voxel Matrix, 08 Harmonograph, 09 Warp Tunnel, and 10 Vector CRT with instant hotkey switching (1–0).
+                High-definition mathematical engines: 01 Chladni Nodes, 02 Faraday Fluid, 03 Winamp Oscillo, 04 Polar Radar, 05 3D Waterfall, 06 Torus Vortex, 07 Voxel Matrix, 08 Warp Tunnel, 09 Digital Scope, 10 Neon Wire Tunnel, and 11 Fractal Flux with instant hotkey switching (1–9, 0, -) and timed random mode auto-cycling (Hotkey: S).
               </div>
             </div>
 
@@ -690,9 +746,16 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
             </div>
 
             <div class="info-card">
-              <div class="info-card__title">[ STYLE TUNING: PALETTES & DENSITY ]</div>
+              <div class="info-card__title">[ STYLE TUNING: PALETTES, DENSITY & THICKNESS ]</div>
               <div class="info-card__desc">
-                5 distinct visual palettes (Pastel Spectrum, Monochrome Brutalist, Amber CRT 589nm, Green CRT P1, Cyber Blue) paired with stepped geometry density modes (Low, Mid, High, Ultra).
+                6 distinct visual palettes (Soft Pastel, Stark Neon Red/Cyan, Monochrome Brutalist, Amber CRT 589nm, Green CRT P1, Cyber Blue) paired with stepped geometry density modes (Low, Mid, High, Ultra) and 4 stroke weights: Fine (2px), Normal (3px), Bold (6px), and Chunky (9px). Hotkeys: [C] Palette, [D] Density, [K] Thickness, [S] Random Shuffle.
+              </div>
+            </div>
+
+            <div class="info-card">
+              <div class="info-card__title">[ 3D ORBITAL CAMERA & PERSPECTIVE CONTROL ]</div>
+              <div class="info-card__desc">
+                Kinematic camera controls featuring stepped continuous orbital drift speeds (0.0X Lock, 0.5X Slow, 1.0X Normal, 2.0X Fast), 3 quick-angle presets (Front 0°, Isometric 35°, Top-Down 80°), and full free-orbit drag & scroll-wheel zoom directly on the canvas. Hotkeys: [R] Camera Speed, [V] View Angle.
               </div>
             </div>
 
@@ -726,9 +789,51 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
           </div>
         </section>
 
-        <!-- Section 3: Clinical & Safety Disclaimers -->
+        <!-- Section 3: Keyboard Shortcuts Matrix -->
         <section class="info-section">
-          <div class="info-section__title">03 // CLINICAL PROTOCOL & SAFETY DISCLAIMERS</div>
+          <div class="info-section__title">03 // OPERATIONAL KEYBOARD SHORTCUTS MATRIX</div>
+          <div class="info-grid">
+            <div class="info-card">
+              <div class="info-card__title">[ VISUALIZER ENGINES ]</div>
+              <div class="info-card__desc">
+                <strong>[ 1 - 9, 0, - ]</strong> Direct select Engines 01 to 11<br/>
+                <strong>[ [ / ] ]</strong> Cycle previous / next visualizer engine<br/>
+                <strong>[ M ]</strong> Open Visualizer Engine Matrix modal<br/>
+                <strong>[ S ]</strong> Toggle Random auto-cycle (OFF / 15s / 30s / 60s)
+              </div>
+            </div>
+
+            <div class="info-card">
+              <div class="info-card__title">[ VISUAL TUNING & CAMERA ]</div>
+              <div class="info-card__desc">
+                <strong>[ C ]</strong> Cycle 6 Color Palettes (Pastel / Stark / Mono / CRT)<br/>
+                <strong>[ D ]</strong> Cycle Geometry Density (Low, Mid, High, Ultra)<br/>
+                <strong>[ K ]</strong> Cycle Stroke / Particle Thickness (2px to 9px)<br/>
+                <strong>[ V ]</strong> Cycle Camera Perspective (Front 0°, Iso 35°, Top 80°)<br/>
+                <strong>[ R ]</strong> Reset Camera Perspective to Front<br/>
+                <strong>[ + / - ]</strong> Scale visual amplitude / sensitivity<br/>
+                <strong>[ Z ]</strong> Expand Canvas (Collapse synthesis deck)<br/>
+                <strong>[ T ]</strong> Fullscreen Theater projection mode
+              </div>
+            </div>
+
+            <div class="info-card">
+              <div class="info-card__title">[ AUDIO & APPLICATION ]</div>
+              <div class="info-card__desc">
+                <strong>[ I ]</strong> Toggle Audio Source (Internal DSP ↔ Live Mic)<br/>
+                <strong>[ O ]</strong> Open Hardware Audio Routing Matrix<br/>
+                <strong>[ P ]</strong> Author New Custom Preset (.anahat)<br/>
+                <strong>[ Space ]</strong> Start / Pause Meditation session<br/>
+                <strong>[ ? / H ]</strong> Open Keyboard Shortcuts Command Matrix<br/>
+                <strong>[ Esc ]</strong> Dismiss active modals / Exit Theater mode
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Section 4: Clinical & Safety Disclaimers -->
+        <section class="info-section">
+          <div class="info-section__title">04 // CLINICAL PROTOCOL & SAFETY DISCLAIMERS</div>
           <div class="info-disclaimer-box">
             <div class="info-disclaimer-box__header">
               <span class="terminal-blink">▲</span> WARNING: MANDATORY SAFETY & REGULATORY ADVISORY
@@ -761,9 +866,9 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
           </div>
         </section>
 
-        <!-- Section 4: Privacy & Hardware Architecture -->
+        <!-- Section 5: Privacy & Hardware Architecture -->
         <section class="info-section">
-          <div class="info-section__title">04 // PRIVACY & ARCHITECTURAL INTEGRITY</div>
+          <div class="info-section__title">05 // PRIVACY & ARCHITECTURAL INTEGRITY</div>
           <p class="info-p">
             <strong>100% AIR-GAPPED & PRIVATE:</strong> Anahat contains zero network telemetry, zero remote tracking beacons, and zero cloud analytics. All digital signal synthesis and WebGL compute calculations execute exclusively on your local workstation hardware.
           </p>
@@ -784,12 +889,127 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
   </div>
 
   <!-- ═══════════════════════════════════════════════════════════
-       VISUALIZER ENGINE MATRIX MODAL (9 CYMATIC ENGINES)
+       KEYBOARD SHORTCUTS MATRIX MODAL OVERLAY
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="modal-backdrop" id="modal-hotkeys">
+    <div class="modal-box modal-box--hotkeys">
+      <div class="modal-header">
+        <span>KEYBOARD SHORTCUTS // OPERATIONAL COMMAND MATRIX</span>
+        <button class="modal-close-btn" id="btn-close-hotkeys" title="Close Modal">✕</button>
+      </div>
+      <div class="modal-body modal-body--hotkeys">
+        <div class="hotkeys-grid">
+          <!-- Column 1: Visualizer Engines -->
+          <div class="hotkeys-category">
+            <div class="hotkeys-cat-title">[ VISUALIZER ENGINES ]</div>
+            <div class="hotkey-row">
+              <span class="hotkey-badge">1 - 9</span>
+              <span class="hotkey-desc">Direct select Engines 01 to 09</span>
+            </div>
+            <div class="hotkey-row">
+              <span class="hotkey-badge">0</span>
+              <span class="hotkey-desc">Engine 10: Neon Wire Tunnel</span>
+            </div>
+            <div class="hotkey-row">
+              <span class="hotkey-badge">-</span>
+              <span class="hotkey-desc">Engine 11: Fractal Flux</span>
+            </div>
+            <div class="hotkey-row">
+              <span class="hotkey-badge">[ / ]</span>
+              <span class="hotkey-desc">Cycle Previous / Next Engine</span>
+            </div>
+            <div class="hotkey-row">
+              <span class="hotkey-badge">M</span>
+              <span class="hotkey-desc">Open Engine Matrix Picker</span>
+            </div>
+            <div class="hotkey-row">
+              <span class="hotkey-badge">S</span>
+              <span class="hotkey-desc">Toggle Random Auto-Cycle (OFF / 15s / 30s / 60s)</span>
+            </div>
+          </div>
+
+          <!-- Column 2: Visual Tuning & Perspectives -->
+          <div class="hotkeys-category">
+            <div class="hotkeys-cat-title">[ VISUAL TUNING & VIEW ]</div>
+            <div class="hotkey-row">
+              <span class="hotkey-badge">C</span>
+              <span class="hotkey-desc">Cycle 6 Color Palettes (Pastel / Stark / Mono / CRT)</span>
+            </div>
+            <div class="hotkey-row">
+              <span class="hotkey-badge">D</span>
+              <span class="hotkey-desc">Cycle Geometry Density (Low, Mid, High, Ultra)</span>
+            </div>
+            <div class="hotkey-row">
+              <span class="hotkey-badge">K</span>
+              <span class="hotkey-desc">Cycle Stroke / Particle Thickness (2px to 9px)</span>
+            </div>
+            <div class="hotkey-row">
+              <span class="hotkey-badge">V</span>
+              <span class="hotkey-desc">Cycle Camera Angle (Front 0°, Iso 35°, Top 80°)</span>
+            </div>
+            <div class="hotkey-row">
+              <span class="hotkey-badge">R</span>
+              <span class="hotkey-desc">Reset Camera Perspective to Front View</span>
+            </div>
+            <div class="hotkey-row">
+              <span class="hotkey-badge">+ / =</span>
+              <span class="hotkey-desc">Increase Visualizer Scale / Sensitivity</span>
+            </div>
+            <div class="hotkey-row">
+              <span class="hotkey-badge">Z</span>
+              <span class="hotkey-desc">Expand Canvas (Collapse Synthesis Deck)</span>
+            </div>
+            <div class="hotkey-row">
+              <span class="hotkey-badge">T</span>
+              <span class="hotkey-desc">Fullscreen Theater Projection Mode</span>
+            </div>
+          </div>
+
+          <!-- Column 3: Audio & System Controls -->
+          <div class="hotkeys-category">
+            <div class="hotkeys-cat-title">[ AUDIO & SESSIONS ]</div>
+            <div class="hotkey-row">
+              <span class="hotkey-badge">I</span>
+              <span class="hotkey-desc">Toggle Audio Source (Internal DSP ↔ Live Mic)</span>
+            </div>
+            <div class="hotkey-row">
+              <span class="hotkey-badge">O</span>
+              <span class="hotkey-desc">Open Hardware DAC Audio Routing Matrix</span>
+            </div>
+            <div class="hotkey-row">
+              <span class="hotkey-badge">P</span>
+              <span class="hotkey-desc">Open Custom Preset Specification Builder</span>
+            </div>
+            <div class="hotkey-row">
+              <span class="hotkey-badge">Space</span>
+              <span class="hotkey-desc">Start / Pause Meditation Cadence Session</span>
+            </div>
+            <div class="hotkey-row">
+              <span class="hotkey-badge">? / H</span>
+              <span class="hotkey-desc">Open this Keyboard Shortcuts Matrix</span>
+            </div>
+            <div class="hotkey-row">
+              <span class="hotkey-badge">Esc</span>
+              <span class="hotkey-desc">Dismiss Active Modals / Exit Theater Mode</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-brutalist btn-brutalist--sm" id="btn-done-hotkeys">
+          [ CLOSE COMMAND MATRIX ]
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       VISUALIZER ENGINE MATRIX MODAL (11 CYMATIC ENGINES)
        ═══════════════════════════════════════════════════════════ -->
   <div class="modal-backdrop" id="modal-engines">
     <div class="modal-box modal-box--engines">
       <div class="modal-header">
-        <span>CYMATICS & NEUROACOUSTIC VISUALIZER ENGINE MATRIX // 9 PIPELINES</span>
+        <span>CYMATICS & NEUROACOUSTIC VISUALIZER ENGINE MATRIX // 11 PIPELINES</span>
         <button class="modal-close-btn" id="btn-close-engines" title="Close Matrix">✕</button>
       </div>
       <div class="modal-body modal-body--engines">
@@ -857,36 +1077,45 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
             <div class="engine-tile__desc">3D volumetric equalizer matrix with ballistic gravity peak decay.</div>
           </button>
 
-          <button class="engine-tile" data-engine="harmonograph" type="button">
-            <div class="engine-tile__top">
-              <span class="engine-tile__num">[08] KEY:8</span>
-              <span class="engine-tile__cat">CYMATICS</span>
-            </div>
-            <div class="engine-tile__title">HARMONOGRAPH</div>
-            <div class="engine-tile__desc">Rotary 3-pendulum resonance trace with dual Lissajous ribbons.</div>
-          </button>
-
           <button class="engine-tile" data-engine="tunnel" type="button">
             <div class="engine-tile__top">
-              <span class="engine-tile__num">[09] KEY:9</span>
+              <span class="engine-tile__num">[08] KEY:8</span>
               <span class="engine-tile__cat">PERSPECTIVE</span>
             </div>
             <div class="engine-tile__title">WARP TUNNEL</div>
             <div class="engine-tile__desc">Infinite 3D acoustic perspective corridor undulating to live audio.</div>
           </button>
 
-          <button class="engine-tile" data-engine="vector_crt" type="button">
+          <button class="engine-tile" data-engine="digital_scope" type="button">
+            <div class="engine-tile__top">
+              <span class="engine-tile__num">[09] KEY:9</span>
+              <span class="engine-tile__cat">LABORATORY</span>
+            </div>
+            <div class="engine-tile__title">DIGITAL SCOPE</div>
+            <div class="engine-tile__desc">Precision laboratory DSO oscilloscope with auto-trigger edge stabilization.</div>
+          </button>
+
+          <button class="engine-tile" data-engine="wire_tunnel" type="button">
             <div class="engine-tile__top">
               <span class="engine-tile__num">[10] KEY:0</span>
-              <span class="engine-tile__cat">ANALOG LAB</span>
+              <span class="engine-tile__cat">CYBERSPACE</span>
             </div>
-            <div class="engine-tile__title">VECTOR CRT</div>
-            <div class="engine-tile__desc">Vintage laboratory phosphor X-Y vectorscope with persistence trail decay.</div>
+            <div class="engine-tile__title">NEON WIRE TUNNEL</div>
+            <div class="engine-tile__desc">Retro-futuristic polygonal wireframe tunnel with glowing data conduits.</div>
+          </button>
+
+          <button class="engine-tile" data-engine="fractal" type="button">
+            <div class="engine-tile__top">
+              <span class="engine-tile__num">[11] KEY:-</span>
+              <span class="engine-tile__cat">CHAOS THEORY</span>
+            </div>
+            <div class="engine-tile__title">FRACTAL FLUX</div>
+            <div class="engine-tile__desc">Procedural 3D Julia & Mandelbrot fractal relief undulating to acoustic harmonics.</div>
           </button>
         </div>
 
         <div class="engine-matrix-footer-bar">
-          <span>SHORTCUTS: KEYS [1 - 9, 0] SELECT // [ [ / ] ] CYCLE // [M] MATRIX // [I] INPUT SRC // [ESC] DISMISS</span>
+          <span>SHORTCUTS: KEYS [1 - 9, 0, -] SELECT // [ [ / ] ] CYCLE // [S] RANDOM // [M] MATRIX // [I] AUDIO SRC // [ESC] DISMISS</span>
         </div>
       </div>
     </div>
@@ -2191,6 +2420,155 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
   }
 
   /* ══════════════════════════════════════════════════════════
+     BOOT LOADING SPLASH SCREEN
+   ══════════════════════════════════════════════════════════ */
+
+  .splash-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 100000;
+    background: #080808;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .splash-screen--fade-out {
+    opacity: 0;
+    transform: scale(1.02);
+    pointer-events: none;
+  }
+
+  .splash-card {
+    width: 440px;
+    max-width: calc(100vw - 32px);
+    background: #0D0D0D;
+    border: 2px solid #222222;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85), 0 0 30px rgba(255, 20, 51, 0.12);
+    padding: 36px 32px 28px 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    font-family: var(--font-mono, "Space Mono", monospace);
+    position: relative;
+  }
+
+  .splash-logo-container {
+    position: relative;
+    width: 72px;
+    height: 72px;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .splash-logo {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    z-index: 2;
+    filter: drop-shadow(0 0 14px rgba(255, 20, 51, 0.55));
+  }
+
+  .splash-glow {
+    position: absolute;
+    inset: -8px;
+    background: radial-gradient(circle, rgba(255, 20, 51, 0.4) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+    animation: splashPulse 2.2s infinite alternate ease-in-out;
+  }
+
+  @keyframes splashPulse {
+    0% { transform: scale(0.92); opacity: 0.5; }
+    100% { transform: scale(1.15); opacity: 0.9; }
+  }
+
+  .splash-header {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .splash-title {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: 0.15em;
+    color: #FFFFFF;
+    margin: 0;
+    line-height: 1;
+  }
+
+  .splash-subtitle {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    color: #FF1433;
+  }
+
+  .splash-desc {
+    font-size: 11px;
+    line-height: 1.5;
+    color: #888888;
+    margin: 0 0 24px 0;
+    max-width: 360px;
+  }
+
+  .splash-progress-box {
+    width: 100%;
+    height: 6px;
+    background: #181818;
+    border: 1px solid #2A2A2A;
+    margin-bottom: 12px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .splash-progress-bar {
+    height: 100%;
+    width: 12%;
+    background: linear-gradient(90deg, #FF1433, #FF4560);
+    transition: width 0.35s ease-out;
+    box-shadow: 0 0 8px rgba(255, 20, 51, 0.8);
+  }
+
+  .splash-meta-row {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: #666666;
+    margin-bottom: 24px;
+    letter-spacing: 0.08em;
+  }
+
+  .splash-status-text {
+    color: #999999;
+  }
+
+  .splash-percent-text {
+    color: #FF1433;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .splash-credits {
+    font-size: 11px;
+    font-weight: 600;
+    color: #AAAAAA;
+    letter-spacing: 0.05em;
+    border-top: 1px solid #1C1C1C;
+    padding-top: 16px;
+    width: 100%;
+  }
+
+  /* ══════════════════════════════════════════════════════════
      THEATER MODE OVERLAY (SCREEN 2)
    ══════════════════════════════════════════════════════════ */
 
@@ -2501,6 +2879,80 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     max-width: 92vw;
     height: 640px;
     max-height: 88vh;
+  }
+
+  .modal-box--hotkeys {
+    width: 880px;
+    max-width: 94vw;
+    max-height: 88vh;
+    box-shadow: 8px 8px 0px 0px #000000;
+  }
+
+  .modal-body--hotkeys {
+    padding: 18px;
+    overflow-y: auto;
+  }
+
+  .hotkeys-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+
+  @media (max-width: 800px) {
+    .hotkeys-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .hotkeys-category {
+    background: #141414;
+    border: 1px solid #2A2A2A;
+    padding: 14px 14px 16px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .hotkeys-cat-title {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--color-accent-industrial, #FF1433);
+    letter-spacing: 0.1em;
+    margin-bottom: 2px;
+    border-bottom: 1px solid #222222;
+    padding-bottom: 6px;
+  }
+
+  .hotkey-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+  }
+
+  .hotkey-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    height: 22px;
+    padding: 0 6px;
+    background: #242424;
+    border: 1px solid #444444;
+    color: #FFFFFF;
+    font-weight: 800;
+    font-family: var(--font-mono, monospace);
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+    box-shadow: 1px 1px 0px #000000;
+  }
+
+  .hotkey-desc {
+    color: #BBBBBB;
+    font-size: 11px;
+    line-height: 1.35;
   }
 
   .modal-box--preset-creator {
@@ -2895,10 +3347,15 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     type VisualizerMode,
     type VisualPalette,
     type GeometryDetail,
+    type ThicknessLevel,
+    type CameraPreset,
   } from "../components/logic/ChladniCanvas";
   import { audioEngine, type AudioSourceMode } from "../components/logic/AudioEngine";
   import { cadenceController, type CadenceType } from "../components/logic/CadenceController";
   import { listen } from "@tauri-apps/api/event";
+  import { getCurrentWindow } from "@tauri-apps/api/window";
+
+  const appWindow = getCurrentWindow();
 
   // ═══════════════════════════════════════════════════════════
   // STATE & VISUALIZER ENGINE
@@ -2930,6 +3387,7 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     visualizer.setAudioProvider(() => audioEngine.getRealtimeAmplitude());
     visualizer.setWaveProvider((buf) => audioEngine.getWaveformData(buf));
     visualizer.setFreqProvider((buf) => audioEngine.getFrequencyData(buf));
+    visualizer.onCameraPresetChange = (preset) => syncCameraAngleUI(preset);
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -3141,7 +3599,8 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
   // ═══════════════════════════════════════════════════════════
 
   const PALETTE_SWATCH_COLORS: Record<VisualPalette, string> = {
-    pastel: "#E05A47",
+    pastel: "#F561B8",
+    stark: "#FF1433",
     monochrome: "#EEEEEE",
     amber_crt: "#FFB000",
     green_crt: "#33FF33",
@@ -3182,6 +3641,7 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     const theaterBtnPalette = document.getElementById("theater-btn-palette");
     const nameMap: Record<VisualPalette, string> = {
       pastel: "PASTEL",
+      stark: "STARK",
       monochrome: "MONO",
       amber_crt: "AMBER",
       green_crt: "GREEN",
@@ -3192,6 +3652,54 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     if (theaterBtnPalette) theaterBtnPalette.textContent = `PAL: ${disp}`;
   }
 
+  // ═══════════════════════════════════════════════════════════
+  // RANDOM VISUALIZER CYCLE MODE
+  // ═══════════════════════════════════════════════════════════
+
+  const RANDOM_INTERVALS = [0, 15000, 30000, 60000];
+  const RANDOM_LABELS = ["OFF", "15S", "30S", "60S"];
+  let randomIntervalIdx = 0;
+  let randomCycleTimer: any = null;
+
+  function cycleRandomModeUI(): void {
+    randomIntervalIdx = (randomIntervalIdx + 1) % RANDOM_INTERVALS.length;
+    syncRandomModeUI();
+  }
+
+  function syncRandomModeUI(): void {
+    if (randomCycleTimer) {
+      clearInterval(randomCycleTimer);
+      randomCycleTimer = null;
+    }
+
+    const intervalMs = RANDOM_INTERVALS[randomIntervalIdx];
+    const label = `⚄ RND: ${RANDOM_LABELS[randomIntervalIdx]}`;
+
+    const randomBtnLabel = document.getElementById("random-btn-label");
+    const theaterBtnRandom = document.getElementById("theater-btn-random");
+    const btnEngineRandom = document.getElementById("btn-engine-random");
+
+    if (randomBtnLabel) randomBtnLabel.textContent = label;
+    if (theaterBtnRandom) theaterBtnRandom.textContent = label;
+
+    if (btnEngineRandom) {
+      btnEngineRandom.classList.toggle("deck__widget-btn--active", intervalMs > 0);
+    }
+    if (theaterBtnRandom) {
+      theaterBtnRandom.style.color = intervalMs > 0 ? "var(--color-accent-industrial, #FF1433)" : "";
+    }
+
+    if (intervalMs > 0) {
+      randomCycleTimer = setInterval(() => {
+        const available = VISUALIZER_ENGINES.filter((e) => e.id !== VISUALIZER_ENGINES[currentEngineIndex].id);
+        const next = available[Math.floor(Math.random() * available.length)];
+        if (next) {
+          setModeUI(next.id);
+        }
+      }, intervalMs);
+    }
+  }
+
   function cycleDetailUI(): void {
     if (!visualizer) return;
     const nextDetail = visualizer.cycleDetail();
@@ -3199,12 +3707,61 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     syncDetailUI(nextDetail);
   }
 
-  function syncDetailUI(det: VisualDetail): void {
+  function syncDetailUI(det: GeometryDetail): void {
     const detailBtnLabel = document.getElementById("detail-btn-label");
     const theaterBtnDetail = document.getElementById("theater-btn-detail");
     const disp = det.toUpperCase();
     if (detailBtnLabel) detailBtnLabel.textContent = `DET: ${disp}`;
     if (theaterBtnDetail) theaterBtnDetail.textContent = `DET: ${disp}`;
+  }
+
+  function cycleThicknessUI(): void {
+    if (!visualizer) return;
+    const nextThick = visualizer.cycleThickness();
+    theaterVisualizer?.setThickness(nextThick);
+    syncThicknessUI(nextThick);
+  }
+
+  function syncThicknessUI(thick: ThicknessLevel): void {
+    const thickBtnLabel = document.getElementById("thick-btn-label");
+    const theaterBtnThick = document.getElementById("theater-btn-thick");
+    const labelMap: Record<ThicknessLevel, string> = {
+      fine: "THICK: 2PX",
+      normal: "THICK: 3PX",
+      bold: "THICK: 6PX",
+      chunky: "THICK: 9PX",
+    };
+    const disp = labelMap[thick] || "THICK: 3PX";
+    if (thickBtnLabel) thickBtnLabel.textContent = disp;
+    if (theaterBtnThick) theaterBtnThick.textContent = disp;
+  }
+
+  function resetCameraViewUI(): void {
+    if (!visualizer) return;
+    visualizer.resetCameraPreset();
+    theaterVisualizer?.resetCameraPreset();
+    syncCameraAngleUI("front");
+  }
+
+  function cycleCameraAngleUI(): void {
+    if (!visualizer) return;
+    const nextPreset = visualizer.cycleCameraPreset();
+    theaterVisualizer?.setCameraPreset(nextPreset);
+    syncCameraAngleUI(nextPreset);
+  }
+
+  function syncCameraAngleUI(preset: CameraPreset): void {
+    const camAngleBtnLabel = document.getElementById("cam-angle-btn-label");
+    const theaterBtnCamAngle = document.getElementById("theater-btn-cam-angle");
+    const labelMap: Record<CameraPreset, string> = {
+      front: "VIEW: FRONT",
+      isometric: "VIEW: ISO",
+      top: "VIEW: TOP",
+      custom: "VIEW: FREE",
+    };
+    const disp = labelMap[preset] || "VIEW: FRONT";
+    if (camAngleBtnLabel) camAngleBtnLabel.textContent = disp;
+    if (theaterBtnCamAngle) theaterBtnCamAngle.textContent = disp;
   }
 
   function cycleEngine(direction: 1 | -1) {
@@ -3213,11 +3770,13 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
   }
 
   function wireToggles() {
-    // Prev / Next arrow buttons
+    // Prev / Next arrow buttons & Random cycle
     document.getElementById("btn-engine-prev")?.addEventListener("click", () => cycleEngine(-1));
     document.getElementById("btn-engine-next")?.addEventListener("click", () => cycleEngine(1));
+    document.getElementById("btn-engine-random")?.addEventListener("click", cycleRandomModeUI);
     document.getElementById("theater-engine-prev")?.addEventListener("click", () => cycleEngine(-1));
     document.getElementById("theater-engine-next")?.addEventListener("click", () => cycleEngine(1));
+    document.getElementById("theater-btn-random")?.addEventListener("click", cycleRandomModeUI);
 
     // Matrix launcher
     const modalEngines = document.getElementById("modal-engines");
@@ -3257,9 +3816,10 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
       // Don't intercept when user is typing in an input
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
-      // Direct visualizer engine selection via hotkeys (1-9, 0)
+      // Direct visualizer engine selection via hotkeys (1-9, 0, -)
       const directKeyMap: Record<string, number> = {
         "1": 0, "2": 1, "3": 2, "4": 3, "5": 4, "6": 5, "7": 6, "8": 7, "9": 8, "0": 9,
+        "-": 10,
       };
       if (directKeyMap[e.key] !== undefined) {
         e.preventDefault();
@@ -3278,16 +3838,41 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
       } else if (e.key === "]") {
         e.preventDefault();
         cycleEngine(1);
-      } else if (e.key.toLowerCase() === "m" || e.key.toLowerCase() === "v") {
+      } else if (e.key.toLowerCase() === "m" && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();
         if (modalEngines?.classList.contains("modal-backdrop--active")) {
           closeEngineMatrix();
         } else {
           openEngineMatrix();
         }
+      } else if (e.key.toLowerCase() === "v" && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        cycleCameraAngleUI();
+      } else if (e.key.toLowerCase() === "r" && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        resetCameraViewUI();
+      } else if ((e.key === "?" || e.key.toLowerCase() === "h") && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        const modalHotkeys = document.getElementById("modal-hotkeys");
+        modalHotkeys?.classList.toggle("modal-backdrop--active");
+      } else if (e.key.toLowerCase() === "k" && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        cycleThicknessUI();
       } else if (e.key === "Escape") {
+        const theaterOverlay = document.getElementById("theater-overlay");
+        if (theaterOverlay?.classList.contains("theater-overlay--active")) {
+          exitTheaterMode();
+        }
         closeEngineMatrix();
         document.querySelectorAll(".modal-backdrop--active").forEach((m) => m.classList.remove("modal-backdrop--active"));
+      } else if (e.key.toLowerCase() === "t" && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        const theaterOverlay = document.getElementById("theater-overlay");
+        if (theaterOverlay?.classList.contains("theater-overlay--active")) {
+          exitTheaterMode();
+        } else {
+          enterTheaterMode();
+        }
       } else if (e.key.toLowerCase() === "i" && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();
         audioEngine.toggleInputSource();
@@ -3301,6 +3886,9 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
       } else if (e.key.toLowerCase() === "c" && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();
         cyclePaletteUI();
+      } else if (e.key.toLowerCase() === "s" && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        cycleRandomModeUI();
       } else if (e.key.toLowerCase() === "d" && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();
         cycleDetailUI();
@@ -3435,61 +4023,98 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
   }
 
   // ═══════════════════════════════════════════════════════════
-  // THEATER MODE (SCREEN 2)
+  // THEATER MODE (SCREEN 2) — FULLSCREEN DISPLAY
   // ═══════════════════════════════════════════════════════════
+
+  async function enterTheaterMode() {
+    const theaterOverlay = document.getElementById("theater-overlay");
+    const theaterCanvasContainer = document.getElementById("theater-canvas");
+
+    theaterOverlay?.classList.add("theater-overlay--active");
+
+    // Mount theater visualizer if not created yet
+    if (!theaterVisualizer && theaterCanvasContainer) {
+      theaterVisualizer = new ChladniCanvas();
+      theaterVisualizer.mount(theaterCanvasContainer);
+      theaterVisualizer.setClearColor(0x000000, 1.0);
+      theaterVisualizer.setAudioProvider(() => audioEngine.getRealtimeAmplitude());
+      theaterVisualizer.setWaveProvider((buf) => audioEngine.getWaveformData(buf));
+      theaterVisualizer.setFreqProvider((buf) => audioEngine.getFrequencyData(buf));
+      theaterVisualizer.onCameraPresetChange = (preset) => syncCameraAngleUI(preset);
+    }
+
+    if (theaterVisualizer && visualizer) {
+      const currentMode = visualizer.getMode();
+      setModeUI(currentMode);
+      if (currentPreset) {
+        theaterVisualizer.updateUniforms({
+          n: currentPreset.harmonic_n || 3,
+          m: currentPreset.harmonic_m || 4,
+        });
+      }
+      theaterVisualizer.setPalette(visualizer.getPalette());
+      theaterVisualizer.setDetail(visualizer.getDetail());
+      theaterVisualizer.setThickness(visualizer.getThickness());
+      theaterVisualizer.setCameraSpeed(visualizer.getCameraSpeed());
+      theaterVisualizer.setCameraPreset(visualizer.getCameraPreset());
+      theaterVisualizer.setVisualGain(visualizer.getVisualGain());
+      theaterVisualizer.resume();
+    }
+
+    // Sync Theater HUD
+    const theaterCode = document.getElementById("theater-code");
+    const theaterHz = document.getElementById("theater-hz");
+    const theaterPhase = document.getElementById("theater-phase");
+    const hudPhaseLabel = document.getElementById("hud-phase-label");
+
+    if (theaterCode && currentPreset) {
+      theaterCode.textContent = currentPreset.code || currentPreset.id?.toUpperCase() || "PRE-001";
+    }
+    if (theaterHz && currentPreset) {
+      theaterHz.textContent = `${Number(currentPreset.target_hz).toFixed(1)} HZ`;
+    }
+    if (theaterPhase) {
+      theaterPhase.textContent = hudPhaseLabel?.textContent ? `CADENCE: ${hudPhaseLabel.textContent.replace("PHASE: ", "")}` : "CADENCE: IDLE";
+    }
+
+    // FILL THE VISUALISATION IN THE COMPLETE SCREEN (Native OS Fullscreen)
+    try {
+      await appWindow.setFullscreen(true);
+    } catch (err) {
+      console.warn("[Theater] Tauri setFullscreen failed, trying HTML5 Fullscreen:", err);
+      try {
+        if (document.documentElement.requestFullscreen) {
+          await document.documentElement.requestFullscreen();
+        }
+      } catch (_) {}
+    }
+  }
+
+  async function exitTheaterMode() {
+    const theaterOverlay = document.getElementById("theater-overlay");
+    theaterOverlay?.classList.remove("theater-overlay--active");
+    theaterVisualizer?.pause();
+
+    // Restore normal native window bounds
+    try {
+      await appWindow.setFullscreen(false);
+    } catch (err) {
+      console.warn("[Theater] Tauri exit fullscreen failed:", err);
+      try {
+        if (document.fullscreenElement && document.exitFullscreen) {
+          await document.exitFullscreen();
+        }
+      } catch (_) {}
+    }
+  }
 
   function wireTheaterMode() {
     const btnTheater = document.getElementById("btn-theater");
     const theaterOverlay = document.getElementById("theater-overlay");
     const btnExit = document.getElementById("btn-theater-exit");
-    const theaterCanvasContainer = document.getElementById("theater-canvas");
 
-    btnTheater?.addEventListener("click", () => {
-      theaterOverlay?.classList.add("theater-overlay--active");
-
-      // Mount theater visualizer if not created yet
-      if (!theaterVisualizer && theaterCanvasContainer) {
-        theaterVisualizer = new ChladniCanvas();
-        theaterVisualizer.mount(theaterCanvasContainer);
-        theaterVisualizer.setClearColor(0x000000, 1.0);
-        theaterVisualizer.setAudioProvider(() => audioEngine.getRealtimeAmplitude());
-        theaterVisualizer.setWaveProvider((buf) => audioEngine.getWaveformData(buf));
-        theaterVisualizer.setFreqProvider((buf) => audioEngine.getFrequencyData(buf));
-      }
-
-      if (theaterVisualizer && visualizer) {
-        const currentMode = visualizer.getMode();
-        setModeUI(currentMode);
-        if (currentPreset) {
-          theaterVisualizer.updateUniforms({
-            n: currentPreset.harmonic_n || 3,
-            m: currentPreset.harmonic_m || 4,
-          });
-        }
-        theaterVisualizer.resume();
-      }
-
-      // Sync Theater HUD
-      const theaterCode = document.getElementById("theater-code");
-      const theaterHz = document.getElementById("theater-hz");
-      const theaterPhase = document.getElementById("theater-phase");
-      const hudPhaseLabel = document.getElementById("hud-phase-label");
-
-      if (theaterCode && currentPreset) {
-        theaterCode.textContent = currentPreset.code || currentPreset.id?.toUpperCase() || "PRE-001";
-      }
-      if (theaterHz && currentPreset) {
-        theaterHz.textContent = `${Number(currentPreset.target_hz).toFixed(1)} HZ`;
-      }
-      if (theaterPhase) {
-        theaterPhase.textContent = hudPhaseLabel?.textContent ? `CADENCE: ${hudPhaseLabel.textContent.replace("PHASE: ", "")}` : "CADENCE: IDLE";
-      }
-    });
-
-    btnExit?.addEventListener("click", () => {
-      theaterOverlay?.classList.remove("theater-overlay--active");
-      theaterVisualizer?.pause();
-    });
+    btnTheater?.addEventListener("click", enterTheaterMode);
+    btnExit?.addEventListener("click", exitTheaterMode);
 
     // Auto-fade theater toolbar on mouse inactivity
     let theaterFadeTimer: any = null;
@@ -3557,6 +4182,22 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
       });
     });
 
+    // Keyboard Shortcuts Matrix Modal
+    const btnHotkeys = document.getElementById("btn-hotkeys");
+    const modalHotkeys = document.getElementById("modal-hotkeys");
+    const btnCloseHotkeys = document.getElementById("btn-close-hotkeys");
+    const btnDoneHotkeys = document.getElementById("btn-done-hotkeys");
+
+    btnHotkeys?.addEventListener("click", () => {
+      modalHotkeys?.classList.add("modal-backdrop--active");
+    });
+
+    [btnCloseHotkeys, btnDoneHotkeys].forEach((el) => {
+      el?.addEventListener("click", () => {
+        modalHotkeys?.classList.remove("modal-backdrop--active");
+      });
+    });
+
     // Custom Preset Builder Modal
     const modalNewPreset = document.getElementById("modal-new-preset");
     const btnCloseNewPreset = document.getElementById("btn-close-new-preset");
@@ -3571,7 +4212,7 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     const modalEngines = document.getElementById("modal-engines");
 
     // Close any modal when clicking its dark backdrop
-    [modalRoute, modalBio, modalInfo, modalEngines, modalNewPreset].forEach((backdrop) => {
+    [modalRoute, modalBio, modalInfo, modalHotkeys, modalEngines, modalNewPreset].forEach((backdrop) => {
       backdrop?.addEventListener("click", (e) => {
         if (e.target === backdrop) {
           backdrop.classList.remove("modal-backdrop--active");
@@ -4204,22 +4845,33 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     const btnScaleUp = document.getElementById("btn-scale-up");
     const btnPaletteCycle = document.getElementById("btn-palette-cycle");
     const btnDetailCycle = document.getElementById("btn-detail-cycle");
+    const btnThickCycle = document.getElementById("btn-thick-cycle");
+    const btnCamAngleCycle = document.getElementById("btn-cam-angle-cycle");
+
     const theaterBtnPalette = document.getElementById("theater-btn-palette");
     const theaterBtnDetail = document.getElementById("theater-btn-detail");
+    const theaterBtnThick = document.getElementById("theater-btn-thick");
+    const theaterBtnCamAngle = document.getElementById("theater-btn-cam-angle");
 
     btnScaleDown?.addEventListener("click", () => setScaleIndex(currentScaleIdx - 1));
     btnScaleUp?.addEventListener("click", () => setScaleIndex(currentScaleIdx + 1));
 
     btnPaletteCycle?.addEventListener("click", cyclePaletteUI);
     btnDetailCycle?.addEventListener("click", cycleDetailUI);
+    btnThickCycle?.addEventListener("click", cycleThicknessUI);
+    btnCamAngleCycle?.addEventListener("click", cycleCameraAngleUI);
 
     theaterBtnPalette?.addEventListener("click", cyclePaletteUI);
     theaterBtnDetail?.addEventListener("click", cycleDetailUI);
+    theaterBtnThick?.addEventListener("click", cycleThicknessUI);
+    theaterBtnCamAngle?.addEventListener("click", cycleCameraAngleUI);
 
     // Initial sync
     setScaleIndex(currentScaleIdx);
     syncPaletteUI("pastel");
     syncDetailUI("high");
+    syncThicknessUI("normal");
+    syncCameraAngleUI("front");
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -4319,6 +4971,48 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
   }
 
   // ═══════════════════════════════════════════════════════════
+  // SPLASH SCREEN BOOT SEQUENCE (SILENT UNTIL LOADED)
+  // ═══════════════════════════════════════════════════════════
+
+  function runSplashBootSequence(): void {
+    const splashScreen = document.getElementById("splash-screen");
+    const progressBar = document.getElementById("splash-progress-bar");
+    const statusText = document.getElementById("splash-status-text");
+    const percentText = document.getElementById("splash-percent-text");
+
+    if (!splashScreen) {
+      audioEngine.play();
+      return;
+    }
+
+    const stages = [
+      { ms: 300, pct: 35, text: "CALIBRATING HARMONICS // N, M MODES" },
+      { ms: 750, pct: 72, text: "INITIALIZING WEBGL 3D CYMATICS ENGINE" },
+      { ms: 1200, pct: 100, text: "READY // ENGAGING NEUROACOUSTIC DSP" },
+    ];
+
+    stages.forEach((stage) => {
+      setTimeout(() => {
+        if (progressBar) progressBar.style.width = `${stage.pct}%`;
+        if (percentText) percentText.textContent = `${stage.pct}%`;
+        if (statusText) statusText.textContent = stage.text;
+      }, stage.ms);
+    });
+
+    // Fade out and start audio playback once fully loaded
+    setTimeout(() => {
+      splashScreen.classList.add("splash-screen--fade-out");
+      // App is loaded: un-mute audio and start sound synthesis now
+      audioEngine.play();
+    }, 1600);
+
+    // Remove from layout after fade
+    setTimeout(() => {
+      splashScreen.style.display = "none";
+    }, 2050);
+  }
+
+  // ═══════════════════════════════════════════════════════════
   // BOOT
   // ═══════════════════════════════════════════════════════════
 
@@ -4336,4 +5030,5 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
   wirePresetCreator();
   wireVisualizerStyleTuning();
   initTooltips();
+  runSplashBootSequence();
 </script>

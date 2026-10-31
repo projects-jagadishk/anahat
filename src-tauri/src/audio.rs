@@ -314,7 +314,7 @@ pub struct AudioController {
 impl AudioController {
     pub fn init() -> Result<Self, String> {
         let params = Arc::new(Mutex::new(DspParams::default()));
-        let is_playing = Arc::new(AtomicBool::new(true)); // Default playing on boot
+        let is_playing = Arc::new(AtomicBool::new(false)); // Muted during boot; plays after splash screen loads
         let is_recording = Arc::new(AtomicBool::new(false));
         let recorded_buffer = Arc::new(Mutex::new(Vec::with_capacity(48000 * 2 * 60))); // 1 min initial cap
 

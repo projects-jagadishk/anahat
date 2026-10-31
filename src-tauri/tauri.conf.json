@@ -19,8 +19,6 @@
         "height": 880,
         "minWidth": 1400,
         "minHeight": 880,
-        "maxWidth": 1400,
-        "maxHeight": 880,
         "decorations": false,
         "transparent": true,
         "center": true,
