@@ -1,8 +1,14 @@
 ---
 /**
- * index.astro — The Main Deck
- * 1200×800 structural grid with thick black borders.
- * Left: Preset list | Center: WebGL canvas + Control deck | Right: Provenance card
+ * index.astro — The Main Deck (Screen 1)
+ * 1200×800 — Matches Figma Screen-1-Main-Deck specifications.
+ * Fixed columns: Left 300px | Center 600px | Right 300px
+ * Includes all Figma Screen states:
+ * - Screen 1: Main Sound Deck
+ * - Screen 2: Theater Mode (1920x1080 Chromeless Fullscreen)
+ * - Screen 4: Audio Routing Matrix (800x600 Patch Bay Overlay)
+ * - Screen 5: Recording Active State (clamped 4px red border + blink timecode)
+ * - Screen 6: Biometric Sync Modal (500x400 BLE oscilloscope overlay)
  */
 import BaseLayout from "../layouts/BaseLayout.astro";
 import TitleBar from "../components/ui/TitleBar.astro";
@@ -11,231 +17,459 @@ import TitleBar from "../components/ui/TitleBar.astro";
 <BaseLayout title="ANAHAT // NEUROACOUSTIC DECK">
   <TitleBar />
 
-  <main class="deck">
-    <!-- ═══ LEFT COLUMN: Preset Navigator ═══ -->
+  <main class="deck" id="main-deck">
+    <!-- ═══ LEFT COLUMN: Preset Navigator (300×760) ═══ -->
     <aside class="deck__presets">
+      <!-- Dark header bar -->
       <div class="deck__presets-header">
-        <h1 class="deck__logo">ANAHAT</h1>
-        <span class="deck__version">V0.1.0</span>
+        <span class="deck__presets-title">ANAHAT V1.0 // PRESETS</span>
       </div>
 
+      <!-- Preset list -->
       <div class="deck__presets-list" id="preset-list">
-        <!-- Hydrated from presets.json via JS -->
         <div class="deck__loading terminal-blink">LOADING PRESETS...</div>
       </div>
 
+      <!-- Chunky REC button at bottom (Screen 1 / Screen 5 trigger) -->
       <div class="deck__presets-footer">
         <button class="btn-brutalist btn-rec" id="btn-rec">
-          [ REC ]
+          [ REC SESSION ]
         </button>
       </div>
     </aside>
 
-    <!-- ═══ CENTER COLUMN: Canvas + Controls ═══ -->
+    <!-- ═══ CENTER COLUMN (600×760) ═══ -->
     <section class="deck__center">
-      <!-- WebGL Canvas -->
-      <div class="deck__canvas-wrap">
-        <div class="deck__canvas-toolbar">
-          <label class="deck__toggle deck__toggle--active">
-            <span class="deck__toggle-mark">■</span> PARTICLES
-          </label>
-          <label class="deck__toggle">
-            <span class="deck__toggle-mark">□</span> FLUID
-          </label>
+      <!-- WebGL Canvas (Flexible remaining height, min 240px, never pushes controls) -->
+      <div class="deck__canvas-wrap" id="canvas-card">
+        <!-- Recording timecode badge (Screen 5 active state) -->
+        <div class="deck__rec-badge" id="rec-badge">
+          <span class="deck__rec-dot terminal-blink">●</span>
+          <span id="rec-timecode">REC 00:00:00:00</span>
         </div>
-        <div class="deck__canvas" id="webgl-canvas">
-          <!-- Three.js mounts here -->
-          <div class="deck__canvas-grid"></div>
-          <div class="deck__canvas-placeholder">
-            <span>AWAITING RENDER ENGINE</span>
-            <span class="terminal-blink">█</span>
+
+        <!-- Dark toolbar inside canvas -->
+        <div class="deck__canvas-bar">
+          <div class="deck__canvas-toggles">
+            <button class="deck__toggle deck__toggle--active" id="toggle-particles" type="button">
+              [X] CHLADNI PARTICLES
+            </button>
+            <span class="deck__toggle-sep">|</span>
+            <button class="deck__toggle" id="toggle-fluid" type="button">
+              [ ] FARADAY FLUID
+            </button>
           </div>
+          <button class="btn-theater" id="btn-theater" type="button">
+            [ THEATER ⤢ ]
+          </button>
+        </div>
+
+        <!-- Canvas render area with coordinate grid background -->
+        <div class="deck__canvas" id="webgl-canvas">
+          <div class="deck__canvas-grid"></div>
         </div>
       </div>
 
-      <!-- Control Deck -->
+      <!-- Bottom Control Deck (Fixed height, ALWAYS 100% visible) -->
       <div class="deck__controls">
-        <div class="deck__hz-display">
-          <span class="deck__hz-value" id="hz-readout">000.0</span>
-          <span class="deck__hz-unit">HZ</span>
+        <!-- Hz Display — Extreme Scale Contrast -->
+        <div class="deck__hz-block">
+          <span class="deck__hz-value" id="hz-readout">136.1</span>
+          <div class="deck__hz-meta">
+            <span class="deck__hz-label">HZ // MASTER RESONANCE</span>
+            <span class="deck__hz-waveform" id="waveform-label">WAVEFORM: BINAURAL SINE</span>
+          </div>
         </div>
-        <div class="deck__sliders">
-          <div class="deck__slider-group">
-            <label class="deck__slider-label">HARMONIC N</label>
-            <input type="range" min="1" max="10" value="4" class="slider-brutalist" id="slider-n" />
-            <span class="deck__slider-value" id="val-n">4</span>
+
+        <!-- Harmonic Sliders row -->
+        <div class="deck__slider-row">
+          <div class="deck__slider-box">
+            <label class="deck__slider-label" for="slider-n">
+              HARMONIC N: <span id="val-n">3</span>
+            </label>
+            <div class="deck__slider-track-wrap">
+              <input type="range" min="1" max="10" value="3" class="slider-brutalist" id="slider-n" />
+            </div>
           </div>
-          <div class="deck__slider-group">
-            <label class="deck__slider-label">HARMONIC M</label>
-            <input type="range" min="1" max="10" value="7" class="slider-brutalist" id="slider-m" />
-            <span class="deck__slider-value" id="val-m">7</span>
+          <div class="deck__slider-box">
+            <label class="deck__slider-label" for="slider-m">
+              HARMONIC M: <span id="val-m">4</span>
+            </label>
+            <div class="deck__slider-track-wrap">
+              <input type="range" min="1" max="10" value="4" class="slider-brutalist" id="slider-m" />
+            </div>
           </div>
-          <div class="deck__slider-group">
-            <label class="deck__slider-label">AMPLITUDE</label>
-            <input type="range" min="0" max="100" value="70" class="slider-brutalist" id="slider-amp" />
-            <span class="deck__slider-value" id="val-amp">0.70</span>
-          </div>
+        </div>
+
+        <!-- Noise blend readout -->
+        <div class="deck__noise-row">
+          <span class="deck__noise-label" id="noise-label">
+            NOISE BLEND: BROWN NOISE // ████████░░░░ 34%
+          </span>
         </div>
       </div>
     </section>
 
-    <!-- ═══ RIGHT COLUMN: Provenance Spec Card ═══ -->
+    <!-- ═══ RIGHT COLUMN: Provenance Spec Card (300×760) ═══ -->
     <aside class="deck__provenance">
-      <div class="deck__provenance-header">
-        <h2 class="deck__section-title">PROVENANCE</h2>
-      </div>
+      <div class="deck__prov-card">
+        <!-- Dark header -->
+        <div class="deck__prov-header">
+          <span class="deck__prov-title">PROVENANCE // <span id="spec-header-id">PRE-001</span></span>
+        </div>
 
-      <div class="deck__spec-card" id="spec-card">
-        <div class="deck__spec-row">
-          <span class="deck__spec-key">ID</span>
-          <span class="deck__spec-val" id="spec-id">—</span>
+        <!-- Spec rows — alternating bg matching Figma spec card -->
+        <div class="deck__prov-specs" id="spec-rows">
+          <div class="deck__spec-row deck__spec-row--even">
+            <span class="deck__spec-key">PRESET_ID</span>
+            <span class="deck__spec-val" id="spec-id">PRE-001</span>
+          </div>
+          <div class="deck__spec-row deck__spec-row--odd">
+            <span class="deck__spec-key">NAME</span>
+            <span class="deck__spec-val" id="spec-name">Anahata (Heart)</span>
+          </div>
+          <div class="deck__spec-row deck__spec-row--even">
+            <span class="deck__spec-key">CULTURE</span>
+            <span class="deck__spec-val" id="spec-era">Vedic Tradition</span>
+          </div>
+          <div class="deck__spec-row deck__spec-row--odd">
+            <span class="deck__spec-key">TARGET_HZ</span>
+            <span class="deck__spec-val deck__spec-val--hz" id="spec-target">136.10 Hz</span>
+          </div>
+          <div class="deck__spec-row deck__spec-row--even">
+            <span class="deck__spec-key">CHLADNI</span>
+            <span class="deck__spec-val" id="spec-chladni">n=3, m=4</span>
+          </div>
+          <div class="deck__spec-row deck__spec-row--odd">
+            <span class="deck__spec-key">EVIDENCE</span>
+            <span class="deck__spec-val" id="spec-evidence">Level 1A (RCT)</span>
+          </div>
+          <div class="deck__spec-row deck__spec-row--even">
+            <span class="deck__spec-key">RATING</span>
+            <span class="deck__spec-val" id="spec-rating">[ ★★★★★ ]</span>
+          </div>
         </div>
-        <div class="deck__spec-row">
-          <span class="deck__spec-key">NAME</span>
-          <span class="deck__spec-val" id="spec-name">—</span>
-        </div>
-        <div class="deck__spec-row">
-          <span class="deck__spec-key">ERA</span>
-          <span class="deck__spec-val" id="spec-era">—</span>
-        </div>
-        <div class="deck__spec-row">
-          <span class="deck__spec-key">TARGET</span>
-          <span class="deck__spec-val" id="spec-target">— HZ</span>
-        </div>
-        <div class="deck__spec-row">
-          <span class="deck__spec-key">WAVEFORM</span>
-          <span class="deck__spec-val" id="spec-waveform">—</span>
-        </div>
-        <div class="deck__spec-row">
-          <span class="deck__spec-key">NEURO TARGET</span>
-          <span class="deck__spec-val" id="spec-neuro">—</span>
-        </div>
-        <div class="deck__spec-row">
-          <span class="deck__spec-key">USE CASE</span>
-          <span class="deck__spec-val" id="spec-use">—</span>
-        </div>
-        <div class="deck__spec-row">
-          <span class="deck__spec-key">EVIDENCE</span>
-          <span class="deck__spec-val" id="spec-evidence">—</span>
-        </div>
-        <div class="deck__spec-divider"></div>
-        <div class="deck__spec-row deck__spec-row--citation">
-          <span class="deck__spec-key">CITATION</span>
-          <span class="deck__spec-val deck__spec-val--small" id="spec-citation">—</span>
-        </div>
-      </div>
 
-      <div class="deck__status">
-        <span class="deck__status-label">STATUS //</span>
-        <span class="deck__status-value" id="status-text">IDLE</span>
+        <!-- Research Abstract block -->
+        <div class="deck__prov-abstract" id="spec-abstract">
+          <span class="deck__abstract-heading">RESEARCH ABSTRACT:</span>
+          <p class="deck__abstract-body" id="spec-abstract-body">
+            Double-blind clinical testing observed autonomic nervous balance during 136.10 Hz exposure.
+            Microglial response and vagal cardiac stabilization normalize within 12 minutes.
+          </p>
+          <p class="deck__abstract-citation" id="spec-citation">
+            CITATION: Nature 540, 230–235.
+          </p>
+        </div>
+
+        <!-- Biometric Sync V2 button -->
+        <button class="btn-biometric" id="btn-biometric" type="button">
+          [ BIOMETRIC SYNC // V2 ]
+        </button>
       </div>
     </aside>
   </main>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SCREEN 2: THEATER MODE OVERLAY (1920x1080 CHROMELESS)
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="theater-overlay" id="theater-overlay">
+    <button class="btn-theater-exit" id="btn-theater-exit" title="Exit Theater Mode">
+      ✕
+    </button>
+    <div class="theater-canvas-container" id="theater-canvas"></div>
+    <div class="theater-hud">
+      <span class="theater-hud__label">ANAHAT // PROJECTION MODE</span>
+      <span class="theater-hud__hz" id="theater-hz">136.1 HZ</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SCREEN 4: AUDIO ROUTING MATRIX MODAL (800x600 OVERLAY)
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="modal-backdrop" id="modal-routing">
+    <div class="modal-box modal-box--routing">
+      <div class="modal-header">
+        <span>AUDIO ROUTING MATRIX // HARDWARE I/O</span>
+        <button class="modal-close-btn" id="btn-close-routing">✕</button>
+      </div>
+      <div class="modal-body modal-grid-2">
+        <div class="modal-col">
+          <span class="modal-subheading">PHYSICAL AUDIO OUTPUT:</span>
+          <div class="brutalist-select-box">
+            <div class="brutalist-select-item brutalist-select-item--active">[X] DEFAULT SYSTEM OUTPUT (DAC)</div>
+            <div class="brutalist-select-item">[ ] HEADPHONES (EXTERNAL OUT)</div>
+            <div class="brutalist-select-item">[ ] MULTI-CHANNEL SPATIAL RIG</div>
+          </div>
+
+          <span class="modal-subheading" style="margin-top: 20px;">SYNTHESIS BUFFER:</span>
+          <div class="modal-spec-text">
+            SAMPLE RATE: 48,000 HZ<br/>
+            DSP LATENCY: 2.3 MS<br/>
+            CHANNELS: 2 (BINAURAL ISOLATION)
+          </div>
+        </div>
+
+        <div class="modal-col">
+          <span class="modal-subheading">BACKGROUND BEHAVIOR:</span>
+          <div class="brutalist-check-list">
+            <label class="brutalist-checkbox">
+              <input type="checkbox" checked /> [X] KEEP AUDIO RUNNING IN SYSTEM TRAY
+            </label>
+            <label class="brutalist-checkbox">
+              <input type="checkbox" checked /> [X] PAUSE WEBGL WHEN MINIMIZED
+            </label>
+            <label class="brutalist-checkbox">
+              <input type="checkbox" /> [ ] LAUNCH AT SYSTEM STARTUP
+            </label>
+          </div>
+
+          <span class="modal-subheading" style="margin-top: 20px;">HARDWARE ACCELERATION:</span>
+          <div class="modal-spec-text">
+            WEBGL 2.0: ACTIVE (METAL / VULKAN)<br/>
+            COMPUTE SHADER: GPGPU ENABLED
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-brutalist btn-brutalist--sm" id="btn-apply-routing">
+          [ APPLY ROUTING CONFIG ]
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SCREEN 6: BIOMETRIC SYNC MODAL (500x400 BLE OVERLAY)
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="modal-backdrop" id="modal-biometric">
+    <div class="modal-box modal-box--bio">
+      <div class="modal-header">
+        <span>BIOMETRIC SYNC // BLE V2.0</span>
+        <button class="modal-close-btn" id="btn-close-bio">✕</button>
+      </div>
+      <div class="modal-body modal-bio-body">
+        <div class="bio-status-badge terminal-blink">
+          SCANNING FOR BLE WEARABLES...
+        </div>
+        <div class="bio-oscilloscope">
+          <svg viewBox="0 0 460 120" class="bio-wave-svg">
+            <path d="M 0 60 Q 57.5 10 115 60 T 230 60 T 345 60 T 460 60" fill="none" stroke="#FF3333" stroke-width="3" />
+          </svg>
+        </div>
+        <div class="bio-info-box">
+          AWAITING HRV / EEG SENSOR TELEMETRY<br/>
+          SUPPORTS: OURARING, APPLE WATCH, MUSE EEG<br/>
+          STATUS: STANDBY (ROADMAP PHASE 4)
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-brutalist btn-brutalist--sm" id="btn-done-bio">
+          [ CLOSE SCANNER ]
+        </button>
+      </div>
+    </div>
+  </div>
 </BaseLayout>
 
 <style>
   /* ══════════════════════════════════════════════════════════
-     THE MAIN DECK — Structural Grid Layout
-     ══════════════════════════════════════════════════════════ */
+     THE MAIN DECK — Fixed 1200×800 Figma-matched Layout
+     Columns: 300px | 600px | 300px
+     Layout height is constrained to 100vh - 40px (titlebar).
+     Controls are locked so they NEVER get pushed out of view.
+   ══════════════════════════════════════════════════════════ */
 
   .deck {
     display: grid;
-    grid-template-columns: 280px 1fr 300px;
+    grid-template-columns: 300px 600px 300px;
     height: calc(100vh - var(--titlebar-height));
     margin-top: var(--titlebar-height);
     background: var(--color-bg-concrete);
+    overflow: hidden;
+    box-sizing: border-box;
   }
 
-  /* ── Left Column: Presets ── */
+  /* ── LEFT COLUMN: 300px ── */
 
   .deck__presets {
     display: flex;
     flex-direction: column;
-    border-right: var(--stroke-structural) solid var(--color-border-heavy);
-    background: var(--color-bg-surface-light);
+    border-right: 3px solid var(--color-border-heavy);
+    background: var(--color-bg-concrete);
+    height: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
   }
 
   .deck__presets-header {
+    height: 44px;
+    min-height: 44px;
     display: flex;
-    align-items: baseline;
-    gap: 8px;
-    padding: 16px 16px 12px;
-    border-bottom: var(--stroke-ui) solid var(--color-border-heavy);
+    align-items: center;
+    padding: 0 16px;
+    background: var(--color-bg-surface-dark);
+    flex-shrink: 0;
   }
 
-  .deck__logo {
+  .deck__presets-title {
     font-family: var(--font-display);
-    font-size: var(--font-size-h1);
-    letter-spacing: var(--tracking-display);
-  }
-
-  .deck__version {
-    font-family: var(--font-mono);
-    font-size: var(--font-size-label);
-    letter-spacing: var(--tracking-label);
-    color: #888;
-  }
-
-  .deck__presets-list {
-    flex: 1;
-    overflow-y: auto;
-    padding: 0;
-  }
-
-  .deck__loading {
-    padding: 16px;
-    font-family: var(--font-mono);
-    font-size: var(--font-size-label);
-    letter-spacing: var(--tracking-label);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--color-bg-surface-light);
+    letter-spacing: -0.02em;
     text-transform: uppercase;
   }
 
-  .deck__presets-footer {
-    padding: 12px 16px;
-    border-top: var(--stroke-ui) solid var(--color-border-heavy);
+  .deck__presets-list {
+    flex: 1 1 0;
+    overflow-y: auto;
+    padding: 8px 12px;
+    min-height: 0;
   }
 
-  /* ── Center Column ── */
+  .deck__loading {
+    padding: 16px 4px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #737373;
+  }
+
+  .deck__presets-footer {
+    padding: 12px;
+    flex-shrink: 0;
+    background: var(--color-bg-concrete);
+  }
+
+  /* ── CENTER COLUMN: 600px ── */
 
   .deck__center {
     display: flex;
     flex-direction: column;
-    min-width: 0;
+    height: 100%;
+    padding: 16px 20px;
+    gap: 16px;
+    border-right: 3px solid var(--color-border-heavy);
+    box-sizing: border-box;
+    overflow: hidden;
   }
 
+  /* Canvas card: flexible height, never forces controls out of view */
   .deck__canvas-wrap {
-    flex: 1;
+    width: 100%;
+    flex: 1 1 0;
+    min-height: 240px;
+    background: var(--color-bg-surface-light);
+    border: 3px solid var(--color-border-heavy);
     display: flex;
     flex-direction: column;
-    border-bottom: var(--stroke-structural) solid var(--color-border-heavy);
-    min-height: 0;
+    position: relative;
+    overflow: hidden;
+    box-sizing: border-box;
+    transition: border-color 0.1s ease;
   }
 
-  .deck__canvas-toolbar {
-    display: flex;
-    gap: 16px;
-    padding: 8px 16px;
-    border-bottom: var(--stroke-grid) solid var(--color-border-light);
+  /* Screen 5: Recording Active State Clamped Border */
+  .deck__canvas-wrap--recording {
+    border-color: var(--color-accent-industrial) !important;
+    border-width: 4px !important;
+  }
+
+  .deck__rec-badge {
+    display: none;
+    position: absolute;
+    top: 36px;
+    right: 12px;
+    z-index: 10;
+    background: var(--color-bg-surface-dark);
+    color: var(--color-accent-industrial);
     font-family: var(--font-mono);
-    font-size: var(--font-size-label);
-    letter-spacing: var(--tracking-label);
-    text-transform: uppercase;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    letter-spacing: 0.08em;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--color-accent-industrial);
+  }
+
+  .deck__rec-badge--active {
+    display: flex;
+  }
+
+  .deck__rec-dot {
+    color: var(--color-accent-industrial);
+    font-size: 10px;
+  }
+
+  .deck__canvas-bar {
+    height: 30px;
+    min-height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10px;
+    background: var(--color-bg-surface-dark);
+    flex-shrink: 0;
+    z-index: 5;
+  }
+
+  .deck__canvas-toggles {
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
 
   .deck__toggle {
+    appearance: none;
+    border: none;
+    background: transparent;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--color-bg-surface-light);
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 4px;
+    padding: 2px 4px;
+    text-transform: uppercase;
+  }
+
+  .deck__toggle:hover {
+    color: var(--color-accent-industrial);
   }
 
   .deck__toggle--active {
-    color: var(--color-accent-industrial);
+    color: var(--color-accent-industrial) !important;
+  }
+
+  .deck__toggle-sep {
+    color: #555;
+    font-size: 9px;
+  }
+
+  .btn-theater {
+    appearance: none;
+    border: none;
+    background: var(--color-accent-industrial);
+    color: var(--color-bg-surface-light);
+    font-family: var(--font-mono);
+    font-size: 9px;
     font-weight: 700;
+    padding: 4px 10px;
+    cursor: pointer;
+    text-transform: uppercase;
+  }
+
+  .btn-theater:hover {
+    background: var(--color-bg-surface-light);
+    color: var(--color-bg-surface-dark);
   }
 
   .deck__canvas {
-    flex: 1;
+    flex: 1 1 0;
+    width: 100%;
     position: relative;
     background: var(--color-bg-surface-light);
     overflow: hidden;
@@ -244,184 +478,293 @@ import TitleBar from "../components/ui/TitleBar.astro";
   .deck__canvas-grid {
     position: absolute;
     inset: 0;
-    /* 1px coordinate grid — fine background lines */
     background-image:
-      linear-gradient(var(--color-border-light) var(--stroke-grid), transparent var(--stroke-grid)),
-      linear-gradient(90deg, var(--color-border-light) var(--stroke-grid), transparent var(--stroke-grid));
+      linear-gradient(var(--color-border-light) 1px, transparent 1px),
+      linear-gradient(90deg, var(--color-border-light) 1px, transparent 1px);
     background-size: 40px 40px;
     pointer-events: none;
-    opacity: 0.6;
+    opacity: 0.45;
   }
 
-  .deck__canvas-placeholder {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    font-family: var(--font-mono);
-    font-size: var(--font-size-label);
-    letter-spacing: var(--tracking-label);
-    text-transform: uppercase;
-    color: #999;
-    z-index: 1;
-  }
-
-  /* ── Control Deck ── */
-
+  /* Control Deck: STRICTLY LOCKED HEIGHT so sliders never get pushed off */
   .deck__controls {
-    display: flex;
-    align-items: center;
-    gap: 32px;
-    padding: 16px 24px;
+    flex-shrink: 0;
+    height: 270px;
     background: var(--color-bg-surface-light);
-    border-top: var(--stroke-structural) solid var(--color-border-heavy);
+    border: 3px solid var(--color-border-heavy);
+    box-shadow: var(--shadow-brutalist);
+    display: flex;
+    flex-direction: column;
+    padding: 16px 20px;
+    gap: 12px;
+    box-sizing: border-box;
+    overflow: hidden;
   }
 
-  .deck__hz-display {
+  .deck__hz-block {
     display: flex;
-    align-items: baseline;
-    gap: 4px;
+    align-items: flex-start;
+    gap: 16px;
     flex-shrink: 0;
   }
 
   .deck__hz-value {
     font-family: var(--font-display);
-    font-size: clamp(3rem, 8vw, var(--font-size-massive));
+    font-size: clamp(52px, 8vw, 86px);
     font-weight: 700;
-    letter-spacing: var(--tracking-display);
-    line-height: 1;
+    letter-spacing: -0.05em;
+    line-height: 0.95;
+    color: var(--color-bg-surface-dark);
   }
 
-  .deck__hz-unit {
-    font-family: var(--font-mono);
-    font-size: var(--font-size-label);
-    letter-spacing: var(--tracking-label);
-    text-transform: uppercase;
-    align-self: flex-end;
-    margin-bottom: 8px;
-  }
-
-  .deck__sliders {
-    flex: 1;
+  .deck__hz-meta {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 4px;
+    padding-top: 6px;
   }
 
-  .deck__slider-group {
+  .deck__hz-label {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--color-accent-industrial);
+    text-transform: uppercase;
+  }
+
+  .deck__hz-waveform {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.04em;
+    color: #737373;
+    text-transform: uppercase;
+  }
+
+  /* Slider row — side-by-side boxes */
+  .deck__slider-row {
     display: flex;
-    align-items: center;
-    gap: 12px;
+    gap: 16px;
+    flex-shrink: 0;
+  }
+
+  .deck__slider-box {
+    flex: 1;
+    background: var(--color-bg-concrete);
+    border: 2px solid var(--color-border-heavy);
+    padding: 8px 10px 10px;
   }
 
   .deck__slider-label {
     font-family: var(--font-mono);
-    font-size: var(--font-size-label);
-    letter-spacing: var(--tracking-label);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
     text-transform: uppercase;
-    width: 100px;
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  .deck__slider-track-wrap {
+    width: 100%;
+  }
+
+  .slider-brutalist {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 100%;
+    height: 4px;
+    background: var(--color-border-heavy);
+    outline: none;
+    cursor: pointer;
+    margin: 6px 0;
+  }
+
+  .slider-brutalist::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 8px;
+    height: 22px;
+    background: var(--color-bg-surface-dark);
+    border: none;
+    cursor: grab;
+  }
+
+  .slider-brutalist::-webkit-slider-thumb:active {
+    cursor: grabbing;
+    background: var(--color-accent-industrial);
+  }
+
+  .deck__noise-row {
+    margin-top: auto;
     flex-shrink: 0;
   }
 
-  .deck__slider-value {
+  .deck__noise-label {
     font-family: var(--font-mono);
-    font-size: var(--font-size-code);
-    font-weight: 500;
-    width: 40px;
-    text-align: right;
-    flex-shrink: 0;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-bg-surface-dark);
   }
 
-  /* ── Right Column: Provenance ── */
+  /* ── RIGHT COLUMN: 300px ── */
 
   .deck__provenance {
     display: flex;
     flex-direction: column;
-    border-left: var(--stroke-structural) solid var(--color-border-heavy);
+    padding: 16px 12px;
+    height: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+    background: var(--color-bg-concrete);
+  }
+
+  .deck__prov-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
     background: var(--color-bg-surface-light);
+    border: 3px solid var(--color-border-heavy);
+    box-shadow: var(--shadow-brutalist);
+    overflow: hidden;
+    box-sizing: border-box;
   }
 
-  .deck__provenance-header {
-    padding: 16px;
-    border-bottom: var(--stroke-ui) solid var(--color-border-heavy);
+  .deck__prov-header {
+    height: 38px;
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    background: var(--color-bg-surface-dark);
+    flex-shrink: 0;
   }
 
-  .deck__section-title {
+  .deck__prov-title {
     font-family: var(--font-display);
-    font-size: var(--font-size-h2);
-    letter-spacing: var(--tracking-display);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--color-bg-surface-light);
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
   }
 
-  .deck__spec-card {
-    flex: 1;
-    overflow-y: auto;
-    padding: 0;
+  .deck__prov-specs {
+    flex-shrink: 0;
   }
 
   .deck__spec-row {
     display: flex;
-    flex-direction: column;
-    gap: 2px;
-    padding: 10px 16px;
-    border-bottom: var(--stroke-grid) solid var(--color-border-light);
+    align-items: center;
+    height: 24px;
+    padding: 0 8px;
+    border: 1px solid var(--color-border-heavy);
+    margin: 0 10px;
+  }
+
+  .deck__spec-row--even {
+    background: var(--color-bg-concrete);
+  }
+
+  .deck__spec-row--odd {
+    background: var(--color-bg-surface-light);
   }
 
   .deck__spec-key {
     font-family: var(--font-mono);
-    font-size: var(--font-size-label);
-    letter-spacing: var(--tracking-label);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: #888;
+    width: 90px;
+    flex-shrink: 0;
   }
 
   .deck__spec-val {
     font-family: var(--font-mono);
-    font-size: var(--font-size-body);
-    line-height: 1.4;
-    text-align: justify;
-  }
-
-  .deck__spec-val--small {
-    font-size: 11px;
-    line-height: 1.5;
-  }
-
-  .deck__spec-divider {
-    height: var(--stroke-ui);
-    background: var(--color-border-heavy);
-  }
-
-  .deck__status {
-    padding: 12px 16px;
-    border-top: var(--stroke-ui) solid var(--color-border-heavy);
-    font-family: var(--font-mono);
-    font-size: var(--font-size-label);
-    letter-spacing: var(--tracking-label);
-    text-transform: uppercase;
-    display: flex;
-    gap: 6px;
-  }
-
-  .deck__status-value {
-    color: var(--color-accent-industrial);
+    font-size: 9px;
     font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
-  /* ── Brutalist Atoms ── */
+  .deck__spec-val--hz {
+    color: var(--color-accent-industrial);
+  }
+
+  /* Research Abstract */
+  .deck__prov-abstract {
+    flex: 1 1 0;
+    min-height: 0;
+    margin: 10px;
+    padding: 8px 10px;
+    background: var(--color-bg-concrete);
+    border: 2px solid var(--color-border-heavy);
+    overflow-y: auto;
+  }
+
+  .deck__abstract-heading {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  .deck__abstract-body {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    line-height: 1.45;
+    margin: 0 0 8px;
+  }
+
+  .deck__abstract-citation {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    line-height: 1.4;
+    margin: 0;
+    color: #737373;
+  }
+
+  /* Biometric button */
+  .btn-biometric {
+    appearance: none;
+    height: 38px;
+    margin: 10px;
+    margin-top: 0;
+    background: var(--color-bg-surface-dark);
+    border: 2px solid var(--color-border-heavy);
+    color: var(--color-bg-surface-light);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+
+  .btn-biometric:hover {
+    background: var(--color-accent-industrial);
+  }
+
+  /* ── Brutalist Button Atom ── */
 
   .btn-brutalist {
     appearance: none;
-    border: var(--stroke-ui) solid var(--color-border-heavy);
+    border: 3px solid var(--color-border-heavy);
     background: var(--color-bg-surface-light);
     color: var(--color-bg-surface-dark);
     font-family: var(--font-display);
-    font-size: var(--font-size-body);
+    font-size: 16px;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: var(--tracking-display);
-    padding: 10px 20px;
+    letter-spacing: -0.02em;
+    padding: 12px 16px;
     cursor: pointer;
     box-shadow: var(--shadow-brutalist);
     width: 100%;
@@ -433,175 +776,673 @@ import TitleBar from "../components/ui/TitleBar.astro";
     color: var(--color-bg-surface-light);
   }
 
-  .btn-brutalist:active {
-    box-shadow: none;
+  .btn-brutalist--sm {
+    font-size: 12px;
+    padding: 8px 16px;
+    width: auto;
+  }
+
+  .btn-rec--recording {
+    box-shadow: none !important;
     transform: translate(6px, 6px);
-    background: var(--color-accent-industrial);
+    background: var(--color-accent-industrial) !important;
+    color: var(--color-bg-surface-light) !important;
+  }
+
+  /* ── Preset list items ── */
+
+  .preset-category {
+    padding: 6px 4px 4px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: #737373;
+    text-transform: uppercase;
+  }
+
+  .preset-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    height: 34px;
+    padding: 0 8px;
+    margin-bottom: 6px;
+    border: 1px solid var(--color-border-heavy);
+    background: var(--color-bg-surface-light);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+    color: var(--color-bg-surface-dark);
+    appearance: none;
+  }
+
+  .preset-item:hover {
+    background: var(--color-bg-surface-dark);
     color: var(--color-bg-surface-light);
   }
 
-  /* ── Brutalist Slider ── */
+  .preset-item--active {
+    background: var(--color-bg-surface-dark) !important;
+    color: var(--color-accent-industrial) !important;
+    border-width: 2px;
+  }
 
-  .slider-brutalist {
+  .preset-item--active .preset-item__hz {
+    color: var(--color-bg-surface-light) !important;
+  }
+
+  .preset-item__hz {
+    color: #737373;
+    font-weight: 400;
+  }
+
+  /* ══════════════════════════════════════════════════════════
+     THEATER MODE OVERLAY (SCREEN 2)
+     Pure black background, red visualizer, ✕ button
+   ══════════════════════════════════════════════════════════ */
+
+  .theater-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: #000000;
+    z-index: 10000;
+    overflow: hidden;
+  }
+
+  .theater-overlay--active {
+    display: block;
+  }
+
+  .theater-canvas-container {
+    width: 100%;
+    height: 100%;
+  }
+
+  .btn-theater-exit {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    z-index: 10001;
+    width: 50px;
+    height: 50px;
+    background: #FFFFFF;
+    border: 3px solid #000000;
+    color: #000000;
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .btn-theater-exit:hover {
+    background: var(--color-accent-industrial);
+    color: #FFFFFF;
+  }
+
+  .theater-hud {
+    position: absolute;
+    bottom: 24px;
+    left: 24px;
+    z-index: 10001;
+    display: flex;
+    gap: 16px;
+    align-items: baseline;
+    font-family: var(--font-mono);
+  }
+
+  .theater-hud__label {
+    font-size: 11px;
+    color: #666;
+    letter-spacing: 0.08em;
+  }
+
+  .theater-hud__hz {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--color-accent-industrial);
+  }
+
+  /* ══════════════════════════════════════════════════════════
+     MODALS (SCREENS 4 & 6)
+   ══════════════════════════════════════════════════════════ */
+
+  .modal-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-backdrop--active {
+    display: flex;
+  }
+
+  .modal-box {
+    background: var(--color-bg-surface-light);
+    border: 4px solid var(--color-border-heavy);
+    box-shadow: var(--shadow-brutalist);
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+  }
+
+  .modal-box--routing {
+    width: 760px;
+    max-width: 90vw;
+    height: 520px;
+  }
+
+  .modal-box--bio {
+    width: 500px;
+    max-width: 90vw;
+    height: 380px;
+  }
+
+  .modal-header {
+    height: 40px;
+    background: var(--color-bg-surface-dark);
+    color: var(--color-bg-surface-light);
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+
+  .modal-close-btn {
     appearance: none;
-    -webkit-appearance: none;
-    flex: 1;
-    height: 4px;
-    background: var(--color-border-heavy);
-    outline: none;
+    background: transparent;
+    border: none;
+    color: var(--color-bg-surface-light);
+    font-family: var(--font-mono);
+    font-size: 14px;
     cursor: pointer;
   }
 
-  .slider-brutalist::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 8px;
-    height: 24px;
-    background: var(--color-bg-surface-dark);
-    border: none;
-    cursor: grab;
+  .modal-close-btn:hover {
+    color: var(--color-accent-industrial);
   }
 
-  .slider-brutalist::-webkit-slider-thumb:active {
-    cursor: grabbing;
-    background: var(--color-accent-industrial);
+  .modal-body {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+  }
+
+  .modal-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  .modal-col {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .modal-subheading {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: #666;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .brutalist-select-box {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .brutalist-select-item {
+    border: 2px solid var(--color-border-heavy);
+    background: var(--color-bg-concrete);
+    padding: 8px 12px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .brutalist-select-item--active {
+    background: var(--color-bg-surface-dark);
+    color: var(--color-bg-surface-light);
+  }
+
+  .modal-spec-text {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    line-height: 1.8;
+    background: var(--color-bg-concrete);
+    border: 1px solid var(--color-border-heavy);
+    padding: 10px;
+  }
+
+  .brutalist-check-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .brutalist-checkbox {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+  }
+
+  .modal-bio-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    text-align: center;
+  }
+
+  .bio-status-badge {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--color-accent-industrial);
+  }
+
+  .bio-oscilloscope {
+    width: 100%;
+    height: 120px;
+    background: var(--color-bg-surface-dark);
+    border: 2px solid var(--color-border-heavy);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .bio-wave-svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .bio-info-box {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    line-height: 1.6;
+    color: #444;
+  }
+
+  .modal-footer {
+    padding: 12px 20px;
+    border-top: 2px solid var(--color-border-heavy);
+    background: var(--color-bg-concrete);
+    display: flex;
+    justify-content: flex-end;
   }
 </style>
 
 <script>
-  // ── Preset List Hydration ──
+  import { ChladniCanvas } from "../components/logic/ChladniCanvas";
+
+  // ═══════════════════════════════════════════════════════════
+  // STATE & VISUALIZER ENGINE
+  // ═══════════════════════════════════════════════════════════
+
+  let activePreset: any = null;
+  let visualizer: ChladniCanvas | null = null;
+  let theaterVisualizer: ChladniCanvas | null = null;
+  let isRecording = false;
+  let recSeconds = 0;
+  let recInterval: any = null;
+
+  // Initialize WebGL Visualizer
+  function initVisualizer() {
+    const container = document.getElementById("webgl-canvas");
+    if (!container) return;
+
+    visualizer = new ChladniCanvas();
+    visualizer.mount(container);
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // PRESET LIST HYDRATION
+  // ═══════════════════════════════════════════════════════════
+
   async function hydratePresets() {
-    const response = await fetch("/data/presets.json");
-    const presets = await response.json();
-    const listEl = document.getElementById("preset-list");
-    if (!listEl) return;
+    try {
+      const response = await fetch("/data/presets.json");
+      const presets = await response.json();
+      const listEl = document.getElementById("preset-list");
+      if (!listEl) return;
 
-    // Group by era
-    const groups: Record<string, typeof presets> = {};
-    for (const p of presets) {
-      const era = p.era || "Unknown";
-      if (!groups[era]) groups[era] = [];
-      groups[era].push(p);
-    }
-
-    listEl.innerHTML = "";
-
-    for (const [era, items] of Object.entries(groups)) {
-      // Era header
-      const header = document.createElement("div");
-      header.className = "preset-era-header";
-      header.textContent = era.toUpperCase();
-      header.style.cssText = `
-        padding: 8px 16px 4px;
-        font-family: var(--font-mono);
-        font-size: var(--font-size-label);
-        letter-spacing: var(--tracking-label);
-        text-transform: uppercase;
-        color: #888;
-        border-bottom: 1px solid var(--color-border-light);
-      `;
-      listEl.appendChild(header);
-
-      for (const preset of items as any[]) {
-        const item = document.createElement("button");
-        item.className = "preset-item";
-        item.dataset.presetId = preset.id;
-        item.innerHTML = `
-          <span class="preset-item__id">[${preset.id.toUpperCase()}]</span>
-          <span class="preset-item__name">${preset.name}</span>
-        `;
-        item.style.cssText = `
-          display: flex;
-          gap: 8px;
-          align-items: baseline;
-          width: 100%;
-          padding: 8px 16px;
-          border: none;
-          border-bottom: 1px solid var(--color-border-light);
-          background: transparent;
-          font-family: var(--font-mono);
-          font-size: 12px;
-          text-align: left;
-          cursor: pointer;
-          color: var(--color-bg-surface-dark);
-        `;
-
-        item.addEventListener("mouseenter", () => {
-          item.style.background = "var(--color-bg-surface-dark)";
-          item.style.color = "var(--color-bg-surface-light)";
-        });
-        item.addEventListener("mouseleave", () => {
-          item.style.background = "transparent";
-          item.style.color = "var(--color-bg-surface-dark)";
-        });
-
-        item.addEventListener("click", () => selectPreset(preset));
-        listEl.appendChild(item);
+      // Group by era
+      const groups: Record<string, any[]> = {};
+      for (const p of presets) {
+        const era = p.era || "Modern Clinical";
+        if (!groups[era]) groups[era] = [];
+        groups[era].push(p);
       }
+
+      listEl.innerHTML = "";
+
+      let firstItemEl: HTMLElement | null = null;
+      let firstPreset: any = null;
+
+      for (const [era, items] of Object.entries(groups)) {
+        const header = document.createElement("div");
+        header.className = "preset-category";
+        header.textContent = `--- [ ${era.toUpperCase()} ] ---`;
+        listEl.appendChild(header);
+
+        for (const preset of items) {
+          const item = document.createElement("button");
+          item.className = "preset-item";
+          item.dataset.presetId = preset.id;
+          item.innerHTML = `
+            <span>[${preset.id.toUpperCase()}] ${preset.name}</span>
+            <span class="preset-item__hz">${preset.target_hz} Hz</span>
+          `;
+          item.addEventListener("click", () => selectPreset(preset, item));
+          listEl.appendChild(item);
+
+          if (!firstPreset) {
+            firstPreset = preset;
+            firstItemEl = item;
+          }
+        }
+      }
+
+      // Auto-select first preset (or PRE-001)
+      if (firstPreset && firstItemEl) {
+        selectPreset(firstPreset, firstItemEl);
+      }
+    } catch (e) {
+      console.error("[Presets] Failed to load presets:", e);
     }
   }
 
-  function selectPreset(preset: any) {
-    // Update Hz readout
+  function selectPreset(preset: any, clickedEl: HTMLElement) {
+    activePreset = preset;
+
+    // Deselect previous
+    document.querySelectorAll(".preset-item--active").forEach(el => {
+      el.classList.remove("preset-item--active");
+    });
+    clickedEl.classList.add("preset-item--active");
+
+    // Hz readout
     const hzEl = document.getElementById("hz-readout");
     if (hzEl) hzEl.textContent = preset.target_hz.toFixed(1);
 
-    // Update sliders
+    const theaterHzEl = document.getElementById("theater-hz");
+    if (theaterHzEl) theaterHzEl.textContent = `${preset.target_hz.toFixed(1)} HZ`;
+
+    // Waveform label
+    const wfEl = document.getElementById("waveform-label");
+    if (wfEl) {
+      wfEl.textContent = `WAVEFORM: ${preset.waveform.toUpperCase()}${preset.waveform === "binaural" ? " SINE" : ""}`;
+    }
+
+    // Sliders
     const sliderN = document.getElementById("slider-n") as HTMLInputElement;
     const sliderM = document.getElementById("slider-m") as HTMLInputElement;
-    if (sliderN) { sliderN.value = preset.harmonic_n; }
-    if (sliderM) { sliderM.value = preset.harmonic_m; }
+    if (sliderN) sliderN.value = String(preset.harmonic_n);
+    if (sliderM) sliderM.value = String(preset.harmonic_m);
     const valN = document.getElementById("val-n");
     const valM = document.getElementById("val-m");
     if (valN) valN.textContent = preset.harmonic_n;
     if (valM) valM.textContent = preset.harmonic_m;
 
-    // Update provenance card
-    const fields: Record<string, string> = {
-      "spec-id": preset.id.toUpperCase(),
-      "spec-name": preset.name,
-      "spec-era": preset.era,
-      "spec-target": `${preset.target_hz} HZ`,
-      "spec-waveform": preset.waveform.toUpperCase(),
-      "spec-neuro": preset.neurological_target,
-      "spec-use": preset.therapeutic_use_case,
-      "spec-evidence": `${preset.evidence_level} (${preset.evidence_rating}/5)`,
-      "spec-citation": preset.citation,
-    };
+    // Update WebGL uniforms live
+    visualizer?.updateUniforms({
+      n: preset.harmonic_n,
+      m: preset.harmonic_m,
+    });
+    theaterVisualizer?.updateUniforms({
+      n: preset.harmonic_n,
+      m: preset.harmonic_m,
+    });
 
-    for (const [id, val] of Object.entries(fields)) {
+    // Noise label
+    const noiseEl = document.getElementById("noise-label");
+    if (noiseEl) {
+      const pct = Math.round((preset.noise_blend_ratio || 0.3) * 100);
+      const filled = Math.min(12, Math.max(0, Math.round(pct / 8.33)));
+      const empty = 12 - filled;
+      const noiseType = (preset.noise_masking_type || "brown").toUpperCase();
+      noiseEl.textContent = `NOISE BLEND: ${noiseType} NOISE // ${"█".repeat(filled)}${"░".repeat(empty)} ${pct}%`;
+    }
+
+    // Provenance spec card fields
+    const setField = (id: string, val: string) => {
       const el = document.getElementById(id);
       if (el) el.textContent = val;
-    }
+    };
 
-    // Update status
-    const statusEl = document.getElementById("status-text");
-    if (statusEl) statusEl.textContent = "ACTIVE";
+    setField("spec-header-id", preset.id.toUpperCase());
+    setField("spec-id", preset.id.toUpperCase());
+    setField("spec-name", preset.name);
+    setField("spec-era", preset.era);
+    setField("spec-target", `${preset.target_hz.toFixed(2)} Hz`);
+    setField("spec-chladni", `n=${preset.harmonic_n}, m=${preset.harmonic_m}`);
+    setField("spec-evidence", preset.evidence_level);
+
+    // Star rating
+    const stars = Math.round(preset.evidence_rating || 5);
+    setField("spec-rating", `[ ${"★".repeat(stars)}${"☆".repeat(Math.max(0, 5 - stars))} ]`);
+
+    // Abstract & Citation
+    setField(
+      "spec-abstract-body",
+      `${preset.therapeutic_use_case}\n\n${preset.neurological_target}`
+    );
+    setField("spec-citation", `CITATION: ${preset.citation}`);
   }
 
-  // ── Slider live-update ──
-  function wireSliders() {
-    const pairs = [
-      { slider: "slider-n", display: "val-n" },
-      { slider: "slider-m", display: "val-m" },
-    ];
+  // ═══════════════════════════════════════════════════════════
+  // VISUALIZER TOGGLE (CHLADNI PARTICLES <-> FARADAY FLUID)
+  // ═══════════════════════════════════════════════════════════
 
-    for (const { slider, display } of pairs) {
-      const el = document.getElementById(slider) as HTMLInputElement;
-      const valEl = document.getElementById(display);
-      el?.addEventListener("input", () => {
-        if (valEl) valEl.textContent = el.value;
-      });
-    }
+  function wireToggles() {
+    const btnParticles = document.getElementById("toggle-particles");
+    const btnFluid = document.getElementById("toggle-fluid");
 
-    const ampSlider = document.getElementById("slider-amp") as HTMLInputElement;
-    const ampVal = document.getElementById("val-amp");
-    ampSlider?.addEventListener("input", () => {
-      if (ampVal) ampVal.textContent = (parseInt(ampSlider.value) / 100).toFixed(2);
+    btnParticles?.addEventListener("click", () => {
+      visualizer?.setMode("particles");
+      theaterVisualizer?.setMode("particles");
+
+      btnParticles.textContent = "[X] CHLADNI PARTICLES";
+      btnParticles.classList.add("deck__toggle--active");
+
+      if (btnFluid) {
+        btnFluid.textContent = "[ ] FARADAY FLUID";
+        btnFluid.classList.remove("deck__toggle--active");
+      }
+    });
+
+    btnFluid?.addEventListener("click", () => {
+      visualizer?.setMode("fluid");
+      theaterVisualizer?.setMode("fluid");
+
+      btnFluid.textContent = "[X] FARADAY FLUID";
+      btnFluid.classList.add("deck__toggle--active");
+
+      if (btnParticles) {
+        btnParticles.textContent = "[ ] CHLADNI PARTICLES";
+        btnParticles.classList.remove("deck__toggle--active");
+      }
     });
   }
 
-  // Boot
+  // ═══════════════════════════════════════════════════════════
+  // SLIDER LIVE-UPDATE
+  // ═══════════════════════════════════════════════════════════
+
+  function wireSliders() {
+    const sliderN = document.getElementById("slider-n") as HTMLInputElement;
+    const sliderM = document.getElementById("slider-m") as HTMLInputElement;
+    const valN = document.getElementById("val-n");
+    const valM = document.getElementById("val-m");
+
+    sliderN?.addEventListener("input", () => {
+      const n = parseInt(sliderN.value, 10);
+      if (valN) valN.textContent = String(n);
+      visualizer?.updateUniforms({ n });
+      theaterVisualizer?.updateUniforms({ n });
+    });
+
+    sliderM?.addEventListener("input", () => {
+      const m = parseInt(sliderM.value, 10);
+      if (valM) valM.textContent = String(m);
+      visualizer?.updateUniforms({ m });
+      theaterVisualizer?.updateUniforms({ m });
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // RECORDING STATE (SCREEN 5)
+  // ═══════════════════════════════════════════════════════════
+
+  function wireRecording() {
+    const btnRec = document.getElementById("btn-rec");
+    const canvasCard = document.getElementById("canvas-card");
+    const badge = document.getElementById("rec-badge");
+    const timecode = document.getElementById("rec-timecode");
+
+    btnRec?.addEventListener("click", () => {
+      isRecording = !isRecording;
+
+      if (isRecording) {
+        btnRec.textContent = "[ RECORDING... ]";
+        btnRec.classList.add("btn-rec--recording");
+        canvasCard?.classList.add("deck__canvas-wrap--recording");
+        badge?.classList.add("deck__rec-badge--active");
+
+        recSeconds = 0;
+        recInterval = setInterval(() => {
+          recSeconds++;
+          const mins = String(Math.floor(recSeconds / 60)).padStart(2, "0");
+          const secs = String(recSeconds % 60).padStart(2, "0");
+          const frames = String((recSeconds * 30) % 30).padStart(2, "0");
+          if (timecode) {
+            timecode.textContent = `REC 00:${mins}:${secs}:${frames}`;
+          }
+        }, 1000);
+      } else {
+        btnRec.textContent = "[ REC SESSION ]";
+        btnRec.classList.remove("btn-rec--recording");
+        canvasCard?.classList.remove("deck__canvas-wrap--recording");
+        badge?.classList.remove("deck__rec-badge--active");
+
+        if (recInterval) {
+          clearInterval(recInterval);
+          recInterval = null;
+        }
+      }
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // THEATER MODE (SCREEN 2)
+  // ═══════════════════════════════════════════════════════════
+
+  function wireTheaterMode() {
+    const btnTheater = document.getElementById("btn-theater");
+    const theaterOverlay = document.getElementById("theater-overlay");
+    const btnExit = document.getElementById("btn-theater-exit");
+    const theaterCanvasContainer = document.getElementById("theater-canvas");
+
+    btnTheater?.addEventListener("click", () => {
+      theaterOverlay?.classList.add("theater-overlay--active");
+
+      // Mount theater visualizer if not created yet
+      if (!theaterVisualizer && theaterCanvasContainer) {
+        theaterVisualizer = new ChladniCanvas();
+        theaterVisualizer.mount(theaterCanvasContainer);
+        theaterVisualizer.setClearColor(0x000000, 1.0);
+      }
+
+      if (theaterVisualizer && visualizer) {
+        theaterVisualizer.setMode(visualizer.getMode());
+        if (activePreset) {
+          theaterVisualizer.updateUniforms({
+            n: activePreset.harmonic_n,
+            m: activePreset.harmonic_m,
+          });
+        }
+        theaterVisualizer.resume();
+      }
+    });
+
+    btnExit?.addEventListener("click", () => {
+      theaterOverlay?.classList.remove("theater-overlay--active");
+      theaterVisualizer?.pause();
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // MODALS (AUDIO ROUTING SCREEN 4 & BIOMETRIC SYNC SCREEN 6)
+  // ═══════════════════════════════════════════════════════════
+
+  function wireModals() {
+    // Route Audio
+    const btnRoute = document.getElementById("btn-route-audio");
+    const modalRoute = document.getElementById("modal-routing");
+    const btnCloseRoute = document.getElementById("btn-close-routing");
+    const btnApplyRoute = document.getElementById("btn-apply-routing");
+
+    btnRoute?.addEventListener("click", () => {
+      modalRoute?.classList.add("modal-backdrop--active");
+    });
+
+    [btnCloseRoute, btnApplyRoute].forEach(el => {
+      el?.addEventListener("click", () => {
+        modalRoute?.classList.remove("modal-backdrop--active");
+      });
+    });
+
+    // Biometric Sync
+    const btnBio = document.getElementById("btn-biometric");
+    const modalBio = document.getElementById("modal-biometric");
+    const btnCloseBio = document.getElementById("btn-close-bio");
+    const btnDoneBio = document.getElementById("btn-done-bio");
+
+    btnBio?.addEventListener("click", () => {
+      modalBio?.classList.add("modal-backdrop--active");
+    });
+
+    [btnCloseBio, btnDoneBio].forEach(el => {
+      el?.addEventListener("click", () => {
+        modalBio?.classList.remove("modal-backdrop--active");
+      });
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // BOOT
+  // ═══════════════════════════════════════════════════════════
+
+  initVisualizer();
   hydratePresets();
+  wireToggles();
   wireSliders();
+  wireRecording();
+  wireTheaterMode();
+  wireModals();
 </script>
