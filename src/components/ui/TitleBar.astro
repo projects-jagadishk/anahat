@@ -21,18 +21,13 @@
 
   <div class="titlebar__flex" data-tauri-drag-region></div>
 
-  <!-- Audio Input Source Switcher in titlebar -->
-  <button class="titlebar__route-btn" id="btn-input-source" title="Toggle Audio Input Source: Internal DSP vs Live Mic Ingest">
-    <span id="titlebar-source-label">SRC: [ DSP ]</span>
-  </button>
-
   <!-- Info button in titlebar -->
-  <button class="titlebar__route-btn titlebar__info-btn" id="btn-info" title="System Specification & Clinical Disclaimers">
+  <button class="titlebar__route-btn titlebar__info-btn" id="btn-info" title="System Specification & Clinical Disclaimers" data-tooltip="System architecture, clinical protocol, and medical safety disclaimers">
     [ INFO // ? ]
   </button>
 
   <!-- Route Audio button in titlebar -->
-  <button class="titlebar__route-btn" id="btn-route-audio" title="Hardware Audio Routing Matrix & DAC Selection">
+  <button class="titlebar__route-btn" id="btn-route-audio" title="Hardware Audio Routing Matrix & DAC Selection" data-tooltip="Hardware Audio Patch Bay: select external USB DACs, headphones, or soundcards (Hotkey: O)">
     <span id="titlebar-route-label">[ ROUTE AUDIO ]</span>
   </button>
 

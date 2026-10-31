@@ -7,7 +7,6 @@
  */
 import BaseLayout from "../layouts/BaseLayout.astro";
 import TitleBar from "../components/ui/TitleBar.astro";
-import SpriteMetronome from "../components/ui/SpriteMetronome.astro";
 import presetsData from "../data/presets.json";
 
 const ERA_DISPLAY_TITLES: Record<string, string> = {
@@ -67,6 +66,7 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
                   class={`preset-item ${isDefault ? "preset-item--active" : ""}`}
                   data-preset-id={preset.id}
                   data-preset-json={JSON.stringify(preset)}
+                  data-tooltip={`Load ${preset.displayName || preset.name} (${preset.code || preset.id}) at ${Number(preset.target_hz).toFixed(1)} Hz into synthesis engine`}
                   type="button"
                 >
                   <div class="preset-item__meta">
@@ -85,15 +85,15 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
       <!-- Action buttons & Chunky REC button at bottom -->
       <div class="deck__presets-footer">
         <div class="deck__preset-mgmt-row">
-          <button class="btn-preset-mgmt" id="btn-new-preset" type="button" title="Create Custom Neuroacoustic Preset (Hotkey: P)">
+          <button class="btn-preset-mgmt" id="btn-new-preset" type="button" data-tooltip="Open Specification Builder to create a custom neuroacoustic preset (Hotkey: P)">
             [ + NEW PRESET ]
           </button>
-          <button class="btn-preset-mgmt" id="btn-import-preset" type="button" title="Import .anahat Profile">
+          <button class="btn-preset-mgmt" id="btn-import-preset" type="button" data-tooltip="Import a saved .anahat preset or neuroacoustic specification JSON profile">
             [ IMPORT ]
           </button>
           <input type="file" id="input-import-preset" accept=".anahat,.json" style="display: none;" />
         </div>
-        <button class="btn-brutalist btn-rec" id="btn-rec" type="button">
+        <button class="btn-brutalist btn-rec" id="btn-rec" type="button" data-tooltip="Toggle audio recording and export lossless 48kHz WAV session audio to disk (Hotkey: R)">
           [ REC SESSION ]
         </button>
       </div>
@@ -124,60 +124,73 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
           <span class="burst-banner__text">INTERVAL CHIME // 528 HZ SINE BURST</span>
         </div>
 
-        <!-- 1-Bit Sprite Container Molecule (Docked on Canvas, toggleable) -->
-        <div class="deck__sprite-dock" id="sprite-dock">
-          <SpriteMetronome id="metronome-cat" />
-        </div>
-
-        <!-- Dark toolbar inside canvas -->
+        <!-- Studio Cyberdeck 2-Row Toolbar directly above visualizer canvas -->
         <div class="deck__canvas-bar">
-          <div class="deck__canvas-toggles">
-            <!-- Visualizer Navigator -->
-            <div class="engine-navigator" id="engine-navigator">
-              <button class="engine-nav-arrow" id="btn-engine-prev" type="button" title="Previous Visualizer Engine (Hotkey: [)">◀</button>
-              <button class="engine-selector-btn" id="btn-engine-menu" type="button" title="Open Visualizer Engine Matrix (Hotkey: M or 1-9)">
+          <!-- Row 1: Primary Engine Navigation & Ingest Source & Fullscreen Theater -->
+          <div class="canvas-bar__row canvas-bar__row--primary">
+            <!-- 1. Precision Engine Navigator (Strictly locked 184px width, ZERO layout shift) -->
+            <div class="engine-navigator" id="engine-navigator" data-tooltip="Visualizer Engine Matrix (Hotkeys: [ / ] or 1-9 to cycle, M to open picker)">
+              <button class="engine-nav-arrow" id="btn-engine-prev" type="button" data-tooltip="Switch to previous visualizer engine (Hotkey: [)">◀</button>
+              <button class="engine-selector-btn" id="btn-engine-menu" type="button" data-tooltip="Open visualizer engine picker matrix (Hotkey: M)">
                 <span class="engine-selector__num" id="engine-display-num">01</span>
                 <span class="engine-selector__name" id="engine-display-name">CHLADNI NODES</span>
-                <span class="engine-selector__cat" id="engine-display-cat">[PHYSICS]</span>
                 <span class="engine-selector__icon">▾</span>
               </button>
-              <button class="engine-nav-arrow" id="btn-engine-next" type="button" title="Next Visualizer Engine (Hotkey: ])">▶</button>
+              <button class="engine-nav-arrow" id="btn-engine-next" type="button" data-tooltip="Switch to next visualizer engine (Hotkey: ])">▶</button>
             </div>
 
-            <span class="deck__toggle-sep">|</span>
+            <span class="deck__toolbar-sep">|</span>
 
-            <button class="deck__toggle deck__toggle--active" id="toggle-companion" type="button" title="Toggle 1-Bit Metronome Companion">
-              [X] COMPANION
-            </button>
-
-            <span class="deck__toggle-sep">|</span>
-
-            <!-- Audio Ingest Source Monitor & Meter -->
-            <div class="deck__source-pill" id="deck-source-pill">
-              <button class="deck__toggle" id="btn-canvas-source" type="button" title="Switch Input Source: Internal Algorithmic DSP vs External Microphone">
-                <span class="source-dot" id="canvas-source-dot">●</span>
-                <span id="canvas-source-label">SRC: DSP</span>
-              </button>
-              <div class="deck__mic-meter" id="deck-mic-meter" style="display: none;">
-                <span class="meter-bar" id="mic-meter-bar">[░░░░░░░░░░]</span>
-                <button class="btn-gain-step" id="btn-gain-step" type="button" title="Cycle Mic Sensitivity Gain">1.4X</button>
+            <!-- 2. Intuitive Audio Ingest Mode: Carrier Tones vs Live Microphone -->
+            <div class="deck__source-wrap" data-tooltip="Audio Source: Generate neuroacoustic carrier tones or capture live room microphone audio (Hotkey: I)">
+              <span class="deck__toolbar-tag">AUDIO:</span>
+              <div class="deck__source-segmented" id="deck-source-segmented">
+                <button class="source-seg-btn source-seg-btn--active" id="btn-src-dsp" type="button" data-tooltip="Synthesize internal neuroacoustic carrier tones">∿ TONES</button>
+                <button class="source-seg-btn" id="btn-src-mic" type="button" data-tooltip="Capture external live microphone / room acoustics">🎙 MIC</button>
               </div>
             </div>
 
-            <span class="deck__toggle-sep">|</span>
+            <div class="canvas-bar__spacer"></div>
 
-            <!-- Visualizer Style Tuning (Palette & Density Deck) -->
-            <button class="deck__toggle" id="btn-palette-toggle" type="button" title="Cycle Visualizer Color Palette (Hotkey: C)">
-              <span id="canvas-palette-label">PAL: [ PASTEL ]</span>
-            </button>
-            <button class="deck__toggle" id="btn-density-toggle" type="button" title="Cycle Geometry Density (Hotkey: D)">
-              <span id="canvas-density-label">DET: [ HIGH ]</span>
+            <!-- 3. Theater Fullscreen Projection (Always prominently visible in top-right) -->
+            <button class="btn-theater" id="btn-theater" type="button" data-tooltip="Launch distraction-free Fullscreen Theater projection (Hotkey: T or Esc to exit)">
+              [ ⛶ FULLSCREEN THEATER ]
             </button>
           </div>
 
-          <button class="btn-theater" id="btn-theater" type="button">
-            [ THEATER ⤢ ]
-          </button>
+          <!-- Row 2: Visualizer Tuning (Scale, Palette, Detail) & Canvas View Mode -->
+          <div class="canvas-bar__row canvas-bar__row--secondary">
+            <div class="canvas-bar__row-group">
+              <!-- Scale Stepper Control (0.5X - 3.0X) -->
+              <div class="deck__scale-widget" data-tooltip="Adjust visualizer amplitude scale and particle deflection sensitivity">
+                <span class="deck__toolbar-tag">SCALE:</span>
+                <button class="scale-step-btn" id="btn-scale-down" type="button" data-tooltip="Decrease visualizer amplitude scale">−</button>
+                <span class="scale-readout" id="scale-readout">1.4X</span>
+                <button class="scale-step-btn" id="btn-scale-up" type="button" data-tooltip="Increase visualizer amplitude scale">+</button>
+              </div>
+
+              <span class="deck__toolbar-sep">|</span>
+
+              <!-- Direct Visualizer Palette Cycle Button -->
+              <button class="deck__widget-btn" id="btn-palette-cycle" type="button" data-tooltip="Cycle through harmonic color palettes (Hotkey: C)">
+                <span class="style-widget__swatch" id="style-swatch-dot">●</span>
+                <span id="palette-btn-label">PAL: PASTEL</span>
+              </button>
+
+              <!-- Direct Visualizer Detail / Density Cycle Button -->
+              <button class="deck__widget-btn" id="btn-detail-cycle" type="button" data-tooltip="Cycle mesh resolution and particle density: Low, Medium, High (Hotkey: D)">
+                <span id="detail-btn-label">DET: HIGH</span>
+              </button>
+            </div>
+
+            <div class="canvas-bar__spacer"></div>
+
+            <!-- Intuitive View / Canvas Expand Toggle -->
+            <button class="deck__widget-btn" id="btn-toggle-canvas-expand" type="button" data-tooltip="Toggle expanded canvas mode to hide or restore bottom synthesis controls (Hotkey: Z)">
+              <span class="deck__toolbar-tag">VIEW:</span>
+              <span id="expand-btn-label">[ ⤢ EXPAND CANVAS ]</span>
+            </button>
+          </div>
         </div>
 
         <!-- Canvas render area with coordinate grid background -->
@@ -186,108 +199,128 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
         </div>
       </div>
 
-      <!-- Bottom Control Deck (Fixed height, ALWAYS 100% visible, ZERO layout shifts) -->
-      <div class="deck__controls">
-        <!-- Hz Display — Extreme Scale Contrast (Rock-solid static display) -->
-        <div class="deck__hz-block">
-          <span class="deck__hz-value" id="hz-readout">{Number(initialPreset.target_hz).toFixed(1)}</span>
-          <div class="deck__hz-meta">
-            <span class="deck__hz-label">HZ // MASTER RESONANCE</span>
-            <span class="deck__hz-waveform" id="waveform-label">
-              WAVEFORM: {(initialPreset.waveform || "sine").toUpperCase()} SINE
-            </span>
+      <!-- Bottom Control Deck (Adaptive height: full synthesis controls in DSP mode, compact telemetry in Mic/Maximized mode) -->
+      <div class="deck__controls" id="bottom-controls-deck">
+        <!-- 1. Full Neuroacoustic Synthesis Controls -->
+        <div class="deck__synthesis-controls" id="deck-synthesis-wrap">
+          <!-- Hz Display — Extreme Scale Contrast (Rock-solid static display) -->
+          <div class="deck__hz-block">
+            <span class="deck__hz-value" id="hz-readout">{Number(initialPreset.target_hz).toFixed(1)}</span>
+            <div class="deck__hz-meta">
+              <span class="deck__hz-label">HZ // MASTER RESONANCE</span>
+              <span class="deck__hz-waveform" id="waveform-label">
+                WAVEFORM: {(initialPreset.waveform || "sine").toUpperCase()} SINE
+              </span>
+            </div>
           </div>
-        </div>
 
-        <!-- Harmonic Sliders row -->
-        <div class="deck__slider-row">
-          <div class="deck__slider-box">
-            <label class="deck__slider-label" for="slider-n">
-              HARMONIC N: <span id="val-n">{initialPreset.harmonic_n}</span>
-            </label>
+          <!-- Harmonic Sliders row -->
+          <div class="deck__slider-row">
+            <div class="deck__slider-box">
+              <label class="deck__slider-label" for="slider-n">
+                HARMONIC N: <span id="val-n">{initialPreset.harmonic_n}</span>
+              </label>
+              <div class="deck__slider-track-wrap">
+                <input
+                  type="range"
+                  min="1"
+                  max="10"
+                  value={initialPreset.harmonic_n}
+                  class="slider-brutalist"
+                  id="slider-n"
+                  data-tooltip="Adjust harmonic modal parameter N (Radial symmetry modes 1 to 10)"
+                />
+              </div>
+            </div>
+            <div class="deck__slider-box">
+              <label class="deck__slider-label" for="slider-m">
+                HARMONIC M: <span id="val-m">{initialPreset.harmonic_m}</span>
+              </label>
+              <div class="deck__slider-track-wrap">
+                <input
+                  type="range"
+                  min="1"
+                  max="10"
+                  value={initialPreset.harmonic_m}
+                  class="slider-brutalist"
+                  id="slider-m"
+                  data-tooltip="Adjust harmonic modal parameter M (Concentric nodal circle modes 1 to 10)"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- V1.5 Meditation Controls: Cadence Dropdown & Timebox Selector -->
+          <div class="deck__meditation-row">
+            <!-- Cadence Dropdown (Atom) -->
+            <div class="deck__cadence-box">
+              <label class="deck__med-label" for="select-cadence">BREATH_SYNC</label>
+              <div class="select-brutalist-wrap">
+                <select class="select-brutalist" id="select-cadence" data-tooltip="Select meditation breath synchronizer cadence: Box (4-4-4-4), 4-7-8 Relax, Coherent (6-sec), or Off">
+                  <option value="box">BREATH_SYNC // [ BOX ]</option>
+                  <option value="478">BREATH_SYNC // [ 4-7-8 ]</option>
+                  <option value="coherent">BREATH_SYNC // [ COHERENT ]</option>
+                  <option value="off">BREATH_SYNC // [ OFF ]</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Timebox Selector (Atom) -->
+            <div class="deck__timebox-box">
+              <span class="deck__med-label">TIMEBOX</span>
+              <div class="deck__timebox-toggles" id="timebox-toggles">
+                <button class="timebox-btn timebox-btn--active" data-mins="10" type="button" data-tooltip="Set meditation session length to 10 minutes">[ 10M ]</button>
+                <button class="timebox-btn" data-mins="20" type="button" data-tooltip="Set meditation session length to 20 minutes">[ 20M ]</button>
+                <button class="timebox-btn" data-mins="60" type="button" data-tooltip="Set meditation session length to 60 minutes">[ 60M ]</button>
+                <button class="timebox-btn" data-mins="infinity" type="button" data-tooltip="Continuous meditation session without automatic timebox limit">[ ∞ ]</button>
+              </div>
+            </div>
+
+            <!-- Session Takeover Trigger Button -->
+            <button class="btn-session" id="btn-session" type="button" data-tooltip="Start or pause guided breath and neuroacoustic meditation session (Hotkey: Space)">
+              [ START SESSION ⏵ ]
+            </button>
+          </div>
+
+          <!-- Noise Blend Interactive Control Deck -->
+          <div class="deck__noise-deck">
+            <div class="deck__noise-header">
+              <span class="deck__noise-label" id="noise-label">
+                NOISE BLEND: {(initialPreset.noise_masking_type || "brown").toUpperCase()} // ████████░░░░ {Math.round((initialPreset.noise_blend_ratio || 0.25) * 100)}%
+              </span>
+              <div class="deck__noise-types" id="noise-types">
+                <button class="noise-type-btn noise-type-btn--active" data-noise="brown" type="button" data-tooltip="Select Brown Noise (Deep Brownian spectral density 1/f²)">BROWN</button>
+                <button class="noise-type-btn" data-noise="pink" type="button" data-tooltip="Select Pink Noise (Balanced 1/f noise floor for acoustic focus)">PINK</button>
+                <button class="noise-type-btn" data-noise="white" type="button" data-tooltip="Select White Noise (Uniform equal-energy spectral distribution)">WHITE</button>
+                <button class="noise-type-btn" data-noise="none" type="button" data-tooltip="Mute acoustic masking noise floor">MUTE</button>
+              </div>
+            </div>
             <div class="deck__slider-track-wrap">
               <input
                 type="range"
-                min="1"
-                max="10"
-                value={initialPreset.harmonic_n}
-                class="slider-brutalist"
-                id="slider-n"
-              />
-            </div>
-          </div>
-          <div class="deck__slider-box">
-            <label class="deck__slider-label" for="slider-m">
-              HARMONIC M: <span id="val-m">{initialPreset.harmonic_m}</span>
-            </label>
-            <div class="deck__slider-track-wrap">
-              <input
-                type="range"
-                min="1"
-                max="10"
-                value={initialPreset.harmonic_m}
-                class="slider-brutalist"
-                id="slider-m"
+                min="0"
+                max="100"
+                value={Math.round((initialPreset.noise_blend_ratio || 0.25) * 100)}
+                class="slider-brutalist slider-brutalist--noise"
+                id="slider-noise"
+                data-tooltip="Adjust background masking noise blend ratio (0% silent to 100% full mix)"
               />
             </div>
           </div>
         </div>
 
-        <!-- V1.5 Meditation Controls: Cadence Dropdown & Timebox Selector -->
-        <div class="deck__meditation-row">
-          <!-- Cadence Dropdown (Atom) -->
-          <div class="deck__cadence-box">
-            <label class="deck__med-label" for="select-cadence">BREATH_SYNC</label>
-            <div class="select-brutalist-wrap">
-              <select class="select-brutalist" id="select-cadence">
-                <option value="box">BREATH_SYNC // [ BOX ]</option>
-                <option value="478">BREATH_SYNC // [ 4-7-8 ]</option>
-                <option value="coherent">BREATH_SYNC // [ COHERENT ]</option>
-                <option value="off">BREATH_SYNC // [ OFF ]</option>
-              </select>
-            </div>
+        <!-- 2. Compact Ingest & Visualizer Telemetry Strip (Engaged during mic ingest or big visualizer mode) -->
+        <div class="deck__telemetry-bar" id="deck-telemetry-strip" style="display: none;">
+          <div class="telemetry-bar__left">
+            <span class="telemetry-badge" id="telemetry-mode-badge">SRC: LIVE MIC INGEST</span>
+            <span class="telemetry-sep">/</span>
+            <span class="telemetry-meter" id="telemetry-meter-bar">LEVEL: [░░░░░░░░░░]</span>
+            <span class="telemetry-sep">/</span>
+            <span class="telemetry-text" id="telemetry-gain-text">GAIN: 1.4X</span>
           </div>
-
-          <!-- Timebox Selector (Atom) -->
-          <div class="deck__timebox-box">
-            <span class="deck__med-label">TIMEBOX</span>
-            <div class="deck__timebox-toggles" id="timebox-toggles">
-              <button class="timebox-btn timebox-btn--active" data-mins="10" type="button">[ 10M ]</button>
-              <button class="timebox-btn" data-mins="20" type="button">[ 20M ]</button>
-              <button class="timebox-btn" data-mins="60" type="button">[ 60M ]</button>
-              <button class="timebox-btn" data-mins="infinity" type="button">[ ∞ ]</button>
-            </div>
-          </div>
-
-          <!-- Session Takeover Trigger Button -->
-          <button class="btn-session" id="btn-session" type="button">
-            [ START SESSION ⏵ ]
-          </button>
-        </div>
-
-        <!-- Noise Blend Interactive Control Deck -->
-        <div class="deck__noise-deck">
-          <div class="deck__noise-header">
-            <span class="deck__noise-label" id="noise-label">
-              NOISE BLEND: {(initialPreset.noise_masking_type || "brown").toUpperCase()} // ████████░░░░ {Math.round((initialPreset.noise_blend_ratio || 0.25) * 100)}%
-            </span>
-            <div class="deck__noise-types" id="noise-types">
-              <button class="noise-type-btn noise-type-btn--active" data-noise="brown" type="button">BROWN</button>
-              <button class="noise-type-btn" data-noise="pink" type="button">PINK</button>
-              <button class="noise-type-btn" data-noise="white" type="button">WHITE</button>
-              <button class="noise-type-btn" data-noise="none" type="button">MUTE</button>
-            </div>
-          </div>
-          <div class="deck__slider-track-wrap">
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={Math.round((initialPreset.noise_blend_ratio || 0.25) * 100)}
-              class="slider-brutalist slider-brutalist--noise"
-              id="slider-noise"
-              title="Noise Blend Ratio"
-            />
+          <div class="telemetry-bar__right">
+            <span class="telemetry-note" id="telemetry-note">VISUALIZER ENGAGED // 60 FPS</span>
+            <button class="btn-restore-deck" id="btn-restore-deck" type="button" data-tooltip="Exit expanded canvas view and restore full synthesis deck controls">[ ⤓ SHOW CONTROLS ]</button>
           </div>
         </div>
       </div>
@@ -347,12 +380,12 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
         </div>
 
         <!-- Biometric Sync V2 button -->
-        <button class="btn-biometric" id="btn-biometric" type="button">
+        <button class="btn-biometric" id="btn-biometric" type="button" data-tooltip="Open Bluetooth LE Biometric Sync monitor and galvanic skin resonance telemetry">
           [ BIOMETRIC SYNC // V2 ]
         </button>
 
         <!-- Export Active Preset Button (.anahat Profile) -->
-        <button class="btn-export-profile" id="btn-export-profile" type="button" title="Export Active Neuroacoustic Specification as .anahat Profile">
+        <button class="btn-export-profile" id="btn-export-profile" type="button" data-tooltip="Export current neuroacoustic synthesis specifications as a portable .anahat JSON profile">
           [ EXPORT .ANAHAT PROFILE ]
         </button>
       </div>
@@ -363,21 +396,21 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
        SCREEN 2: THEATER MODE OVERLAY (1920x1080 CHROMELESS)
        ═══════════════════════════════════════════════════════════ -->
   <div class="theater-overlay" id="theater-overlay">
-    <button class="btn-theater-exit" id="btn-theater-exit" title="Exit Theater Mode">
+    <button class="btn-theater-exit" id="btn-theater-exit" data-tooltip="Exit Fullscreen Theater Mode (Hotkey: Esc or T)">
       ✕
     </button>
     <!-- Theater Visualizer Navigator (Centered floating HUD with matrix launcher) -->
     <div class="theater-toolbar" id="theater-toolbar">
-      <button class="theater-nav-arrow" id="theater-engine-prev" type="button" title="Previous Engine (Hotkey: [)">◀</button>
-      <button class="theater-selector-btn" id="theater-engine-menu" type="button" title="Open Engine Matrix (Hotkey: M or 1-9)">
+      <button class="theater-nav-arrow" id="theater-engine-prev" type="button" data-tooltip="Previous visualizer engine (Hotkey: [)">◀</button>
+      <button class="theater-selector-btn" id="theater-engine-menu" type="button" data-tooltip="Open engine matrix picker (Hotkey: M or 1-9)">
         <span class="theater-engine__num" id="theater-display-num">01</span>
         <span class="theater-engine__name" id="theater-display-name">CHLADNI NODES</span>
         <span class="theater-engine__cat" id="theater-display-cat">[PHYSICS]</span>
         <span class="theater-engine__icon">▾</span>
       </button>
-      <button class="theater-nav-arrow" id="theater-engine-next" type="button" title="Next Engine (Hotkey: ])">▶</button>
-      <button class="theater-nav-arrow" id="theater-btn-palette" type="button" title="Cycle Palette (Hotkey: C)" style="margin-left: 8px; width: auto; padding: 0 10px; font-size: 10px; font-weight: 700;">PAL: PASTEL</button>
-      <button class="theater-nav-arrow" id="theater-btn-detail" type="button" title="Cycle Detail (Hotkey: D)" style="width: auto; padding: 0 10px; font-size: 10px; font-weight: 700;">DET: HIGH</button>
+      <button class="theater-nav-arrow" id="theater-engine-next" type="button" data-tooltip="Next visualizer engine (Hotkey: ])">▶</button>
+      <button class="theater-nav-arrow" id="theater-btn-palette" type="button" data-tooltip="Cycle harmonic color palette (Hotkey: C)" style="margin-left: 8px; width: auto; padding: 0 10px; font-size: 10px; font-weight: 700;">PAL: PASTEL</button>
+      <button class="theater-nav-arrow" id="theater-btn-detail" type="button" data-tooltip="Cycle geometry density and resolution (Hotkey: D)" style="width: auto; padding: 0 10px; font-size: 10px; font-weight: 700;">DET: HIGH</button>
     </div>
     <div class="theater-canvas-container" id="theater-canvas"></div>
     <div class="theater-hud">
@@ -629,13 +662,6 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
             </div>
 
             <div class="info-card">
-              <div class="info-card__title">[ 1-BIT METRONOMIC COMPANION ]</div>
-              <div class="info-card__desc">
-                Lightweight 60 FPS pixel-art metronome (<code>TABBY_01</code>) providing intuitive cadence rhythm with zero layout shifts and complete visibility control.
-              </div>
-            </div>
-
-            <div class="info-card">
               <div class="info-card__title">[ 10-MODE VISUALIZER SUITE ]</div>
               <div class="info-card__desc">
                 High-definition mathematical engines: 01 Chladni Nodes, 02 Faraday Fluid, 03 Winamp Oscillo, 04 Polar Radar, 05 3D Waterfall, 06 Torus Vortex, 07 Voxel Matrix, 08 Harmonograph, 09 Warp Tunnel, and 10 Vector CRT with instant hotkey switching (1–0).
@@ -667,6 +693,20 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
               <div class="info-card__title">[ STYLE TUNING: PALETTES & DENSITY ]</div>
               <div class="info-card__desc">
                 5 distinct visual palettes (Pastel Spectrum, Monochrome Brutalist, Amber CRT 589nm, Green CRT P1, Cyber Blue) paired with stepped geometry density modes (Low, Mid, High, Ultra).
+              </div>
+            </div>
+
+            <div class="info-card">
+              <div class="info-card__title">[ MODULAR ZERO-SHIFT TOOLBAR ]</div>
+              <div class="info-card__desc">
+                Precision Brutalist widgets with locked dimensions to eliminate layout shifts: Engine Navigator (prev/next/matrix), Segmented Source Switcher [ DSP | MIC ], Style Tuning Popover HUD, Metronome Cat, and Canvas Maximize.
+              </div>
+            </div>
+
+            <div class="info-card">
+              <div class="info-card__title">[ ADAPTIVE CANVAS REAL ESTATE // MAX MODE ]</div>
+              <div class="info-card__desc">
+                Automatic canvas expansion in mic ingest mode (collapsing the 308px synthesis deck down to a sleek 42px telemetry bar). Full visualizer maximize can also be toggled anytime in internal DSP mode via [ ⤢ MAX ] or Hotkey [Z].
               </div>
             </div>
 
@@ -851,6 +891,9 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
       </div>
     </div>
   </div>
+
+  <!-- Brutalist Hover Tooltip (Delayed 3 seconds) -->
+  <div class="brutalist-tooltip" id="brutalist-tooltip" role="tooltip" aria-hidden="true"></div>
 </BaseLayout>
 
 <style>
@@ -862,7 +905,7 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
 
   .deck {
     display: grid;
-    grid-template-columns: 300px 600px 300px;
+    grid-template-columns: 300px 1fr 300px;
     height: calc(100vh - var(--titlebar-height));
     margin-top: var(--titlebar-height);
     background: var(--color-bg-concrete);
@@ -1105,176 +1148,441 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     font-size: 10px;
   }
 
+  /* ── Studio Cyberdeck Canvas Toolbar (2-Row Studio Layout) ── */
+
   .deck__canvas-bar {
+    display: flex;
+    flex-direction: column;
+    background: #101114;
+    border-bottom: 2px solid #000;
+    flex-shrink: 0;
+    z-index: 10;
+    white-space: nowrap !important;
+    box-sizing: border-box;
+  }
+
+  .canvas-bar__row {
     height: 30px;
     min-height: 30px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
     padding: 0 10px;
-    background: var(--color-bg-surface-dark);
-    flex-shrink: 0;
-    z-index: 5;
+    gap: 8px;
+    white-space: nowrap !important;
+    box-sizing: border-box;
   }
 
-  .deck__canvas-toggles {
+  .canvas-bar__row--primary {
+    border-bottom: 1px solid #1C1E24;
+  }
+
+  .canvas-bar__row--secondary {
+    background: #0B0C0E;
+  }
+
+  .canvas-bar__row-group {
     display: flex;
     align-items: center;
     gap: 8px;
+    flex-shrink: 0;
   }
 
-  /* Engine Navigator Widget */
+  .canvas-bar__spacer {
+    flex: 1;
+  }
+
+  /* ── Brutalist Tooltip (3-second hover delay) ── */
+  .brutalist-tooltip {
+    position: fixed;
+    z-index: 999999;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    background: #0D0E12;
+    color: #E2E4E8;
+    border: 1px solid #3F4452;
+    border-left: 3px solid var(--color-accent-industrial);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.9);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 500;
+    line-height: 1.4;
+    padding: 6px 10px;
+    max-width: 280px;
+    white-space: normal !important;
+    word-break: break-word;
+    letter-spacing: 0.02em;
+    transition: opacity 0.15s ease;
+  }
+
+  .brutalist-tooltip--visible {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .deck__toolbar-sep {
+    color: #2D3039;
+    font-size: 11px;
+    font-weight: 700;
+    user-select: none;
+    flex-shrink: 0;
+  }
+
+  .deck__toolbar-tag {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    color: #727785;
+    letter-spacing: 0.06em;
+    user-select: none;
+    flex-shrink: 0;
+  }
+
+  /* Engine Navigator: RIGIDLY FIXED 184px (ZERO layout shift) */
   .engine-navigator {
     display: flex;
     align-items: center;
-    background: #141414;
-    border: 1px solid #333333;
-    height: 22px;
+    background: #090A0D;
+    border: 1px solid #262830;
+    height: 24px;
+    width: 184px;
+    min-width: 184px;
+    max-width: 184px;
+    flex-shrink: 0;
+    box-sizing: border-box;
   }
 
   .engine-nav-arrow {
     appearance: none;
     background: transparent;
     border: none;
-    color: #888;
+    color: #727785;
     font-family: var(--font-mono);
     font-size: 9px;
     width: 20px;
+    min-width: 20px;
+    max-width: 20px;
     height: 100%;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
     transition: background 0.15s ease, color 0.15s ease;
   }
 
   .engine-nav-arrow:hover {
     color: #FFF;
-    background: #262626;
+    background: #1B1D24;
   }
 
   .engine-selector-btn {
     appearance: none;
     background: transparent;
     border: none;
-    border-left: 1px solid #282828;
-    border-right: 1px solid #282828;
+    border-left: 1px solid #1C1E24;
+    border-right: 1px solid #1C1E24;
     color: var(--color-bg-surface-light);
     font-family: var(--font-mono);
     font-size: 9px;
     font-weight: 700;
     height: 100%;
-    padding: 0 8px;
+    width: 144px;
+    min-width: 144px;
+    max-width: 144px;
+    padding: 0 6px;
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 6px;
+    justify-content: space-between;
+    gap: 4px;
+    flex-shrink: 0;
+    box-sizing: border-box;
     transition: background 0.15s ease;
   }
 
   .engine-selector-btn:hover {
-    background: #242424;
+    background: #17181F;
   }
 
   .engine-selector__num {
     color: var(--color-accent-industrial);
     font-weight: 700;
+    font-size: 9px;
+    flex-shrink: 0;
   }
 
+  /* Strict width truncation ensures engine name changes NEVER shift adjacent buttons */
   .engine-selector__name {
-    color: #FFF;
-    letter-spacing: 0.04em;
-  }
-
-  .engine-selector__cat {
-    color: #777;
-    font-size: 8px;
+    color: #E2E4E8;
+    letter-spacing: 0.03em;
+    font-size: 9px;
+    width: 100px;
+    max-width: 100px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap !important;
+    text-align: left;
+    display: block;
   }
 
   .engine-selector__icon {
     font-size: 8px;
-    color: #888;
-    margin-left: 2px;
+    color: #5D6372;
+    flex-shrink: 0;
   }
 
-  .deck__toggle {
+  /* Audio Source Switcher: Intuitive ∿ TONES vs 🎙 MIC */
+  .deck__source-wrap {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    white-space: nowrap !important;
+  }
+
+  .deck__source-segmented {
+    display: flex;
+    height: 24px;
+    background: #090A0D;
+    border: 1px solid #262830;
+    overflow: hidden;
+    flex-shrink: 0;
+    box-sizing: border-box;
+  }
+
+  .source-seg-btn {
     appearance: none;
-    border: none;
     background: transparent;
+    border: none;
     font-family: var(--font-mono);
     font-size: 9px;
     font-weight: 700;
-    letter-spacing: 0.04em;
-    color: var(--color-bg-surface-light);
+    color: #727785;
+    padding: 0 8px;
+    height: 100%;
     cursor: pointer;
-    padding: 2px 4px;
-    text-transform: uppercase;
+    white-space: nowrap !important;
+    flex-shrink: 0;
+    transition: background 0.15s ease, color 0.15s ease;
   }
 
-  .deck__toggle:hover {
-    color: var(--color-accent-industrial);
-  }
-
-  .deck__toggle--active {
-    color: var(--color-accent-industrial) !important;
-  }
-
-  .deck__toggle-sep {
-    color: #555;
-    font-size: 9px;
-  }
-
-  .deck__source-pill {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    background: #141414;
-    border: 1px solid #333333;
-    height: 22px;
-    padding: 0 6px;
-  }
-
-  .source-dot {
-    color: #44CC44;
-    font-size: 8px;
-    margin-right: 3px;
-  }
-
-  .source-dot--mic {
-    color: var(--color-accent-industrial) !important;
-  }
-
-  .deck__mic-meter {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-family: var(--font-mono);
-    font-size: 8px;
-  }
-
-  .meter-bar {
-    color: var(--color-accent-industrial);
-    letter-spacing: -0.05em;
-    font-weight: 700;
-  }
-
-  .btn-gain-step {
-    appearance: none;
-    border: 1px solid #444;
-    background: #222;
+  .source-seg-btn:hover {
     color: #FFF;
+    background: #1A1C22;
+  }
+
+  .source-seg-btn--active {
+    background: var(--color-bg-surface-light) !important;
+    color: var(--color-bg-surface-dark) !important;
+  }
+
+  .source-seg-btn--mic-active {
+    background: var(--color-accent-industrial) !important;
+    color: #FFFFFF !important;
+  }
+
+  /* Scale Stepper Widget */
+  .deck__scale-widget {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    background: #090A0D;
+    border: 1px solid #262830;
+    height: 24px;
+    padding: 0 4px;
+    flex-shrink: 0;
+    box-sizing: border-box;
+  }
+
+  .scale-step-btn {
+    appearance: none;
+    background: transparent;
+    border: none;
+    color: #727785;
     font-family: var(--font-mono);
-    font-size: 8px;
+    font-size: 11px;
     font-weight: 700;
-    padding: 1px 4px;
+    width: 14px;
+    height: 100%;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s ease;
+  }
+
+  .scale-step-btn:hover {
+    color: #FFF;
+  }
+
+  .scale-readout {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    color: #00F0FF;
+    min-width: 26px;
+    text-align: center;
+  }
+
+  /* Widget Buttons (Palette, Detail, Maximize) */
+  .deck__widget-btn {
+    appearance: none;
+    background: #090A0D;
+    border: 1px solid #262830;
+    color: var(--color-bg-surface-light);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    height: 24px;
+    padding: 0 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap !important;
+    flex-shrink: 0;
+    box-sizing: border-box;
     transition: background 0.15s ease, border-color 0.15s ease;
   }
 
-  .btn-gain-step:hover {
-    border-color: var(--color-accent-industrial);
+  .deck__widget-btn:hover {
+    background: #181920;
+    border-color: #3F4452;
+  }
+
+  .deck__widget-btn--active {
     color: var(--color-accent-industrial);
-    background: #2a1515;
+    border-color: var(--color-accent-industrial);
+  }
+
+  .style-widget__swatch {
+    color: #FF8877;
+    font-size: 8px;
+  }
+
+  .btn-theater {
+    appearance: none;
+    border: none;
+    background: var(--color-accent-industrial);
+    color: var(--color-bg-surface-light);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    height: 24px;
+    padding: 0 10px;
+    cursor: pointer;
+    text-transform: uppercase;
+    white-space: nowrap !important;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    transition: background 0.15s ease;
+  }
+
+  .btn-theater:hover {
+    background: #FF5555;
+  }
+  /* ── Adaptive Collapsible Deck (Doubles Canvas Area) ── */
+
+  .deck__controls--collapsed {
+    height: 42px !important;
+    min-height: 42px !important;
+    padding: 0 14px !important;
+  }
+
+  .deck__controls--collapsed .deck__synthesis-controls {
+    display: none !important;
+  }
+
+  .deck__controls--collapsed .deck__telemetry-bar {
+    display: flex !important;
+  }
+
+  .deck__synthesis-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    height: 100%;
+  }
+
+  .deck__telemetry-bar {
+    height: 100%;
+    align-items: center;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    gap: 12px;
+    white-space: nowrap !important;
+    overflow: hidden;
+  }
+
+  .telemetry-bar__left,
+  .telemetry-bar__right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    white-space: nowrap !important;
+    flex-shrink: 0;
+  }
+
+  .telemetry-badge {
+    background: var(--color-accent-industrial);
+    color: #FFF;
+    padding: 3px 8px;
+    font-size: 9px;
+    letter-spacing: 0.04em;
+    white-space: nowrap !important;
+    flex-shrink: 0;
+  }
+
+  .telemetry-sep {
+    color: #888;
+    font-size: 9px;
+    flex-shrink: 0;
+  }
+
+  .telemetry-meter {
+    color: var(--color-accent-industrial);
+    letter-spacing: -0.05em;
+    white-space: nowrap !important;
+    flex-shrink: 0;
+  }
+
+  .telemetry-text {
+    color: var(--color-text-secondary);
+    font-size: 9px;
+    white-space: nowrap !important;
+    flex-shrink: 0;
+  }
+
+  .telemetry-note {
+    font-size: 9px;
+    color: #666;
+    white-space: nowrap !important;
+    flex-shrink: 0;
+  }
+
+  .btn-restore-deck {
+    appearance: none;
+    border: 2px solid var(--color-border-heavy);
+    background: var(--color-bg-concrete);
+    color: var(--color-text-primary);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    padding: 4px 10px;
+    cursor: pointer;
+    border-radius: 0 !important;
+    white-space: nowrap !important;
+    flex-shrink: 0;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  .btn-restore-deck:hover {
+    background: var(--color-bg-surface-dark);
+    color: var(--color-bg-surface-light);
   }
 
   .theater-hud__source {
@@ -1286,9 +1594,6 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     padding: 3px 6px;
     border: 1px solid #333;
   }
-
-  .btn-theater {
-    appearance: none;
     border: none;
     background: var(--color-accent-industrial);
     color: var(--color-bg-surface-light);
@@ -1403,19 +1708,6 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
   }
 
   .deck--screen7 .deck__provenance {
-    display: none !important;
-  }
-
-  /* 1-Bit Sprite Metronome Container (Docked on Canvas, toggleable) */
-  .deck__sprite-dock {
-    display: flex;
-    position: absolute;
-    top: 40px;
-    left: 12px;
-    z-index: 25;
-  }
-
-  .deck__sprite-dock--hidden {
     display: none !important;
   }
 
@@ -2605,7 +2897,7 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     type GeometryDetail,
   } from "../components/logic/ChladniCanvas";
   import { audioEngine, type AudioSourceMode } from "../components/logic/AudioEngine";
-  import { spriteMetronome, type CadenceType } from "../components/logic/SpriteMetronome";
+  import { cadenceController, type CadenceType } from "../components/logic/CadenceController";
   import { listen } from "@tauri-apps/api/event";
 
   // ═══════════════════════════════════════════════════════════
@@ -2806,15 +3098,121 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     });
   }
 
+  let isCanvasMaximized = false;
+
+  function setCanvasMaximized(maximized: boolean) {
+    isCanvasMaximized = maximized;
+    const bottomDeck = document.getElementById("bottom-controls-deck");
+    const expandBtnLabel = document.getElementById("expand-btn-label");
+    const btnToggleExpand = document.getElementById("btn-toggle-canvas-expand");
+    const telemetryModeBadge = document.getElementById("telemetry-mode-badge");
+
+    if (bottomDeck) {
+      bottomDeck.classList.toggle("deck__controls--collapsed", maximized);
+    }
+
+    if (expandBtnLabel) {
+      expandBtnLabel.textContent = maximized ? "[ ⤓ SHOW CONTROLS ]" : "[ ⤢ EXPAND CANVAS ]";
+    }
+
+    if (btnToggleExpand) {
+      btnToggleExpand.classList.toggle("deck__widget-btn--active", maximized);
+      btnToggleExpand.setAttribute(
+        "data-tooltip",
+        maximized
+          ? "Restore bottom synthesis control deck (Hotkey: Z)"
+          : "Expand visualizer canvas and collapse bottom controls (Hotkey: Z)"
+      );
+    }
+
+    if (telemetryModeBadge) {
+      const isMic = audioEngine.getSourceMode() === "mic_ingest";
+      telemetryModeBadge.textContent = isMic ? "SRC: LIVE MIC INGEST" : "SRC: INTERNAL DSP [MAX VISUAL]";
+      telemetryModeBadge.classList.toggle("telemetry-badge--mic", isMic);
+    }
+  }
+
+  function toggleCanvasMaximize() {
+    setCanvasMaximized(!isCanvasMaximized);
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // VISUALIZER STYLE TUNING: PALETTES, DENSITY & SCALE CONTROLS
+  // ═══════════════════════════════════════════════════════════
+
+  const PALETTE_SWATCH_COLORS: Record<VisualPalette, string> = {
+    pastel: "#E05A47",
+    monochrome: "#EEEEEE",
+    amber_crt: "#FFB000",
+    green_crt: "#33FF33",
+    cyber_blue: "#00F0FF",
+  };
+
+  const SCALE_STEPS = [0.5, 0.8, 1.0, 1.4, 2.0, 3.0];
+  let currentScaleIdx = 3; // 1.4X
+
+  function setScaleIndex(idx: number) {
+    currentScaleIdx = Math.max(0, Math.min(SCALE_STEPS.length - 1, idx));
+    const scale = SCALE_STEPS[currentScaleIdx];
+    visualizer?.setVisualGain(scale);
+    theaterVisualizer?.setVisualGain(scale);
+    audioEngine.setMicSensitivity(scale);
+
+    const scaleReadout = document.getElementById("scale-readout");
+    if (scaleReadout) scaleReadout.textContent = `${scale.toFixed(1)}X`;
+
+    const telemetryGainText = document.getElementById("telemetry-gain-text");
+    if (telemetryGainText) telemetryGainText.textContent = `SCALE: ${scale.toFixed(1)}X`;
+  }
+
+  function cyclePaletteUI(): void {
+    if (!visualizer) return;
+    const nextPalette = visualizer.cyclePalette();
+    theaterVisualizer?.setPalette(nextPalette);
+    syncPaletteUI(nextPalette);
+  }
+
+  function syncPaletteUI(pal: VisualPalette): void {
+    const swatchDot = document.getElementById("style-swatch-dot");
+    if (swatchDot) {
+      swatchDot.style.color = PALETTE_SWATCH_COLORS[pal] || "#FFF";
+    }
+
+    const paletteBtnLabel = document.getElementById("palette-btn-label");
+    const theaterBtnPalette = document.getElementById("theater-btn-palette");
+    const nameMap: Record<VisualPalette, string> = {
+      pastel: "PASTEL",
+      monochrome: "MONO",
+      amber_crt: "AMBER",
+      green_crt: "GREEN",
+      cyber_blue: "CYBER",
+    };
+    const disp = nameMap[pal] || pal.toUpperCase();
+    if (paletteBtnLabel) paletteBtnLabel.textContent = `PAL: ${disp}`;
+    if (theaterBtnPalette) theaterBtnPalette.textContent = `PAL: ${disp}`;
+  }
+
+  function cycleDetailUI(): void {
+    if (!visualizer) return;
+    const nextDetail = visualizer.cycleDetail();
+    theaterVisualizer?.setDetail(nextDetail);
+    syncDetailUI(nextDetail);
+  }
+
+  function syncDetailUI(det: VisualDetail): void {
+    const detailBtnLabel = document.getElementById("detail-btn-label");
+    const theaterBtnDetail = document.getElementById("theater-btn-detail");
+    const disp = det.toUpperCase();
+    if (detailBtnLabel) detailBtnLabel.textContent = `DET: ${disp}`;
+    if (theaterBtnDetail) theaterBtnDetail.textContent = `DET: ${disp}`;
+  }
+
   function cycleEngine(direction: 1 | -1) {
     const nextIdx = (currentEngineIndex + direction + VISUALIZER_ENGINES.length) % VISUALIZER_ENGINES.length;
     setModeUI(VISUALIZER_ENGINES[nextIdx].id);
   }
 
   function wireToggles() {
-    const btnCompanion = document.getElementById("toggle-companion");
-    const spriteDock = document.getElementById("sprite-dock");
-
     // Prev / Next arrow buttons
     document.getElementById("btn-engine-prev")?.addEventListener("click", () => cycleEngine(-1));
     document.getElementById("btn-engine-next")?.addEventListener("click", () => cycleEngine(1));
@@ -2852,18 +3250,6 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
           closeEngineMatrix();
         }
       });
-    });
-
-    // Companion toggle
-    btnCompanion?.addEventListener("click", () => {
-      const isHidden = spriteDock?.classList.toggle("deck__sprite-dock--hidden");
-      if (isHidden) {
-        btnCompanion.textContent = "[ ] COMPANION";
-        btnCompanion.classList.remove("deck__toggle--active");
-      } else {
-        btnCompanion.textContent = "[X] COMPANION";
-        btnCompanion.classList.add("deck__toggle--active");
-      }
     });
 
     // Global keyboard hotkeys
@@ -2918,6 +3304,15 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
       } else if (e.key.toLowerCase() === "d" && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();
         cycleDetailUI();
+      } else if ((e.key === "+" || e.key === "=") && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        setScaleIndex(currentScaleIdx + 1);
+      } else if ((e.key === "-" || e.key === "_") && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        setScaleIndex(currentScaleIdx - 1);
+      } else if (e.key.toLowerCase() === "z" && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        toggleCanvasMaximize();
       } else if (e.key.toLowerCase() === "p" && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();
         openNewPresetModal();
@@ -3205,8 +3600,8 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     const hudPhaseLabel = document.getElementById("hud-phase-label");
     const canvasCard = document.getElementById("canvas-card");
 
-    // Init GSAP Sprite Metronome (Canvas-driven, guaranteed 60FPS animation)
-    spriteMetronome.init("sprite-cadence-label", "tabby-canvas");
+    // Init Breath Cadence Controller (Synchronizes visualizer breathing and session intervals)
+    cadenceController.init();
 
     function triggerSineWaveBurst() {
       // Trigger mathematical expanding sine wave ripple across particles, fluid, and oscilloscope
@@ -3230,7 +3625,7 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     }
 
     // Connect Breath Phase callback to Visualizer & Interval Chimes
-    spriteMetronome.setPhaseCallback((phase, durationSec) => {
+    cadenceController.setPhaseCallback((phase, durationSec) => {
       visualizer?.setBreathPhase(phase, durationSec);
       theaterVisualizer?.setBreathPhase(phase, durationSec);
 
@@ -3257,7 +3652,7 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     // Cadence Select dropdown
     selectCadence?.addEventListener("change", () => {
       activeCadence = selectCadence.value as CadenceType;
-      spriteMetronome.applyCadence(activeCadence);
+      cadenceController.applyCadence(activeCadence);
     });
 
     // Timebox Toggles
@@ -3361,44 +3756,37 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
   // ═══════════════════════════════════════════════════════════
 
   function wireInputSource() {
-    const btnInputSource = document.getElementById("btn-input-source");
-    const titlebarSourceLabel = document.getElementById("titlebar-source-label");
-    const btnCanvasSource = document.getElementById("btn-canvas-source");
-    const canvasSourceLabel = document.getElementById("canvas-source-label");
-    const canvasSourceDot = document.getElementById("canvas-source-dot");
-    const deckMicMeter = document.getElementById("deck-mic-meter");
-    const micMeterBar = document.getElementById("mic-meter-bar");
-    const btnGainStep = document.getElementById("btn-gain-step");
+    const btnSrcDsp = document.getElementById("btn-src-dsp");
+    const btnSrcMic = document.getElementById("btn-src-mic");
     const theaterSource = document.getElementById("theater-source");
 
     const routingSrcDsp = document.getElementById("routing-src-dsp");
     const routingSrcMic = document.getElementById("routing-src-mic");
 
-    const gainSteps = [0.5, 1.0, 1.4, 2.0, 3.0];
-    let currentGainIdx = 2; // Default 1.4X
+    const btnToggleCanvasExpand = document.getElementById("btn-toggle-canvas-expand");
+    const btnRestoreDeck = document.getElementById("btn-restore-deck");
+    const telemetryMeterBar = document.getElementById("telemetry-meter-bar");
 
     const syncSourceUI = (mode: AudioSourceMode) => {
       const isMic = mode === "mic_ingest";
 
-      // Titlebar Button
-      if (titlebarSourceLabel) {
-        titlebarSourceLabel.textContent = isMic ? "SRC: [ MIC ]" : "SRC: [ DSP ]";
-      }
-      btnInputSource?.classList.toggle("titlebar__route-btn--active", isMic);
-
-      // Canvas Toolbar Pill
-      if (canvasSourceLabel) {
-        canvasSourceLabel.textContent = isMic ? "SRC: MIC" : "SRC: DSP";
-      }
-      btnCanvasSource?.classList.toggle("deck__toggle--active", isMic);
-      if (canvasSourceDot) {
-        canvasSourceDot.classList.toggle("source-dot--mic", isMic);
-        canvasSourceDot.classList.toggle("terminal-blink", isMic);
+      // Segmented Source Switcher (Zero layout shift, directly above visualizer)
+      if (btnSrcDsp && btnSrcMic) {
+        if (isMic) {
+          btnSrcDsp.classList.remove("source-seg-btn--active");
+          btnSrcMic.classList.add("source-seg-btn--active", "source-seg-btn--mic-active");
+        } else {
+          btnSrcDsp.classList.add("source-seg-btn--active");
+          btnSrcMic.classList.remove("source-seg-btn--active", "source-seg-btn--mic-active");
+        }
       }
 
-      // Mic meter visibility
-      if (deckMicMeter) {
-        deckMicMeter.style.display = isMic ? "flex" : "none";
+      // Adaptive deck layout: mic ingest automatically collapses bottom controls to maximize canvas real estate
+      // When returning to internal DSP, un-collapse unless user explicitly maximized
+      if (isMic) {
+        setCanvasMaximized(true);
+      } else {
+        setCanvasMaximized(false);
       }
 
       // Theater HUD indicator
@@ -3423,14 +3811,19 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
       }
     };
 
-    // Toggle trigger
-    const handleToggle = async () => {
-      const newMode = await audioEngine.toggleInputSource();
-      syncSourceUI(newMode);
-    };
+    btnSrcDsp?.addEventListener("click", () => {
+      if (audioEngine.getSourceMode() !== "internal_dsp") {
+        audioEngine.disableMicIngest();
+        syncSourceUI("internal_dsp");
+      }
+    });
 
-    btnInputSource?.addEventListener("click", handleToggle);
-    btnCanvasSource?.addEventListener("click", handleToggle);
+    btnSrcMic?.addEventListener("click", async () => {
+      if (audioEngine.getSourceMode() !== "mic_ingest") {
+        const ok = await audioEngine.enableMicIngest();
+        syncSourceUI(ok ? "mic_ingest" : "internal_dsp");
+      }
+    });
 
     routingSrcDsp?.addEventListener("click", () => {
       if (audioEngine.getSourceMode() !== "internal_dsp") {
@@ -3446,13 +3839,9 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
       }
     });
 
-    // Sensitivity gain stepper
-    btnGainStep?.addEventListener("click", () => {
-      currentGainIdx = (currentGainIdx + 1) % gainSteps.length;
-      const g = gainSteps[currentGainIdx];
-      audioEngine.setMicSensitivity(g);
-      if (btnGainStep) btnGainStep.textContent = `${g.toFixed(1)}X`;
-    });
+    // Expand / collapse deck buttons
+    btnToggleCanvasExpand?.addEventListener("click", toggleCanvasMaximize);
+    btnRestoreDeck?.addEventListener("click", () => setCanvasMaximized(false));
 
     // Audio Engine state listener
     audioEngine.onSourceModeChange(syncSourceUI);
@@ -3462,11 +3851,12 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
 
     // 60FPS Input Level Meter RAF Loop
     const updateMeter = () => {
-      if (audioEngine.getSourceMode() === "mic_ingest" && micMeterBar) {
-        const rms = audioEngine.getRMSLevel();
+      if (telemetryMeterBar) {
+        const isMic = audioEngine.getSourceMode() === "mic_ingest";
+        const rms = isMic ? audioEngine.getRMSLevel() : (audioEngine.isPlaying() ? 0.35 : 0.0);
         const segments = 10;
         const filled = Math.min(segments, Math.max(0, Math.round(rms * 16)));
-        micMeterBar.textContent = `[${"█".repeat(filled)}${"░".repeat(segments - filled)}]`;
+        telemetryMeterBar.textContent = `LEVEL: [${"█".repeat(filled)}${"░".repeat(segments - filled)}]`;
       }
       requestAnimationFrame(updateMeter);
     };
@@ -3809,54 +4199,123 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     });
   }
 
-  // ═══════════════════════════════════════════════════════════
-  // VISUALIZER STYLE TUNING: PALETTES & DENSITY (Option 4)
-  // ═══════════════════════════════════════════════════════════
-
-  function cyclePaletteUI(): void {
-    if (!visualizer) return;
-    const nextPalette = visualizer.cyclePalette();
-    theaterVisualizer?.setPalette(nextPalette);
-
-    const canvasPaletteLabel = document.getElementById("canvas-palette-label");
-    const theaterBtnPalette = document.getElementById("theater-btn-palette");
-
-    const nameMap: Record<VisualPalette, string> = {
-      pastel: "PASTEL",
-      monochrome: "MONO",
-      amber_crt: "AMBER CRT",
-      green_crt: "GREEN CRT",
-      cyber_blue: "CYBER BLUE",
-    };
-
-    const disp = nameMap[nextPalette] || nextPalette.toUpperCase();
-    if (canvasPaletteLabel) canvasPaletteLabel.textContent = `PAL: [ ${disp} ]`;
-    if (theaterBtnPalette) theaterBtnPalette.textContent = `PAL: ${disp}`;
-  }
-
-  function cycleDetailUI(): void {
-    if (!visualizer) return;
-    const nextDetail = visualizer.cycleDetail();
-    theaterVisualizer?.setDetail(nextDetail);
-
-    const canvasDensityLabel = document.getElementById("canvas-density-label");
-    const theaterBtnDetail = document.getElementById("theater-btn-detail");
-
-    const disp = nextDetail.toUpperCase();
-    if (canvasDensityLabel) canvasDensityLabel.textContent = `DET: [ ${disp} ]`;
-    if (theaterBtnDetail) theaterBtnDetail.textContent = `DET: ${disp}`;
-  }
-
   function wireVisualizerStyleTuning(): void {
-    const btnPalette = document.getElementById("btn-palette-toggle");
-    const btnDetail = document.getElementById("btn-density-toggle");
+    const btnScaleDown = document.getElementById("btn-scale-down");
+    const btnScaleUp = document.getElementById("btn-scale-up");
+    const btnPaletteCycle = document.getElementById("btn-palette-cycle");
+    const btnDetailCycle = document.getElementById("btn-detail-cycle");
     const theaterBtnPalette = document.getElementById("theater-btn-palette");
     const theaterBtnDetail = document.getElementById("theater-btn-detail");
 
-    btnPalette?.addEventListener("click", cyclePaletteUI);
-    btnDetail?.addEventListener("click", cycleDetailUI);
+    btnScaleDown?.addEventListener("click", () => setScaleIndex(currentScaleIdx - 1));
+    btnScaleUp?.addEventListener("click", () => setScaleIndex(currentScaleIdx + 1));
+
+    btnPaletteCycle?.addEventListener("click", cyclePaletteUI);
+    btnDetailCycle?.addEventListener("click", cycleDetailUI);
+
     theaterBtnPalette?.addEventListener("click", cyclePaletteUI);
     theaterBtnDetail?.addEventListener("click", cycleDetailUI);
+
+    // Initial sync
+    setScaleIndex(currentScaleIdx);
+    syncPaletteUI("pastel");
+    syncDetailUI("high");
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // BRUTALIST TOOLTIP ENGINE (3-SECOND HOVER DELAY)
+  // ═══════════════════════════════════════════════════════════
+
+  function initTooltips(): void {
+    const tooltipEl = document.getElementById("brutalist-tooltip");
+    if (!tooltipEl) return;
+
+    // Convert any remaining title attributes across the document to data-tooltip
+    // and remove title to prevent double / conflicting browser-native OS tooltips
+    document.querySelectorAll("[title]").forEach((el) => {
+      const titleVal = el.getAttribute("title");
+      if (titleVal && !el.getAttribute("data-tooltip")) {
+        el.setAttribute("data-tooltip", titleVal);
+      }
+      el.removeAttribute("title");
+    });
+
+    let hoverTimer: number | null = null;
+    let activeTarget: HTMLElement | null = null;
+
+    function hideTooltip(): void {
+      if (hoverTimer !== null) {
+        window.clearTimeout(hoverTimer);
+        hoverTimer = null;
+      }
+      activeTarget = null;
+      if (tooltipEl) {
+        tooltipEl.classList.remove("brutalist-tooltip--visible");
+        tooltipEl.setAttribute("aria-hidden", "true");
+      }
+    }
+
+    function showTooltip(el: HTMLElement): void {
+      if (!tooltipEl) return;
+      const text = el.getAttribute("data-tooltip");
+      if (!text) return;
+
+      tooltipEl.textContent = text;
+      tooltipEl.setAttribute("aria-hidden", "false");
+      tooltipEl.classList.add("brutalist-tooltip--visible");
+
+      // Compute positioned coordinates relative to target element
+      const rect = el.getBoundingClientRect();
+      const tipWidth = tooltipEl.offsetWidth || 220;
+      const tipHeight = tooltipEl.offsetHeight || 34;
+
+      let top = rect.bottom + 6;
+      let left = rect.left;
+
+      // Invert to top if overflowing bottom edge
+      if (top + tipHeight > window.innerHeight - 8) {
+        top = Math.max(8, rect.top - tipHeight - 6);
+      }
+
+      // Clamp horizontally within viewport
+      if (left + tipWidth > window.innerWidth - 8) {
+        left = Math.max(8, window.innerWidth - tipWidth - 8);
+      }
+      if (left < 8) left = 8;
+
+      tooltipEl.style.top = `${Math.round(top)}px`;
+      tooltipEl.style.left = `${Math.round(left)}px`;
+    }
+
+    document.addEventListener("pointerover", (e: PointerEvent) => {
+      const target = (e.target as HTMLElement | null)?.closest("[data-tooltip]") as HTMLElement | null;
+      if (!target) {
+        hideTooltip();
+        return;
+      }
+
+      if (target !== activeTarget) {
+        hideTooltip();
+        activeTarget = target;
+        // User directive: show tooltip when cursor hovers for more than 3 seconds (3000ms)
+        hoverTimer = window.setTimeout(() => {
+          if (activeTarget === target) {
+            showTooltip(target);
+          }
+        }, 3000);
+      }
+    }, { passive: true });
+
+    document.addEventListener("pointerout", (e: PointerEvent) => {
+      const related = e.relatedTarget as HTMLElement | null;
+      if (activeTarget && (!related || !activeTarget.contains(related))) {
+        hideTooltip();
+      }
+    }, { passive: true });
+
+    document.addEventListener("pointerdown", hideTooltip, { passive: true });
+    document.addEventListener("keydown", hideTooltip, { passive: true });
+    window.addEventListener("scroll", hideTooltip, { passive: true });
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -3876,4 +4335,5 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
   wireAudioRouting();
   wirePresetCreator();
   wireVisualizerStyleTuning();
+  initTooltips();
 </script>

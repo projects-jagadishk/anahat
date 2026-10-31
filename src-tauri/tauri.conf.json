@@ -15,15 +15,17 @@
       {
         "label": "main",
         "title": "Anahat",
-        "width": 1200,
-        "height": 800,
-        "minWidth": 960,
-        "minHeight": 640,
+        "width": 1400,
+        "height": 880,
+        "minWidth": 1400,
+        "minHeight": 880,
+        "maxWidth": 1400,
+        "maxHeight": 880,
         "decorations": false,
         "transparent": true,
         "center": true,
         "visible": true,
-        "resizable": true,
+        "resizable": false,
         "dragDropEnabled": false
       }
     ],

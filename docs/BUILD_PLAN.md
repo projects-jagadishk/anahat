@@ -236,5 +236,60 @@
 - [x] **System Specification & Clinical Disclaimers Update**:
   - [x] Refreshed `#modal-info` documentation covering all 10 visualizers, live audio ingest, hardware DAC routing, `.anahat` preset profiles, and visual styling engines.
 
+---
+
+### Step 10: Studio Cyberdeck Toolbar, Locked Frame (1400×880) & Zero-Shift Controls
+- [x] **Frame Expansion & Resizing Prevention (`tauri.conf.json`)**:
+  - [x] Locked window dimensions to `width: 1400`, `height: 880` (`minWidth: 1400, minHeight: 880, maxWidth: 1400, maxHeight: 880`).
+  - [x] Set `"resizable": false` to strictly prevent frame distortion and layout breaking.
+  - [x] Expanded `.deck` grid to `grid-template-columns: 300px 1fr 300px;` allowing the center visualizer canvas column to occupy the full ~800px width.
+- [x] **Studio Cyberdeck Visualizer Toolbar Aesthetic (`src/pages/index.astro`)**:
+  - [x] Abandoned cramped Figma toolbar in favor of a dark anodized metal rack strip (`#101114`, 36px height) with tactile micro-modules and razor-sharp dividers (`#2D3039`).
+  - [x] **Zero Layout Shift Engine Navigator** (`#engine-navigator`, rigidly locked to 184px):
+    - [x] Truncated monospace engine name slot locked to 100px with ellipsis. Long engine names (`CHLADNI NODES`, `FARADAY FLUID`, `WINAMP OSCILLO`, `HARMONOGRAPH`) NEVER shift adjacent buttons or the Theater button by even 1 pixel.
+  - [x] **Intuitive Audio Source Labels**:
+    - [x] Replaced technical/cryptic `DSP` vs `MIC` with universally intuitive `∿ TONES` (neuroacoustic carrier synthesis) and `🎙 MIC` (ambient microphone / Spotify ingest).
+  - [x] **Direct Visualizer Scale Controls**:
+    - [x] Added direct tactile `SCALE: [ − ] 1.4X [ + ]` stepper (`0.5X` to `3.0X`) on the toolbar, directly controlling `visualizer.setVisualGain()` and `audioEngine.setMicSensitivity()` with real-time digital readout (and keyboard hotkeys `+` and `-`).
+  - [x] **Direct Palette & Detail Toggles**:
+    - [x] Direct `PAL: PASTEL` button with live glowing color swatch (`●`) cycling 5 palettes with hotkey `[C]`.
+    - [x] Direct `DET: HIGH` button cycling 4 geometry densities with hotkey `[D]`.
+    - [x] Completely eliminated clipped popover dropdowns.
+  - [x] **Strict Non-Wrapping Deck & Telemetry Controls**:
+    - [x] Added `white-space: nowrap !important;` and `flex-shrink: 0;` to all toolbar widgets, `.deck__telemetry-bar`, `.telemetry-bar__left`, `.telemetry-bar__right`, and `[ RESTORE DECK ⤓ ]` button.
+- [x] **Removal of Sprite Metronome Companion**:
+  - [x] Completely removed `SpriteMetronome.astro` and `SpriteMetronome.ts` cat sprite canvas overlay and toolbar toggle.
+  - [x] Replaced with lightweight, non-visual `CadenceController.ts` preserving clean meditation breathing phase synchronization and interval chimes without visual obstruction.
+- [x] **Adaptive Canvas Real Estate & Big Visualizer Mode**:
+  - [x] When microphone ingest is active, the massive 308px synthesis deck (`#bottom-controls-deck`) automatically collapses down to a sleek 42px telemetry bar (`#deck-telemetry-strip`), doubling the WebGL canvas height from ~360px to ~680px.
+  - [x] Full manual maximize/minimize via `[ ⤢ MAX ]` / `[ ⤓ DECK ]` button and hotkey `[Z]` allowing pure visual focus in internal DSP mode as well.
+  - [x] Integrated 42px Telemetry Bar displaying live source badge, 10-segment level meter (`[██████░░░░]`), active gain, 60 FPS status, and one-click `[ RESTORE DECK ⤓ ]` button.
+  - [x] Automatic Three.js viewport and camera aspect ratio recalculation via `ChladniCanvas`'s `ResizeObserver`.
+- [x] **Documentation & System Info**:
+  - [x] Updated `#modal-info` documentation with cards for Modular Zero-Shift Toolbar and Adaptive Canvas Real Estate, and purged obsolete companion references.
+
+---
+
+### Step 11: 2-Row Cyberdeck Toolbar, Dynamic Voxel Matrix Shading & 3-Second Brutalist Tooltip Engine
+- [x] **2-Row Cyberdeck Toolbar Layout (`src/pages/index.astro`)**:
+  - [x] Split `.deck__canvas-bar` into a clean, spacious 2-row layout (`.canvas-bar__row--primary` and `.canvas-bar__row--secondary`, each 30px height, total 60px):
+    - **Row 1:** Precision Engine Navigator (`◀ [ 01 CHLADNI NODES ▾ ] ▶`), Ingest Source Mode (`AUDIO: [ ∿ TONES | 🎙 MIC ]`), and prominent right-anchored Fullscreen Theater button (`[ ⛶ FULLSCREEN THEATER ]`).
+    - **Row 2:** Sensitivity Stepper (`SCALE: [ − ] 1.4X [ + ]`), Palette Cycler (`PAL: PASTEL`), Density Cycler (`DET: HIGH`), and intuitive View Mode Toggle (`VIEW: [ ⤢ EXPAND CANVAS ]` / `VIEW: [ ⤓ SHOW CONTROLS ]`).
+  - [x] Permanently resolved Theater button clipping and crowding; top-right position is always accessible regardless of visualizer selection.
+- [x] **Intuitive Canvas View / Deck Collapse Nomenclature**:
+  - [x] Replaced confusing "MAX / DECK" and "RESTORE DECK" labels with intuitive, clear terminology:
+    - Toolbar toggle: `VIEW: [ ⤢ EXPAND CANVAS ]` (when normal) / `VIEW: [ ⤓ SHOW CONTROLS ]` (when expanded).
+    - Bottom telemetry strip button: `[ ⤓ SHOW CONTROLS ]`.
+- [x] **Voxel Matrix Dynamic Color Palette Caps (`src/components/logic/ChladniCanvas.ts`)**:
+  - [x] Replaced hardcoded red (`0xff3333`) box top caps with dynamic per-instance coloring (`voxelCapMesh.instanceColor`).
+  - [x] Box tops are now shaded using the active harmonic palette (`samplePalette()`) scaled with height resonance and golden peak energy flashes on high amplitude peaks, producing aesthetic generative artwork across all 5 palettes (Pastel, CRT, Monochrome, Cyber Blue).
+- [x] **Global Brutalist Tooltip Engine with 3-Second Hover Delay (`src/pages/index.astro`)**:
+  - [x] Created custom `#brutalist-tooltip` floating element with dark industrial brutalist styling (`#0D0E12`, red accent border, monospace font, zero radius, elevation shadow).
+  - [x] Added `data-tooltip` attributes across all interactive elements (titlebar buttons, preset buttons, engine navigator, source toggles, scale steppers, palette/detail buttons, theater buttons, sliders, breath cadence select, timebox duration buttons, session trigger, noise controls, and modal buttons).
+  - [x] Built event-delegated pointer tracking with an exact **3000ms (3-second)** hover delay requirement before surfacing.
+  - [x] Automatically suppresses native OS `title` tooltips and promotes any remaining `title` attributes into `data-tooltip` to prevent competing or prematurely triggered tooltips.
+  - [x] Integrated viewport edge detection and automatic inversion/clamping so tooltips never clip outside screen boundaries.
+
+
 
 

@@ -1337,7 +1337,7 @@ export class ChladniCanvas {
 
     const capGeo = new THREE.BoxGeometry(0.076, 0.015, 0.076);
     capGeo.translate(0, 0.0075, 0);
-    const capMat = new THREE.MeshBasicMaterial({ color: 0xff3333 });
+    const capMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
     this.voxelCapMesh = new THREE.InstancedMesh(capGeo, capMat, 256);
 
     const dummy = new THREE.Object3D();
@@ -1352,12 +1352,14 @@ export class ChladniCanvas {
         this.voxelMesh.setMatrixAt(idx, dummy.matrix);
         this.voxelCapMesh.setMatrixAt(idx, dummy.matrix);
         this.voxelMesh.setColorAt(idx, new THREE.Color(0x333333));
+        this.voxelCapMesh.setColorAt(idx, new THREE.Color(0x00f0ff));
         this.voxelPeaks[idx] = 0.02;
       }
     }
     this.voxelMesh.instanceMatrix.needsUpdate = true;
     if (this.voxelMesh.instanceColor) this.voxelMesh.instanceColor.needsUpdate = true;
     this.voxelCapMesh.instanceMatrix.needsUpdate = true;
+    if (this.voxelCapMesh.instanceColor) this.voxelCapMesh.instanceColor.needsUpdate = true;
 
     this.voxelGroup.add(this.voxelMesh);
     this.voxelGroup.add(this.voxelCapMesh);
@@ -1420,19 +1422,29 @@ export class ChladniCanvas {
         dummy.updateMatrix();
         this.voxelCapMesh.setMatrixAt(idx, dummy.matrix);
 
-        // Dynamic pastel color gradient from center outwards
+        // Dynamic palette-aware color gradient from center outwards
         const colorRatio = (distCenter * 0.75 + time * 0.03 + (rawAmp * 0.25)) % 1.0;
-        const baseColor = this.samplePastelSpectrum(colorRatio);
+        const baseColor = this.samplePalette(colorRatio);
         if (targetHeight > 0.8) {
-          baseColor.lerp(new THREE.Color(1.0, 0.2, 0.2), 0.35); // Accent kick
+          baseColor.lerp(new THREE.Color(1.0, 0.4, 0.2), 0.35); // Accent kick
         }
         this.voxelMesh.setColorAt(idx, baseColor);
+
+        // Dynamic multi-hued cap color matching active palette & audio resonance
+        const capPhase = (colorRatio + 0.28 + targetHeight * 0.3) % 1.0;
+        const capColor = this.samplePalette(capPhase);
+        capColor.multiplyScalar(1.35); // Enhanced luminosity & vibrance for floating cap lights
+        if (targetHeight > 0.6) {
+          capColor.lerp(new THREE.Color(1.0, 0.95, 0.5), 0.4); // Golden apex peak flash
+        }
+        this.voxelCapMesh.setColorAt(idx, capColor);
       }
     }
 
     this.voxelMesh.instanceMatrix.needsUpdate = true;
     if (this.voxelMesh.instanceColor) this.voxelMesh.instanceColor.needsUpdate = true;
     this.voxelCapMesh.instanceMatrix.needsUpdate = true;
+    if (this.voxelCapMesh.instanceColor) this.voxelCapMesh.instanceColor.needsUpdate = true;
 
     this.voxelGroup.rotation.y = time * 0.18;
     this.voxelGroup.rotation.x = Math.PI * 0.26 + Math.sin(time * 0.25) * 0.06;
