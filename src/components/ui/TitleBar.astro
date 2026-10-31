@@ -1,11 +1,11 @@
 <header data-tauri-drag-region class="titlebar">
-  <!-- macOS traffic light spacer -->
-  <div class="titlebar__traffic-spacer"></div>
-
-  <!-- Drag region label — centered per Figma -->
-  <span class="titlebar__label" data-tauri-drag-region>
-    ANAHAT // made with 🫨 ☕ ❤️ 🤖 by Jagadish, Kasi.
-  </span>
+  <!-- Brand identity on left with logo -->
+  <div class="titlebar__brand" data-tauri-drag-region>
+    <img src="/logo.svg" alt="ANAHAT Emblem" class="titlebar__logo" />
+    <span class="titlebar__label" data-tauri-drag-region>
+      ANAHAT // made with 🫨 ☕ ❤️ 🤖 by Jagadish, Kasi.
+    </span>
+  </div>
 
   <div class="titlebar__flex" data-tauri-drag-region></div>
 
@@ -73,8 +73,23 @@
     z-index: 9999;
   }
 
-  .titlebar__traffic-spacer {
-    width: 78px;
+  .titlebar__brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-left: 14px;
+    height: 100%;
+    cursor: default;
+    user-select: none;
+    flex-shrink: 0;
+  }
+
+  .titlebar__logo {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    filter: drop-shadow(0 0 6px rgba(255, 20, 51, 0.65));
+    pointer-events: none;
     flex-shrink: 0;
   }
 

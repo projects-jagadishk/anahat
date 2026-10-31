@@ -26,8 +26,7 @@ export type VisualizerMode =
   | "voxel_grid"
   | "tunnel"
   | "digital_scope"
-  | "wire_tunnel"
-  | "fractal";
+  | "wire_tunnel";
 
 export type VisualPalette = "pastel" | "stark" | "monochrome" | "amber_crt" | "green_crt" | "cyber_blue";
 export type GeometryDetail = "low" | "mid" | "high" | "ultra";
@@ -55,7 +54,6 @@ export const VISUALIZER_ENGINES: EngineMeta[] = [
   { id: "tunnel", code: "ENG_08", num: "08", name: "WARP TUNNEL", category: "PERSPECTIVE", description: "Infinite 3D acoustic perspective corridor", hotkey: "8" },
   { id: "digital_scope", code: "ENG_09", num: "09", name: "DIGITAL SCOPE", category: "LABORATORY", description: "Precision DSO lab oscilloscope with edge trigger", hotkey: "9" },
   { id: "wire_tunnel", code: "ENG_10", num: "10", name: "NEON WIRE TUNNEL", category: "CYBERSPACE", description: "Retro-futuristic wireframe tunnel with neon conduits", hotkey: "0" },
-  { id: "fractal", code: "ENG_11", num: "11", name: "FRACTAL FLUX", category: "CHAOS THEORY", description: "Recursive Mandelbrot & Julia fractal dynamics", hotkey: "-" },
 ];
 
 export interface VisualizerUniforms {
@@ -192,12 +190,6 @@ export class ChladniCanvas {
   private readonly wireRingCount = 30;
   private readonly wireSides = 12;
 
-  // 11 // Fractal Flux (Recursive Mandelbrot & Julia Chaos Dynamics)
-  private fractalGroup: THREE.Group | null = null;
-  private fractalMesh: THREE.Mesh | null = null;
-  private fractalWireMesh: THREE.Mesh | null = null;
-  private fractalMaterial: THREE.ShaderMaterial | null = null;
-
   mount(container: HTMLElement): void {
     this.container = container;
     const width = Math.max(container.clientWidth, 100);
@@ -232,7 +224,6 @@ export class ChladniCanvas {
     this.initTunnel();       // 08 // Warp Tunnel
     this.initDigitalScope(); // 09 // Digital Scope
     this.initWireTunnel();   // 10 // Neon Wire Tunnel
-    this.initFractal();      // 11 // Fractal Flux
 
     // Initialize visible shockwave ring
     this.initShockwave();
@@ -591,7 +582,6 @@ export class ChladniCanvas {
     if (this.tunnelGroup) this.tunnelGroup.visible = this.mode === "tunnel";
     if (this.digitalScopeGroup) this.digitalScopeGroup.visible = this.mode === "digital_scope";
     if (this.wireTunnelGroup) this.wireTunnelGroup.visible = this.mode === "wire_tunnel";
-    if (this.fractalGroup) this.fractalGroup.visible = this.mode === "fractal";
   }
 
   updateUniforms(uniforms: Partial<VisualizerUniforms>): void {
@@ -2113,191 +2103,6 @@ export class ChladniCanvas {
     this.wireTunnelGroup.rotation.z = time * 0.15;
   }
 
-  // ═══════════════════════════════════════════════════════════
-  // 11 // FRACTAL FLUX (RECURSIVE MANDELBROT & JULIA DYNAMICS)
-  // ═══════════════════════════════════════════════════════════
-
-  private initFractal(): void {
-    this.fractalGroup = new THREE.Group();
-
-    // 140x140 plane geometry for 3D topological displacement
-    const geo = new THREE.PlaneGeometry(2.4, 2.4, 140, 140);
-
-    this.fractalMaterial = new THREE.ShaderMaterial({
-      wireframe: false,
-      uniforms: {
-        u_time: { value: 0.0 },
-        u_n: { value: this.uN },
-        u_m: { value: this.uM },
-        u_amplitude: { value: this.uAmplitude },
-        u_breath_scale: { value: 1.0 },
-        u_palette: { value: 0 },
-        u_bass: { value: 0.0 },
-        u_mid: { value: 0.0 },
-      },
-      vertexShader: `
-        uniform float u_time;
-        uniform float u_n;
-        uniform float u_m;
-        uniform float u_amplitude;
-        uniform float u_breath_scale;
-        uniform float u_bass;
-        uniform float u_mid;
-        varying vec2 vUv;
-        varying float vElevation;
-        varying float vIter;
-
-        void main() {
-          vUv = uv;
-          vec3 p = position;
-
-          // Acoustic Julia fractal parameter calculation
-          vec2 c = vec2(
-            sin(u_time * 0.15 + u_n * 0.18) * 0.38 - 0.72 + u_bass * 0.08,
-            cos(u_time * 0.12 + u_m * 0.18) * 0.32 + 0.18 + u_mid * 0.08
-          );
-
-          vec2 z = (uv - 0.5) * 2.5 / max(0.4, u_breath_scale);
-          float iter = 0.0;
-          for (int i = 0; i < 28; i++) {
-            if (dot(z, z) > 4.0) break;
-            z = vec2(z.x * z.x - z.y * z.y, 2.0 * z.x * z.y) + c;
-            iter += 1.0;
-          }
-
-          // Smooth distance iteration
-          float smoothVal = iter - log2(max(1.0, log2(dot(z, z)) * 0.5));
-          vIter = smoothVal;
-
-          // 3D topological relief displacement
-          float elev = (smoothVal / 28.0) * 0.55 * u_amplitude * u_breath_scale;
-          p.z += elev;
-          vElevation = elev;
-
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
-        }
-      `,
-      fragmentShader: `
-        uniform float u_time;
-        uniform int u_palette;
-        uniform float u_bass;
-        varying vec2 vUv;
-        varying float vElevation;
-        varying float vIter;
-
-        vec3 getPaletteColor(float t) {
-          t = fract(t);
-          if (u_palette == 1) {
-            float w = smoothstep(0.4, 0.6, sin(t * 6.28318));
-            return mix(vec3(0.92, 0.92, 0.92), vec3(1.0, 0.2, 0.2), w * 0.5);
-          } else if (u_palette == 2) {
-            vec3 c0 = vec3(0.85, 0.40, 0.0);
-            vec3 c1 = vec3(1.0, 0.70, 0.0);
-            vec3 c2 = vec3(1.0, 0.92, 0.45);
-            return mix(mix(c0, c1, smoothstep(0.0, 0.5, t)), c2, smoothstep(0.5, 1.0, t));
-          } else if (u_palette == 3) {
-            vec3 c0 = vec3(0.0, 0.55, 0.15);
-            vec3 c1 = vec3(0.15, 0.95, 0.35);
-            vec3 c2 = vec3(0.75, 1.0, 0.75);
-            return mix(mix(c0, c1, smoothstep(0.0, 0.5, t)), c2, smoothstep(0.5, 1.0, t));
-          } else if (u_palette == 4) {
-            vec3 c0 = vec3(0.0, 0.30, 0.85);
-            vec3 c1 = vec3(0.0, 0.80, 1.0);
-            vec3 c2 = vec3(0.70, 0.98, 1.0);
-            return mix(mix(c0, c1, smoothstep(0.0, 0.5, t)), c2, smoothstep(0.5, 1.0, t));
-          } else if (u_palette == 5) {
-            // Stark Chromatic Spectrum
-            vec3 c0 = vec3(1.0, 0.08, 0.20);
-            vec3 c1 = vec3(1.0, 0.05, 0.78);
-            vec3 c2 = vec3(0.55, 0.05, 1.0);
-            vec3 c3 = vec3(0.0, 0.90, 1.0);
-            vec3 c4 = vec3(0.08, 1.0, 0.32);
-            vec3 c5 = vec3(1.0, 0.76, 0.0);
-            float seg = t * 5.0;
-            if (seg < 1.0) return mix(c0, c1, seg);
-            if (seg < 2.0) return mix(c1, c2, seg - 1.0);
-            if (seg < 3.0) return mix(c2, c3, seg - 2.0);
-            if (seg < 4.0) return mix(c3, c4, seg - 3.0);
-            return mix(c4, c5, seg - 4.0);
-          } else {
-            // Vibrant Pastel Spectrum
-            vec3 c0 = vec3(1.0, 0.52, 0.42);
-            vec3 c1 = vec3(0.96, 0.44, 0.76);
-            vec3 c2 = vec3(0.68, 0.52, 0.98);
-            vec3 c3 = vec3(0.36, 0.70, 0.98);
-            vec3 c4 = vec3(0.24, 0.85, 0.65);
-            vec3 c5 = vec3(1.0, 0.84, 0.45);
-            float seg = t * 5.0;
-            if (seg < 1.0) return mix(c0, c1, seg);
-            if (seg < 2.0) return mix(c1, c2, seg - 1.0);
-            if (seg < 3.0) return mix(c2, c3, seg - 2.0);
-            if (seg < 4.0) return mix(c3, c4, seg - 3.0);
-            return mix(c4, c5, seg - 4.0);
-          }
-        }
-
-        void main() {
-          float t = (vIter / 28.0) * 3.0 + u_time * 0.06;
-          vec3 col = getPaletteColor(t);
-
-          // Dark core threshold for Mandelbrot interior
-          if (vIter >= 27.2) {
-            col = vec3(0.03, 0.04, 0.06);
-          }
-
-          // Shading contour relief
-          col += vec3(vElevation * 0.4);
-          gl_FragColor = vec4(col, 0.96);
-        }
-      `,
-      transparent: false,
-    });
-
-    this.fractalMesh = new THREE.Mesh(geo, this.fractalMaterial);
-    this.fractalGroup.add(this.fractalMesh);
-
-    // Subtle wireframe overlay for Brutalist cyber grid contour
-    const wireGeo = new THREE.PlaneGeometry(2.4, 2.4, 48, 48);
-    const wireMat = new THREE.MeshBasicMaterial({
-      color: 0x222222,
-      wireframe: true,
-      transparent: true,
-      opacity: 0.35,
-    });
-    this.fractalWireMesh = new THREE.Mesh(wireGeo, wireMat);
-    this.fractalWireMesh.position.z = 0.01;
-    this.fractalGroup.add(this.fractalWireMesh);
-
-    this.scene?.add(this.fractalGroup);
-  }
-
-  private updateFractal(delta: number, time: number): void {
-    if (!this.fractalGroup || !this.fractalMaterial) return;
-
-    if (this.freqProvider) {
-      this.freqProvider(this.freqDataBuffer);
-    }
-
-    let bass = 0;
-    for (let i = 0; i < 8; i++) bass += this.freqDataBuffer[i];
-    bass = (bass / 8) / 255.0;
-
-    let mid = 0;
-    for (let i = 8; i < 48; i++) mid += this.freqDataBuffer[i];
-    mid = (mid / 40) / 255.0;
-
-    this.fractalMaterial.uniforms.u_time.value = time;
-    this.fractalMaterial.uniforms.u_n.value = this.uN;
-    this.fractalMaterial.uniforms.u_m.value = this.uM;
-    this.fractalMaterial.uniforms.u_amplitude.value = this.uAmplitude;
-    this.fractalMaterial.uniforms.u_breath_scale.value = this.currentBreathScale;
-    this.fractalMaterial.uniforms.u_bass.value = bass;
-    this.fractalMaterial.uniforms.u_mid.value = mid;
-
-    // Slow organic planar roll
-    this.fractalGroup.rotation.z = time * 0.04;
-  }
-
   private chladni(x: number, y: number, n: number, m: number): number {
     const pi = Math.PI;
     // Chladni 2D nodal equation:
@@ -2482,8 +2287,6 @@ export class ChladniCanvas {
       this.updateDigitalScope(delta, elapsedTime);
     } else if (this.mode === "wire_tunnel") {
       this.updateWireTunnel(delta, elapsedTime);
-    } else if (this.mode === "fractal") {
-      this.updateFractal(delta, elapsedTime);
     }
 
     // 3D Camera kinematics (Static, no automatic orbital rotation)
@@ -2546,9 +2349,6 @@ export class ChladniCanvas {
     }
     if (this.waterfallMaterial?.uniforms.u_palette) {
       this.waterfallMaterial.uniforms.u_palette.value = val;
-    }
-    if (this.fractalMaterial?.uniforms.u_palette) {
-      this.fractalMaterial.uniforms.u_palette.value = val;
     }
     this.updateStaticMaterialsForPalette();
   }
@@ -2637,9 +2437,6 @@ export class ChladniCanvas {
 
     if (this.particleMaterial?.uniforms?.u_point_size) {
       this.particleMaterial.uniforms.u_point_size.value = ptSizes[thick];
-    }
-    if (this.fractalWireMesh) {
-      (this.fractalWireMesh.material as THREE.MeshBasicMaterial).opacity = lineOpacities[thick] * 0.45;
     }
     if (this.radarBarsLine) (this.radarBarsLine.material as THREE.LineBasicMaterial).opacity = lineOpacities[thick];
     if (this.radarSweepLine) (this.radarSweepLine.material as THREE.LineBasicMaterial).opacity = lineOpacities[thick];
@@ -2844,11 +2641,6 @@ export class ChladniCanvas {
     if (this.wireLatticeLine) {
       (this.wireLatticeLine.material as THREE.LineBasicMaterial).color.copy(secondary);
     }
-
-    // Fractal Wireframe
-    if (this.fractalWireMesh) {
-      (this.fractalWireMesh.material as THREE.MeshBasicMaterial).color.copy(accent);
-    }
   }
 
   setClearColor(hex: number, alpha = 1.0): void {
@@ -2871,17 +2663,6 @@ export class ChladniCanvas {
       this.fluidMesh.geometry.dispose();
       this.fluidMaterial?.dispose();
       this.fluidMesh = null;
-    }
-
-    if (this.fractalMesh) {
-      this.fractalMesh.geometry.dispose();
-      this.fractalMaterial?.dispose();
-      this.fractalMesh = null;
-    }
-    if (this.fractalWireMesh) {
-      this.fractalWireMesh.geometry.dispose();
-      (this.fractalWireMesh.material as THREE.Material).dispose();
-      this.fractalWireMesh = null;
     }
 
     this.renderer?.dispose();
