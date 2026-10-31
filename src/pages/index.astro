@@ -7,6 +7,7 @@
  */
 import BaseLayout from "../layouts/BaseLayout.astro";
 import TitleBar from "../components/ui/TitleBar.astro";
+import SpriteMetronome from "../components/ui/SpriteMetronome.astro";
 import presetsData from "../data/presets.json";
 
 const ERA_DISPLAY_TITLES: Record<string, string> = {
@@ -93,15 +94,43 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
           <span id="rec-timecode">REC 00:00:00:00</span>
         </div>
 
+        <!-- Overlaid Session HUD on the Visualizer (Zero Layout Shifts in Controls) -->
+        <div class="deck__canvas-hud" id="canvas-hud">
+          <div class="hud-countdown" id="hud-countdown">10:00</div>
+          <div class="hud-phase-badge" id="hud-phase-badge">
+            <span class="hud-dot terminal-blink">●</span>
+            <span id="hud-phase-label">PHASE: INHALE [ 4S ]</span>
+          </div>
+        </div>
+
+        <!-- Unmissable Sine Burst Notification Banner -->
+        <div class="deck__burst-banner" id="burst-banner">
+          <span class="burst-banner__icon terminal-blink">⚡</span>
+          <span class="burst-banner__text">INTERVAL CHIME // 528 HZ SINE BURST</span>
+        </div>
+
+        <!-- 1-Bit Sprite Container Molecule (Docked on Canvas, toggleable) -->
+        <div class="deck__sprite-dock" id="sprite-dock">
+          <SpriteMetronome id="metronome-cat" />
+        </div>
+
         <!-- Dark toolbar inside canvas -->
         <div class="deck__canvas-bar">
           <div class="deck__canvas-toggles">
             <button class="deck__toggle deck__toggle--active" id="toggle-particles" type="button">
-              [X] CHLADNI PARTICLES
+              [X] CHLADNI
             </button>
             <span class="deck__toggle-sep">|</span>
             <button class="deck__toggle" id="toggle-fluid" type="button">
-              [ ] FARADAY FLUID
+              [ ] FLUID
+            </button>
+            <span class="deck__toggle-sep">|</span>
+            <button class="deck__toggle" id="toggle-oscillo" type="button">
+              [ ] OSCILLO
+            </button>
+            <span class="deck__toggle-sep">|</span>
+            <button class="deck__toggle deck__toggle--active" id="toggle-companion" type="button">
+              [X] COMPANION
             </button>
           </div>
           <button class="btn-theater" id="btn-theater" type="button">
@@ -115,9 +144,9 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
         </div>
       </div>
 
-      <!-- Bottom Control Deck (Fixed height, ALWAYS 100% visible) -->
+      <!-- Bottom Control Deck (Fixed height, ALWAYS 100% visible, ZERO layout shifts) -->
       <div class="deck__controls">
-        <!-- Hz Display — Extreme Scale Contrast -->
+        <!-- Hz Display — Extreme Scale Contrast (Rock-solid static display) -->
         <div class="deck__hz-block">
           <span class="deck__hz-value" id="hz-readout">{Number(initialPreset.target_hz).toFixed(1)}</span>
           <div class="deck__hz-meta">
@@ -160,6 +189,38 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
               />
             </div>
           </div>
+        </div>
+
+        <!-- V1.5 Meditation Controls: Cadence Dropdown & Timebox Selector -->
+        <div class="deck__meditation-row">
+          <!-- Cadence Dropdown (Atom) -->
+          <div class="deck__cadence-box">
+            <label class="deck__med-label" for="select-cadence">BREATH_SYNC</label>
+            <div class="select-brutalist-wrap">
+              <select class="select-brutalist" id="select-cadence">
+                <option value="box">BREATH_SYNC // [ BOX ]</option>
+                <option value="478">BREATH_SYNC // [ 4-7-8 ]</option>
+                <option value="coherent">BREATH_SYNC // [ COHERENT ]</option>
+                <option value="off">BREATH_SYNC // [ OFF ]</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Timebox Selector (Atom) -->
+          <div class="deck__timebox-box">
+            <span class="deck__med-label">TIMEBOX</span>
+            <div class="deck__timebox-toggles" id="timebox-toggles">
+              <button class="timebox-btn timebox-btn--active" data-mins="10" type="button">[ 10M ]</button>
+              <button class="timebox-btn" data-mins="20" type="button">[ 20M ]</button>
+              <button class="timebox-btn" data-mins="60" type="button">[ 60M ]</button>
+              <button class="timebox-btn" data-mins="infinity" type="button">[ ∞ ]</button>
+            </div>
+          </div>
+
+          <!-- Session Takeover Trigger Button -->
+          <button class="btn-session" id="btn-session" type="button">
+            [ START SESSION ⏵ ]
+          </button>
         </div>
 
         <!-- Noise Blend Interactive Control Deck -->
@@ -258,10 +319,18 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     <button class="btn-theater-exit" id="btn-theater-exit" title="Exit Theater Mode">
       ✕
     </button>
+    <!-- Theater Visualizer Mode Switcher -->
+    <div class="theater-toolbar">
+      <button class="theater-mode-btn theater-mode-btn--active" data-mode="particles" id="theater-mode-particles">[ CHLADNI ]</button>
+      <button class="theater-mode-btn" data-mode="fluid" id="theater-mode-fluid">[ FLUID ]</button>
+      <button class="theater-mode-btn" data-mode="oscillo" id="theater-mode-oscillo">[ OSCILLO ]</button>
+    </div>
     <div class="theater-canvas-container" id="theater-canvas"></div>
     <div class="theater-hud">
-      <span class="theater-hud__label">ANAHAT // PROJECTION MODE</span>
+      <span class="theater-hud__label">ANAHAT // THEATER PROJECTION</span>
+      <span class="theater-hud__code" id="theater-code">{initialPreset.code || "PRE-001"}</span>
       <span class="theater-hud__hz" id="theater-hz">{Number(initialPreset.target_hz).toFixed(1)} HZ</span>
+      <span class="theater-hud__phase" id="theater-phase">CADENCE: IDLE</span>
     </div>
   </div>
 
@@ -347,6 +416,146 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
       <div class="modal-footer">
         <button class="btn-brutalist btn-brutalist--sm" id="btn-done-bio">
           [ CLOSE SCANNER ]
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SYSTEM INFO & CLINICAL DISCLAIMERS MODAL
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="modal-backdrop" id="modal-info">
+    <div class="modal-box modal-box--info">
+      <div class="modal-header">
+        <span>SYSTEM SPECIFICATION // ARCHITECTURE, CAPABILITIES & CLINICAL PROTOCOL</span>
+        <button class="modal-close-btn" id="btn-close-info" title="Close Modal">✕</button>
+      </div>
+      <div class="modal-body modal-body--info">
+        <!-- Section 1: Purpose & Philosophy -->
+        <section class="info-section">
+          <div class="info-section__title">01 // ARCHITECTURAL PURPOSE & DESIGN RATIONALE</div>
+          <p class="info-p">
+            <strong>ANAHAT</strong> (अनाहत — <em>"unstruck sound"</em>) is an offline-first neuroacoustic workstation and cymatic resonance visualizer engineered for brainwave entrainment, meditative absorption, sustained cognitive focus, and psychoacoustic exploration.
+          </p>
+          <p class="info-p">
+            Operating strictly on a 48,000 Hz 32-bit float digital signal processing pipeline, Anahat synthesizes uncompromised continuous carrier waves, binaural phase differentials, harmonic overtone spectra, and calibrated stochastic noise without dynamic range compression or mp3/aac lossy artifacts.
+          </p>
+        </section>
+
+        <!-- Section 2: Core Subsystems Grid -->
+        <section class="info-section">
+          <div class="info-section__title">02 // CORE SUBSYSTEMS & CAPABILITIES</div>
+          <div class="info-grid">
+            <div class="info-card">
+              <div class="info-card__title">[ DUAL-CHANNEL DSP ENGINE ]</div>
+              <div class="info-card__desc">
+                Native Rust stereo oscillators with independent L/R phase tracking targeting Delta (0.5–4 Hz), Theta (4–8 Hz), Alpha (8–13 Hz), Beta (13–30 Hz), and Gamma (30–100 Hz) cognitive states.
+              </div>
+            </div>
+
+            <div class="info-card">
+              <div class="info-card__title">[ CHLADNI NODAL DYNAMICS ]</div>
+              <div class="info-card__desc">
+                12,000 WebGL particles governed by Ernst Chladni's wave equation with viscous fluid damping (0.94) and organic harmonic curl, eliminating erratic motion while simulating resonant plate physics.
+              </div>
+            </div>
+
+            <div class="info-card">
+              <div class="info-card__title">[ FARADAY FLUID HYDRODYNAMICS ]</div>
+              <div class="info-card__desc">
+                Continuous 3D parametric standing wave wireframe simulation across a 96×96 surface grid responding in real-time to instantaneous audio amplitude and harmonic modes.
+              </div>
+            </div>
+
+            <div class="info-card">
+              <div class="info-card__title">[ WINAMP 3D OSCILLOSCOPE ]</div>
+              <div class="info-card__desc">
+                4-trace multi-ribbon time-domain PCM waveform visualizer with harmonic offsets, sub-bass envelope ribbons, and a 3D rotating Lissajous orbit loop in pastel spectrum gradients.
+              </div>
+            </div>
+
+            <div class="info-card">
+              <div class="info-card__title">[ BREATH SYNC & INTERVAL CHIMES ]</div>
+              <div class="info-card__desc">
+                Temporal breath cadences (Box 4:4:4:4, 4-7-8, Coherent, Flow State) driving particle expansion/contraction in lockstep with dual-harmonic 528 Hz pure sine bell bursts.
+              </div>
+            </div>
+
+            <div class="info-card">
+              <div class="info-card__title">[ 1-BIT METRONOMIC COMPANION ]</div>
+              <div class="info-card__desc">
+                Lightweight 60 FPS pixel-art metronome (<code>TABBY_01</code>) providing intuitive cadence rhythm with zero layout shifts and complete visibility control.
+              </div>
+            </div>
+
+            <div class="info-card">
+              <div class="info-card__title">[ SCREEN 2 THEATER PROJECTION ]</div>
+              <div class="info-card__desc">
+                Chromeless 1920×1080 pure black visual projection mode with live HUD telemetry for external displays, projectors, and ambient installations.
+              </div>
+            </div>
+
+            <div class="info-card">
+              <div class="info-card__title">[ LOSSLESS WAV SESSION EXPORT ]</div>
+              <div class="info-card__desc">
+                Direct-to-disk uncompressed 16-bit 48 kHz stereo WAV recording via native OS file dialogs without reliance on cloud rendering or external codecs.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Section 3: Clinical & Safety Disclaimers -->
+        <section class="info-section">
+          <div class="info-section__title">03 // CLINICAL PROTOCOL & SAFETY DISCLAIMERS</div>
+          <div class="info-disclaimer-box">
+            <div class="info-disclaimer-box__header">
+              <span class="terminal-blink">▲</span> WARNING: MANDATORY SAFETY & REGULATORY ADVISORY
+            </div>
+
+            <div class="info-disclaimer-item">
+              <strong>1. NOT A MEDICAL DEVICE / NOT MEDICAL TREATMENT:</strong>
+              Anahat is an acoustic experimentation platform and relaxation utility. It is <strong>NOT</strong> a medical device, is <strong>NOT</strong> approved or cleared by the US Food and Drug Administration (FDA), European Medicines Agency (EMA), or CE medical directives, and is <strong>NOT</strong> intended to diagnose, treat, mitigate, cure, or prevent any neurological, psychological, psychiatric, or physiological condition (including but not limited to clinical insomnia, clinical depression, epilepsy, ADHD, PTSD, or anxiety disorders). Never substitute neuroacoustic sessions for licensed psychiatric, medical, or pharmacological treatment.
+            </div>
+
+            <div class="info-disclaimer-item">
+              <strong>2. PHOTOSENSITIVE EPILEPSY & SEIZURE ADVISORY:</strong>
+              The real-time visualizers (Chladni particle collapses, Faraday wave interference, and sine wave shockwave bursts) produce rhythmic visual patterns and high-contrast oscillations. If you or anyone in your immediate family has an epileptic condition, photosensitivity, or has ever experienced seizures, tremors, optical migraine auras, or loss of consciousness when exposed to flashing or rhythmic light patterns, <strong>DO NOT USE THE VISUALIZERS</strong>. Immediately close the visualizer or run Anahat strictly in audio-only mode.
+            </div>
+
+            <div class="info-disclaimer-item">
+              <strong>3. AUDITORY HEALTH & DECIBEL SAFETY PROTOCOL:</strong>
+              Binaural beat entrainment functions solely via stereo separation and does <strong>NOT</strong> require high volume to be neuro-biologically effective. <strong>Always initialize playback at a low volume before placing headphones over your ears.</strong> Listening at sustained sound pressure levels above 85 dB(A) can cause permanent noise-induced hearing loss (NIHL) and chronic tinnitus.
+            </div>
+
+            <div class="info-disclaimer-item">
+              <strong>4. MOTOR VEHICLE & HEAVY MACHINERY RESTRICTION:</strong>
+              Presets in the Delta (&lt;4 Hz) and Theta (4–8 Hz) spectrums intentionally promote profound parasympathetic nervous system dominance, rapid muscular relaxation, and drowsiness. <strong>NEVER listen to Anahat while driving a motor vehicle, operating heavy machinery, piloting, or performing any task demanding acute physical reaction time and undivided cognitive vigilance.</strong>
+            </div>
+
+            <div class="info-disclaimer-item">
+              <strong>5. PRE-EXISTING MEDICAL CONDITIONS & PACEMAKERS:</strong>
+              Consult a qualified physician prior to use if you have an implanted cardiac pacemaker, deep brain stimulator, history of stroke, or severe cardiovascular disease. Discontinue use immediately if you experience dizziness, nausea, eye strain, disorientation, or heart palpitations.
+            </div>
+          </div>
+        </section>
+
+        <!-- Section 4: Privacy & Hardware Architecture -->
+        <section class="info-section">
+          <div class="info-section__title">04 // PRIVACY & ARCHITECTURAL INTEGRITY</div>
+          <p class="info-p">
+            <strong>100% AIR-GAPPED & PRIVATE:</strong> Anahat contains zero network telemetry, zero remote tracking beacons, and zero cloud analytics. All digital signal synthesis and WebGL compute calculations execute exclusively on your local workstation hardware.
+          </p>
+          <div class="modal-spec-text">
+            SYSTEM ENGINE: TAURI V2 // RUST 1.99 DSP CORE<br/>
+            FRONTEND UI: ASTRO V7 STATIC SHELL // TAILWIND CSS V4<br/>
+            GRAPHICS PIPELINE: THREE.JS WEBGL2 // VISCOUS CHLADNI COMPUTE<br/>
+            SAMPLING ARCHITECTURE: 48,000 HZ / 32-BIT FLOAT STEREO PIPELINE
+          </div>
+        </section>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-brutalist btn-brutalist--sm" id="btn-acknowledge-info">
+          [ ACKNOWLEDGE & CLOSE ]
         </button>
       </div>
     </div>
@@ -690,14 +899,14 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
   /* Control Deck: STRICTLY LOCKED HEIGHT so sliders never get pushed off */
   .deck__controls {
     flex-shrink: 0;
-    height: 270px;
+    height: 308px;
     background: var(--color-bg-surface-light);
     border: 3px solid var(--color-border-heavy);
     box-shadow: var(--shadow-brutalist);
     display: flex;
     flex-direction: column;
-    padding: 16px 20px;
-    gap: 12px;
+    padding: 12px 16px;
+    gap: 8px;
     box-sizing: border-box;
     overflow: hidden;
   }
@@ -707,6 +916,229 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     align-items: flex-start;
     gap: 16px;
     flex-shrink: 0;
+  }
+
+  /* Overlaid Canvas HUD for Meditation Countdown (Zero layout shifts) */
+  .deck__canvas-hud {
+    display: none;
+    position: absolute;
+    top: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    pointer-events: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    text-align: center;
+  }
+
+  .deck--screen7 .deck__canvas-hud {
+    display: flex;
+  }
+
+  .hud-countdown {
+    font-family: var(--font-display);
+    font-size: clamp(60px, 9vw, 96px);
+    font-weight: 700;
+    letter-spacing: -0.05em;
+    line-height: 0.9;
+    color: transparent;
+    -webkit-text-stroke: 2.5px var(--color-border-heavy);
+    text-shadow: 2px 2px 0px rgba(255, 255, 255, 0.95);
+  }
+
+  .hud-phase-badge {
+    background: var(--color-bg-surface-dark);
+    color: var(--color-accent-industrial);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 3px 10px;
+    border: 2px solid var(--color-border-heavy);
+    box-shadow: 3px 3px 0 0 #000;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-transform: uppercase;
+  }
+
+  .hud-dot {
+    color: var(--color-accent-industrial);
+    font-size: 10px;
+  }
+
+  /* Screen 7 Takeover State */
+  .deck--screen7 {
+    grid-template-columns: 300px 1fr 0px !important;
+  }
+
+  .deck--screen7 .deck__provenance {
+    display: none !important;
+  }
+
+  /* 1-Bit Sprite Metronome Container (Docked on Canvas, toggleable) */
+  .deck__sprite-dock {
+    display: flex;
+    position: absolute;
+    top: 40px;
+    left: 12px;
+    z-index: 25;
+  }
+
+  .deck__sprite-dock--hidden {
+    display: none !important;
+  }
+
+  /* Unmissable Sine Burst Banner */
+  .deck__burst-banner {
+    display: none;
+    position: absolute;
+    top: 36px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 30;
+    background: var(--color-accent-industrial);
+    color: var(--color-bg-surface-light);
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: 6px 16px;
+    border: 2px solid var(--color-border-heavy);
+    box-shadow: 4px 4px 0 0 #000;
+    align-items: center;
+    gap: 8px;
+    text-transform: uppercase;
+  }
+
+  .deck__burst-banner--active {
+    display: flex;
+  }
+
+  .burst-banner__icon {
+    color: #FFF;
+    font-size: 14px;
+  }
+
+  .deck__canvas-wrap--pulse {
+    border-color: var(--color-accent-industrial) !important;
+    box-shadow: inset 0 0 0 3px var(--color-accent-industrial), 0 0 16px rgba(255, 51, 51, 0.4);
+  }
+
+  /* Meditation Row (V1.5 Meditation) */
+  .deck__meditation-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    background: var(--color-bg-concrete);
+    border: 2px solid var(--color-border-heavy);
+    padding: 5px 8px;
+    flex-shrink: 0;
+  }
+
+  .deck__med-label {
+    font-family: var(--font-mono);
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: #666;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .deck__cadence-box {
+    flex: 1.1;
+    min-width: 0;
+  }
+
+  .select-brutalist-wrap {
+    width: 100%;
+  }
+
+  .select-brutalist {
+    width: 100%;
+    height: 24px;
+    background: var(--color-bg-surface-light);
+    border: 2px solid var(--color-border-heavy);
+    font-family: var(--font-mono);
+    font-size: 8px;
+    font-weight: 700;
+    color: var(--color-bg-surface-dark);
+    padding: 0 4px;
+    text-transform: uppercase;
+    outline: none;
+    cursor: pointer;
+  }
+
+  .select-brutalist:focus {
+    border-color: var(--color-accent-industrial);
+  }
+
+  .deck__timebox-box {
+    flex: 1.3;
+    min-width: 0;
+  }
+
+  .deck__timebox-toggles {
+    display: flex;
+    gap: 2px;
+  }
+
+  .timebox-btn {
+    appearance: none;
+    -webkit-appearance: none;
+    background: var(--color-bg-surface-light);
+    border: 1px solid var(--color-border-heavy);
+    font-family: var(--font-mono);
+    font-size: 7.5px;
+    font-weight: 700;
+    padding: 2px 4px;
+    cursor: pointer;
+    color: var(--color-bg-surface-dark);
+    text-transform: uppercase;
+  }
+
+  .timebox-btn:hover {
+    background: var(--color-bg-surface-dark);
+    color: var(--color-bg-surface-light);
+  }
+
+  .timebox-btn--active {
+    background: var(--color-accent-industrial) !important;
+    color: var(--color-bg-surface-light) !important;
+    border-color: var(--color-accent-industrial) !important;
+  }
+
+  .btn-session {
+    appearance: none;
+    -webkit-appearance: none;
+    background: var(--color-bg-surface-dark);
+    color: var(--color-bg-surface-light);
+    border: 2px solid var(--color-border-heavy);
+    font-family: var(--font-display);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 4px 8px;
+    letter-spacing: -0.02em;
+    cursor: pointer;
+    text-transform: uppercase;
+    flex-shrink: 0;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .btn-session:hover {
+    background: var(--color-accent-industrial);
+  }
+
+  .btn-session--active {
+    background: var(--color-accent-industrial) !important;
+    color: var(--color-bg-surface-light) !important;
   }
 
   .deck__hz-value {
@@ -1084,6 +1516,39 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     color: #FFFFFF;
   }
 
+  .theater-toolbar {
+    position: absolute;
+    top: 24px;
+    left: 24px;
+    z-index: 10001;
+    display: flex;
+    gap: 8px;
+  }
+
+  .theater-mode-btn {
+    appearance: none;
+    background: transparent;
+    border: 2px solid #555;
+    color: #AAA;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 6px 14px;
+    cursor: pointer;
+    text-transform: uppercase;
+  }
+
+  .theater-mode-btn:hover {
+    border-color: #FFF;
+    color: #FFF;
+  }
+
+  .theater-mode-btn--active {
+    border-color: var(--color-accent-industrial) !important;
+    color: var(--color-accent-industrial) !important;
+    background: rgba(255, 51, 51, 0.15);
+  }
+
   .theater-hud {
     position: absolute;
     bottom: 24px;
@@ -1101,10 +1566,23 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     letter-spacing: 0.08em;
   }
 
+  .theater-hud__code {
+    font-size: 14px;
+    font-weight: 700;
+    color: #FFF;
+  }
+
   .theater-hud__hz {
     font-size: 24px;
     font-weight: 700;
     color: var(--color-accent-industrial);
+  }
+
+  .theater-hud__phase {
+    font-size: 12px;
+    font-weight: 700;
+    color: #AAA;
+    letter-spacing: 0.05em;
   }
 
   /* ══════════════════════════════════════════════════════════
@@ -1144,6 +1622,13 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     width: 500px;
     max-width: 90vw;
     height: 380px;
+  }
+
+  .modal-box--info {
+    width: 840px;
+    max-width: 92vw;
+    height: 640px;
+    max-height: 88vh;
   }
 
   .modal-header {
@@ -1285,6 +1770,112 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     color: #444;
   }
 
+  /* Info Modal Specific Styles */
+  .modal-body--info {
+    padding: 24px;
+    background: #FAFAFA;
+  }
+
+  .info-section {
+    margin-bottom: 24px;
+  }
+
+  .info-section:last-child {
+    margin-bottom: 0;
+  }
+
+  .info-section__title {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--color-bg-surface-dark);
+    background: var(--color-bg-concrete);
+    padding: 5px 10px;
+    border-left: 4px solid var(--color-accent-industrial);
+    margin-bottom: 12px;
+    display: inline-block;
+    letter-spacing: 0.05em;
+  }
+
+  .info-p {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1.7;
+    color: #222;
+    margin-bottom: 10px;
+  }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 12px;
+    margin-top: 8px;
+  }
+
+  .info-card {
+    border: 1px solid var(--color-border-heavy);
+    background: #FFFFFF;
+    padding: 12px;
+    box-shadow: 2px 2px 0px 0px rgba(0, 0, 0, 0.15);
+  }
+
+  .info-card__title {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--color-bg-surface-dark);
+    margin-bottom: 6px;
+    letter-spacing: 0.03em;
+  }
+
+  .info-card__desc {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    line-height: 1.6;
+    color: #444;
+  }
+
+  .info-disclaimer-box {
+    border: 2px solid var(--color-accent-industrial);
+    background: #FFF5F5;
+    padding: 16px;
+    box-shadow: 3px 3px 0px 0px rgba(255, 51, 51, 0.2);
+  }
+
+  .info-disclaimer-box__header {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--color-accent-industrial);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: 0.05em;
+  }
+
+  .info-disclaimer-item {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    line-height: 1.6;
+    color: #222;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed rgba(255, 51, 51, 0.3);
+  }
+
+  .info-disclaimer-item:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+
+  .info-disclaimer-item strong {
+    color: #000;
+    display: block;
+    margin-bottom: 2px;
+  }
+
   .modal-footer {
     padding: 12px 20px;
     border-top: 2px solid var(--color-border-heavy);
@@ -1297,6 +1888,7 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
 <script>
   import { ChladniCanvas } from "../components/logic/ChladniCanvas";
   import { audioEngine } from "../components/logic/AudioEngine";
+  import { spriteMetronome, type CadenceType } from "../components/logic/SpriteMetronome";
   import { listen } from "@tauri-apps/api/event";
 
   // ═══════════════════════════════════════════════════════════
@@ -1312,6 +1904,13 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
   let currentNoiseType = "brown";
   let currentNoiseRatio = 0.25;
 
+  // V1.5 Meditation Session State
+  let isSessionActive = false;
+  let sessionMinutes = 10;
+  let sessionSecondsRemaining = 600;
+  let sessionInterval: any = null;
+  let activeCadence: CadenceType = "box";
+
   // Initialize WebGL Visualizer
   function initVisualizer() {
     const container = document.getElementById("webgl-canvas");
@@ -1320,6 +1919,7 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     visualizer = new ChladniCanvas();
     visualizer.mount(container);
     visualizer.setAudioProvider(() => audioEngine.getRealtimeAmplitude());
+    visualizer.setWaveProvider((buf) => audioEngine.getWaveformData(buf));
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -1373,6 +1973,8 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
 
     const theaterHzEl = document.getElementById("theater-hz");
     if (theaterHzEl) theaterHzEl.textContent = `${Number(preset.target_hz).toFixed(1)} HZ`;
+    const theaterCodeEl = document.getElementById("theater-code");
+    if (theaterCodeEl) theaterCodeEl.textContent = preset.code || preset.id?.toUpperCase() || "PRE-001";
 
     // Waveform label
     const wfEl = document.getElementById("waveform-label");
@@ -1455,33 +2057,62 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
   // VISUALIZER TOGGLE (CHLADNI PARTICLES <-> FARADAY FLUID)
   // ═══════════════════════════════════════════════════════════
 
+  function setModeUI(mode: "particles" | "fluid" | "oscillo") {
+    visualizer?.setMode(mode);
+    theaterVisualizer?.setMode(mode);
+
+    const btnParticles = document.getElementById("toggle-particles");
+    const btnFluid = document.getElementById("toggle-fluid");
+    const btnOscillo = document.getElementById("toggle-oscillo");
+
+    if (btnParticles) {
+      const active = mode === "particles";
+      btnParticles.textContent = active ? "[X] CHLADNI" : "[ ] CHLADNI";
+      btnParticles.classList.toggle("deck__toggle--active", active);
+    }
+    if (btnFluid) {
+      const active = mode === "fluid";
+      btnFluid.textContent = active ? "[X] FLUID" : "[ ] FLUID";
+      btnFluid.classList.toggle("deck__toggle--active", active);
+    }
+    if (btnOscillo) {
+      const active = mode === "oscillo";
+      btnOscillo.textContent = active ? "[X] OSCILLO" : "[ ] OSCILLO";
+      btnOscillo.classList.toggle("deck__toggle--active", active);
+    }
+
+    // Theater toolbar mode buttons
+    document.querySelectorAll(".theater-mode-btn").forEach((btn: any) => {
+      btn.classList.toggle("theater-mode-btn--active", btn.dataset.mode === mode);
+    });
+  }
+
   function wireToggles() {
     const btnParticles = document.getElementById("toggle-particles");
     const btnFluid = document.getElementById("toggle-fluid");
+    const btnOscillo = document.getElementById("toggle-oscillo");
+    const btnCompanion = document.getElementById("toggle-companion");
+    const spriteDock = document.getElementById("sprite-dock");
 
-    btnParticles?.addEventListener("click", () => {
-      visualizer?.setMode("particles");
-      theaterVisualizer?.setMode("particles");
+    btnParticles?.addEventListener("click", () => setModeUI("particles"));
+    btnFluid?.addEventListener("click", () => setModeUI("fluid"));
+    btnOscillo?.addEventListener("click", () => setModeUI("oscillo"));
 
-      btnParticles.textContent = "[X] CHLADNI PARTICLES";
-      btnParticles.classList.add("deck__toggle--active");
-
-      if (btnFluid) {
-        btnFluid.textContent = "[ ] FARADAY FLUID";
-        btnFluid.classList.remove("deck__toggle--active");
-      }
+    document.querySelectorAll(".theater-mode-btn").forEach((btn: any) => {
+      btn.addEventListener("click", () => {
+        const mode = btn.dataset.mode as "particles" | "fluid" | "oscillo";
+        if (mode) setModeUI(mode);
+      });
     });
 
-    btnFluid?.addEventListener("click", () => {
-      visualizer?.setMode("fluid");
-      theaterVisualizer?.setMode("fluid");
-
-      btnFluid.textContent = "[X] FARADAY FLUID";
-      btnFluid.classList.add("deck__toggle--active");
-
-      if (btnParticles) {
-        btnParticles.textContent = "[ ] CHLADNI PARTICLES";
-        btnParticles.classList.remove("deck__toggle--active");
+    btnCompanion?.addEventListener("click", () => {
+      const isHidden = spriteDock?.classList.toggle("deck__sprite-dock--hidden");
+      if (isHidden) {
+        btnCompanion.textContent = "[ ] COMPANION";
+        btnCompanion.classList.remove("deck__toggle--active");
+      } else {
+        btnCompanion.textContent = "[X] COMPANION";
+        btnCompanion.classList.add("deck__toggle--active");
       }
     });
   }
@@ -1618,11 +2249,36 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
         theaterVisualizer = new ChladniCanvas();
         theaterVisualizer.mount(theaterCanvasContainer);
         theaterVisualizer.setClearColor(0x000000, 1.0);
+        theaterVisualizer.setAudioProvider(() => audioEngine.getRealtimeAmplitude());
+        theaterVisualizer.setWaveProvider((buf) => audioEngine.getWaveformData(buf));
       }
 
       if (theaterVisualizer && visualizer) {
-        theaterVisualizer.setMode(visualizer.getMode());
+        const currentMode = visualizer.getMode();
+        setModeUI(currentMode);
+        if (currentPreset) {
+          theaterVisualizer.updateUniforms({
+            n: currentPreset.harmonic_n || 3,
+            m: currentPreset.harmonic_m || 4,
+          });
+        }
         theaterVisualizer.resume();
+      }
+
+      // Sync Theater HUD
+      const theaterCode = document.getElementById("theater-code");
+      const theaterHz = document.getElementById("theater-hz");
+      const theaterPhase = document.getElementById("theater-phase");
+      const hudPhaseLabel = document.getElementById("hud-phase-label");
+
+      if (theaterCode && currentPreset) {
+        theaterCode.textContent = currentPreset.code || currentPreset.id?.toUpperCase() || "PRE-001";
+      }
+      if (theaterHz && currentPreset) {
+        theaterHz.textContent = `${Number(currentPreset.target_hz).toFixed(1)} HZ`;
+      }
+      if (theaterPhase) {
+        theaterPhase.textContent = hudPhaseLabel?.textContent ? `CADENCE: ${hudPhaseLabel.textContent.replace("PHASE: ", "")}` : "CADENCE: IDLE";
       }
     });
 
@@ -1668,6 +2324,202 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
         modalBio?.classList.remove("modal-backdrop--active");
       });
     });
+
+    // System Info & Clinical Disclaimers
+    const btnInfo = document.getElementById("btn-info");
+    const modalInfo = document.getElementById("modal-info");
+    const btnCloseInfo = document.getElementById("btn-close-info");
+    const btnAcknowledgeInfo = document.getElementById("btn-acknowledge-info");
+
+    btnInfo?.addEventListener("click", () => {
+      modalInfo?.classList.add("modal-backdrop--active");
+    });
+
+    [btnCloseInfo, btnAcknowledgeInfo].forEach((el) => {
+      el?.addEventListener("click", () => {
+        modalInfo?.classList.remove("modal-backdrop--active");
+      });
+    });
+
+    // Close any modal when clicking its dark backdrop
+    [modalRoute, modalBio, modalInfo].forEach((backdrop) => {
+      backdrop?.addEventListener("click", (e) => {
+        if (e.target === backdrop) {
+          backdrop.classList.remove("modal-backdrop--active");
+        }
+      });
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // V1.5 MEDITATION: TIMEBOX, CADENCE & SCREEN 7 TAKEOVER
+  // ═══════════════════════════════════════════════════════════
+
+  function formatCountdown(sec: number): string {
+    if (sec === Infinity) return "∞ // FLOW";
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  }
+
+  function wireMeditationSession() {
+    const mainDeck = document.getElementById("main-deck");
+    const btnSession = document.getElementById("btn-session");
+    const selectCadence = document.getElementById("select-cadence") as HTMLSelectElement;
+    const timeboxButtons = document.querySelectorAll<HTMLButtonElement>(".timebox-btn");
+    const hudCountdown = document.getElementById("hud-countdown");
+    const hudPhaseLabel = document.getElementById("hud-phase-label");
+    const canvasCard = document.getElementById("canvas-card");
+
+    // Init GSAP Sprite Metronome (Canvas-driven, guaranteed 60FPS animation)
+    spriteMetronome.init("sprite-cadence-label", "tabby-canvas");
+
+    function triggerSineWaveBurst() {
+      // Trigger mathematical expanding sine wave ripple across particles, fluid, and oscilloscope
+      visualizer?.triggerSineBurst();
+      theaterVisualizer?.triggerSineBurst();
+
+      // Unmissable top banner [ ⚡ INTERVAL CHIME // 528 HZ SINE BURST ]
+      const banner = document.getElementById("burst-banner");
+      if (banner) {
+        banner.classList.add("deck__burst-banner--active");
+        setTimeout(() => {
+          banner.classList.remove("deck__burst-banner--active");
+        }, 1400);
+      }
+
+      // Subtle brutalist border pulse (replaces flat solid red background flash)
+      canvasCard?.classList.add("deck__canvas-wrap--pulse");
+      setTimeout(() => {
+        canvasCard?.classList.remove("deck__canvas-wrap--pulse");
+      }, 350);
+    }
+
+    // Connect Breath Phase callback to Visualizer & Interval Chimes
+    spriteMetronome.setPhaseCallback((phase, durationSec) => {
+      visualizer?.setBreathPhase(phase, durationSec);
+      theaterVisualizer?.setBreathPhase(phase, durationSec);
+
+      if (hudPhaseLabel) {
+        hudPhaseLabel.textContent = `PHASE: ${phase.toUpperCase()} [ ${durationSec}S ]`;
+      }
+      const theaterPhase = document.getElementById("theater-phase");
+      if (theaterPhase) {
+        theaterPhase.textContent = `CADENCE: ${phase.toUpperCase()} [ ${durationSec}S ]`;
+      }
+
+      // Interval Chime & Sine Wave Burst on breath phase shift
+      if (isSessionActive) {
+        audioEngine.playIntervalChime(phase === "inhale" ? 528 : 432);
+        triggerSineWaveBurst();
+      }
+    });
+
+    // Audio Engine chime listener
+    audioEngine.onChime(() => {
+      triggerSineWaveBurst();
+    });
+
+    // Cadence Select dropdown
+    selectCadence?.addEventListener("change", () => {
+      activeCadence = selectCadence.value as CadenceType;
+      spriteMetronome.applyCadence(activeCadence);
+    });
+
+    // Timebox Toggles
+    timeboxButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        timeboxButtons.forEach((b) => b.classList.remove("timebox-btn--active"));
+        btn.classList.add("timebox-btn--active");
+
+        const mins = btn.dataset.mins;
+        if (mins === "infinity") {
+          sessionMinutes = Infinity;
+          sessionSecondsRemaining = Infinity;
+        } else {
+          sessionMinutes = parseInt(mins || "10", 10);
+          sessionSecondsRemaining = sessionMinutes * 60;
+        }
+
+        if (hudCountdown) {
+          hudCountdown.textContent = formatCountdown(sessionSecondsRemaining);
+        }
+      });
+    });
+
+    function endSession() {
+      isSessionActive = false;
+      mainDeck?.classList.remove("deck--screen7");
+      if (btnSession) {
+        btnSession.textContent = "[ START SESSION ⏵ ]";
+        btnSession.classList.remove("btn-session--active");
+      }
+      if (sessionInterval) {
+        clearInterval(sessionInterval);
+        sessionInterval = null;
+      }
+      visualizer?.setBreathPhase("idle");
+      theaterVisualizer?.setBreathPhase("idle");
+      const theaterPhase = document.getElementById("theater-phase");
+      if (theaterPhase) {
+        theaterPhase.textContent = "CADENCE: IDLE";
+      }
+
+      setTimeout(() => {
+        (visualizer as any)?.handleResize?.();
+      }, 50);
+    }
+
+    // Session Start / End Button (Screen 7 Takeover)
+    btnSession?.addEventListener("click", () => {
+      isSessionActive = !isSessionActive;
+
+      if (isSessionActive) {
+        // Activate Screen 7
+        mainDeck?.classList.add("deck--screen7");
+        btnSession.textContent = "[ END SESSION ⏹ ]";
+        btnSession.classList.add("btn-session--active");
+
+        // Set initial countdown
+        if (sessionMinutes === Infinity) {
+          sessionSecondsRemaining = Infinity;
+        } else {
+          sessionSecondsRemaining = sessionMinutes * 60;
+        }
+        if (hudCountdown) {
+          hudCountdown.textContent = formatCountdown(sessionSecondsRemaining);
+        }
+
+        // Trigger rich sine chime & wave burst on start
+        audioEngine.playIntervalChime(528);
+        triggerSineWaveBurst();
+
+        // Start countdown timer
+        sessionInterval = setInterval(() => {
+          if (sessionSecondsRemaining !== Infinity) {
+            sessionSecondsRemaining--;
+            if (hudCountdown) {
+              hudCountdown.textContent = formatCountdown(sessionSecondsRemaining);
+            }
+
+            if (sessionSecondsRemaining <= 0) {
+              clearInterval(sessionInterval);
+              sessionInterval = null;
+              audioEngine.playIntervalChime(528);
+              triggerSineWaveBurst();
+              endSession();
+            }
+          }
+        }, 1000);
+
+        // Force visualizer to adapt to expanded canvas
+        setTimeout(() => {
+          (visualizer as any)?.handleResize?.();
+        }, 50);
+      } else {
+        endSession();
+      }
+    });
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -1682,4 +2534,5 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
   wireTheaterMode();
   wireModals();
   wireTrayEvents();
+  wireMeditationSession();
 </script>

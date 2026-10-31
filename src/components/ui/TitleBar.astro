@@ -21,6 +21,11 @@
 
   <div class="titlebar__flex" data-tauri-drag-region></div>
 
+  <!-- Info button in titlebar -->
+  <button class="titlebar__route-btn titlebar__info-btn" id="btn-info" title="System Specification & Clinical Disclaimers">
+    [ INFO // ? ]
+  </button>
+
   <!-- Route Audio button in titlebar -->
   <button class="titlebar__route-btn" id="btn-route-audio">
     [ ROUTE AUDIO ]
@@ -76,10 +81,19 @@
     font-family: var(--font-mono);
     font-size: 9px;
     font-weight: 700;
-    padding: 4px 16px;
-    margin-right: 12px;
+    padding: 4px 14px;
+    margin-right: 8px;
     cursor: pointer;
     text-transform: uppercase;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  .titlebar__info-btn {
+    border-color: #666;
+  }
+
+  .titlebar__info-btn:hover {
+    border-color: var(--color-bg-surface-light);
   }
 
   .titlebar__route-btn:hover {

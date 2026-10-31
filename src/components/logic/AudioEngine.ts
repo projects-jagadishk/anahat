@@ -38,6 +38,9 @@ export class AudioEngine {
   private currentParams: AudioPresetParams | null = null;
   private currentAmplitude = 0.7;
 
+  // Interval chime event hook
+  private onChimeCallbacks: Array<() => void> = [];
+
   constructor() {
     // Lazy init on first user interaction to comply with browser autoplay policies
   }
@@ -138,6 +141,70 @@ export class AudioEngine {
     this.rightOsc.start();
   }
 
+  onChime(callback: () => void): () => void {
+    this.onChimeCallbacks.push(callback);
+    return () => {
+      this.onChimeCallbacks = this.onChimeCallbacks.filter((cb) => cb !== callback);
+    };
+  }
+
+  /**
+   * Interval Chime (V1.5 Meditation)
+   * Crisp, unadulterated high sine burst at temporal milestones.
+   * Dual-harmonic pure sine bell (Fundamental + 2nd Harmonic overtone).
+   */
+  playIntervalChime(freq = 528): void {
+    this.ensureAudioContext();
+    if (!this.ctx) return;
+
+    if (this.ctx.state === "suspended") {
+      this.ctx.resume();
+    }
+
+    try {
+      const now = this.ctx.currentTime;
+
+      // 1. Fundamental Pure Sine
+      const osc1 = this.ctx.createOscillator();
+      const gain1 = this.ctx.createGain();
+      osc1.type = "sine";
+      osc1.frequency.setValueAtTime(freq, now);
+
+      gain1.gain.setValueAtTime(0.0001, now);
+      gain1.gain.exponentialRampToValueAtTime(0.75, now + 0.006);
+      gain1.gain.exponentialRampToValueAtTime(0.0001, now + 1.4);
+
+      osc1.connect(gain1);
+      gain1.connect(this.ctx.destination);
+
+      osc1.start(now);
+      osc1.stop(now + 1.45);
+
+      // 2. Crystal Overtone (2x harmonic)
+      const osc2 = this.ctx.createOscillator();
+      const gain2 = this.ctx.createGain();
+      osc2.type = "sine";
+      osc2.frequency.setValueAtTime(freq * 2, now);
+
+      gain2.gain.setValueAtTime(0.0001, now);
+      gain2.gain.exponentialRampToValueAtTime(0.28, now + 0.004);
+      gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.9);
+
+      osc2.connect(gain2);
+      gain2.connect(this.ctx.destination);
+
+      osc2.start(now);
+      osc2.stop(now + 0.95);
+
+      // Trigger visual sine burst callbacks
+      for (const cb of this.onChimeCallbacks) {
+        try { cb(); } catch (_) {}
+      }
+    } catch (e) {
+      console.warn("[AudioEngine] Interval chime failed:", e);
+    }
+  }
+
   setAmplitude(amp: number): void {
     this.currentAmplitude = Math.max(0.0, Math.min(1.0, amp));
 
@@ -235,6 +302,18 @@ export class AudioEngine {
 
     const avg = (sum / len) / 255.0;
     return avg * this.currentAmplitude;
+  }
+
+  /**
+   * Sample real-time oscilloscope time-domain waveform (0-255 raw byte data)
+   * Centered at 128 for zero-crossing.
+   */
+  getWaveformData(targetArray: Uint8Array): void {
+    if (!this.analyser || !this.isPlaying) {
+      targetArray.fill(128);
+      return;
+    }
+    this.analyser.getByteTimeDomainData(targetArray);
   }
 
   /**

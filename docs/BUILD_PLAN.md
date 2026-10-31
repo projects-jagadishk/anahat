@@ -87,3 +87,66 @@
   - [x] Instant toggle between `[X] CHLADNI PARTICLES` and `[X] FARADAY FLUID`.
   - [x] Live uniform updates when adjusting $n$ and $m$ sliders or picking presets.
   - [x] Dual-mount support for both Main Deck and Theater Mode.
+
+---
+
+### Step 5: V1.5 Meditation Update (Timebox, Breath Sync, GSAP Sprite Metronome & Screen 7 Takeover)
+- [x] **Native Shell Check**:
+  - [x] Verified frameless and transparent Tauri window management remains robust across Screen 7 transition.
+  - [x] Dynamic canvas expansion from 600px to 900px without breaking window bounds or macOS drag regions.
+- [x] **Base Layout Extension**:
+  - [x] Injected Timebox Selector (`[ 10M ] | [ 20M ] | [ 60M ] | [ ∞ ]`) in IBM Plex Mono with active invert to `#FF3333`.
+  - [x] Injected Cadence Dropdown (`BREATH_SYNC // [ BOX ]`, `[ 4-7-8 ]`, `[ COHERENT ]`, `[ OFF ]`).
+  - [x] Strict height containment (308px locked height) ensuring noise sliders and harmonic controls never overflow.
+- [x] **V1.5 Meditation UI Construction (Screen 7 Guided Session Takeover)**:
+  - [x] Grid dynamically adapts to `300px 1fr 0px`, collapsing Provenance Card and expanding WebGL canvas.
+  - [x] Massive Hollow Countdown Timer in Space Grotesk `Display/Massive` with 2.5px stroke outline.
+  - [x] Live phase status readout (`PHASE: INHALE [ 4S ]`).
+  - [x] Interactive session toggle button (`[ START SESSION ⏵ ]` / `[ END SESSION ⏹ ]`).
+- [x] **Audio Engine Interval Chimes**:
+  - [x] Crisp, unadulterated 880 Hz / 528 Hz pure sine burst with instant attack and exponential decay.
+  - [x] Triggered on cadence phase transitions and session milestone completion.
+  - [x] Coupled with momentary 120ms canvas flash in pure `Accent-Industrial` red (`#FF3333`).
+- [x] **WebGL Breath Sync Engine**:
+  - [x] Three.js uniform and physics mapping for Box, 4-7-8, and Coherent cadences.
+  - [x] Radial expansion during Inhale ($1.0 \to 1.65$) with elevated wander motion.
+  - [x] Violent collapse during Exhale ($1.65 \to 0.82$) with accelerated nodal gradient settling.
+  - [x] Faraday fluid wave height and speed dynamically breathing in lockstep.
+- [x] **GSAP Sprite Metronome (`<SpriteMetronome />`)**:
+  - [x] 1-bit high-contrast 160×160px stark square with 4px black border and `COMPANION_ID: TABBY_01`.
+  - [x] GSAP timeline cycling chest breathing, ear orientation, and tail taps matching the cadence seconds.
+  - [x] Seamless docking to the top-left of the expanded WebGL canvas during Screen 7 Takeover.
+  - [x] Dedicated 2D canvas pixel-art renderer (`#tabby-canvas`) for guaranteed 60FPS animation with zero SVG transform bugs.
+  - [x] Canvas toolbar toggle `[X] COMPANION` to toggle companion visibility on/off anytime.
+- [x] **Zero-Layout-Shift Overlaid Canvas HUD**:
+  - [x] Moved countdown timer out of bottom control deck; overlaid directly on WebGL canvas (`#canvas-hud`).
+  - [x] Giant hollow Space Grotesk countdown readout floating directly over the visualization with zero shifts.
+- [x] **Mathematical Wave Burst (Replacing Flat Red Flash)**:
+  - [x] Concentric propagating sine shockwave ripple through particles and fluid mesh outward from center.
+  - [x] Dual-harmonic 528 Hz pure sine bell chime (fundamental + 1056 Hz crystal overtone).
+  - [x] Canvas container subtle brutalist border pulse (`.deck__canvas-wrap--pulse`).
+- [x] **Pastel Spectrum Waveform Gradients**:
+  - [x] Iridescent pastel spectrum shader (Coral -> Rose -> Lavender -> Sky -> Mint -> Amber).
+  - [x] Applied across particle nodal interference fields and Faraday fluid 3D standing wireframe waves.
+- [x] **Viscous Chladni Particle Motion Smoothing**:
+  - [x] Eliminated erratic white-noise micro-jittering and random seizing.
+  - [x] Implemented viscous fluid inertia with 0.94 damping, normalized gradient pull vectors, and organic harmonic curl drift.
+- [x] **Winamp-Style 3D Oscilloscope & Lissajous Visualizer (`oscillo` mode)**:
+  - [x] Real-time time-domain PCM byte sampling from Web Audio API Analyser via `audioEngine.getWaveformData(buf)`.
+  - [x] 4 multi-trace ribbons: Center time-domain waveform, upper harmonic ribbon, lower sub-bass ribbon, and 3D rotating Lissajous orbit loop.
+  - [x] Reactive pastel gradient palette shader across all ribbons.
+  - [x] Toolbar toggle `[ ] OSCILLO` wired in both main deck and theater mode.
+- [x] **Unmissable Sine Wave Burst & Shockwave Ring**:
+  - [x] Dynamic Three.js `THREE.RingGeometry` physical shockwave ring with particle radial displacement.
+  - [x] Prominent brutalist top banner `[ ⚡ INTERVAL CHIME // 528 HZ SINE BURST ]` popping on session chime.
+- [x] **Synchronized Theater Mode (Screen 2)**:
+  - [x] Complete real-time audio and waveform sync with `theaterVisualizer.setAudioProvider` and `theaterVisualizer.setWaveProvider`.
+  - [x] Chromeless full-screen mode toggles (`[ CHLADNI ] | [ FLUID ] | [ OSCILLO ]`).
+  - [x] Live HUD readouts for preset code, frequency in Hz, and meditation cadence phase.
+- [x] **System Specification & Clinical Disclaimers (Info Modal)**:
+  - [x] Titlebar trigger `[ INFO // ? ]` available globally across the application.
+  - [x] Modal detailing purpose, architectural rationale, and 8 core subsystems.
+  - [x] Prominent brutalist clinical advisory covering Non-Medical Device status, Photosensitive Epilepsy warning, Hearing & Decibel Safety protocol, Motor Vehicle/Machinery restrictions, and Pre-existing condition guidance.
+  - [x] 100% offline air-gapped privacy assurance.
+
+
