@@ -48,7 +48,7 @@ jobs:
           npm run build
 
       - name: Configure Apple Signing (if secrets provided)
-        if: matrix.platform == 'macos-latest' && secrets.APPLE_CERTIFICATE != ''
+        if: matrix.platform == 'macos-latest'
         env:
           APPLE_CERT: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERT_PASS: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
@@ -56,11 +56,16 @@ jobs:
           APP_PASS: ${{ secrets.APPLE_PASSWORD }}
           TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          echo "APPLE_CERTIFICATE=${APPLE_CERT}" >> $GITHUB_ENV
-          echo "APPLE_CERTIFICATE_PASSWORD=${APPLE_CERT_PASS}" >> $GITHUB_ENV
-          echo "APPLE_ID=${APP_ID}" >> $GITHUB_ENV
-          echo "APPLE_PASSWORD=${APP_PASS}" >> $GITHUB_ENV
-          echo "APPLE_TEAM_ID=${TEAM_ID}" >> $GITHUB_ENV
+          if [ -n "$APPLE_CERT" ]; then
+            echo "APPLE_CERTIFICATE=${APPLE_CERT}" >> $GITHUB_ENV
+            echo "APPLE_CERTIFICATE_PASSWORD=${APPLE_CERT_PASS}" >> $GITHUB_ENV
+            echo "APPLE_ID=${APP_ID}" >> $GITHUB_ENV
+            echo "APPLE_PASSWORD=${APP_PASS}" >> $GITHUB_ENV
+            echo "APPLE_TEAM_ID=${TEAM_ID}" >> $GITHUB_ENV
+            echo "Apple signing credentials configured."
+          else
+            echo "No Apple Certificate secret detected. Skipping macOS code signing."
+          fi
 
       - name: Build Tauri Desktop Bundle
         uses: tauri-apps/tauri-action@v0
