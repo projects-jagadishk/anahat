@@ -579,6 +579,278 @@
       color: var(--color-accent-industrial);
       text-decoration: underline;
     }
+
+    /* ═══════════════════════════════════════════════════════════
+       UNSIGNED RELEASE MODAL OVERLAY & NOTICES
+       ═══════════════════════════════════════════════════════════ */
+    .badge-unsigned-header {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 800;
+      padding: 4px 8px;
+      background: #FFFBEB;
+      color: #B45309;
+      border: 1px solid #F59E0B;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .dl-pill--warn {
+      background: #FFB000 !important;
+      color: #000000 !important;
+      font-weight: 800;
+    }
+
+    .download-modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .download-modal-overlay.active {
+      display: flex;
+    }
+
+    .download-modal-box {
+      background: var(--bg-surface-light);
+      border: 3px solid var(--border-heavy);
+      box-shadow: 10px 10px 0px #000000;
+      max-width: 660px;
+      width: 100%;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      animation: modalSlideIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      overflow: hidden;
+    }
+
+    @keyframes modalSlideIn {
+      from { transform: translateY(12px) scale(0.98); opacity: 0; }
+      to { transform: translateY(0) scale(1.0); opacity: 1; }
+    }
+
+    .modal-header {
+      background: var(--bg-surface-black);
+      color: #FFFFFF;
+      padding: 10px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid var(--border-heavy);
+      flex-shrink: 0;
+    }
+
+    .modal-header-tag {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .modal-close-btn {
+      background: transparent;
+      border: 1px solid #444;
+      color: #FFF;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 4px 8px;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .modal-close-btn:hover {
+      background: var(--color-accent-industrial);
+      border-color: var(--color-accent-industrial);
+    }
+
+    .modal-body {
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      background: #FFFFFF;
+    }
+
+    .modal-alert-banner {
+      background: #FFFBEB;
+      border: 2px solid var(--color-accent-gold);
+      border-left: 6px solid var(--color-accent-gold);
+      padding: 12px 14px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .modal-alert-icon {
+      font-size: 18px;
+      line-height: 1;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .modal-alert-title {
+      font-family: var(--font-display);
+      font-size: 12.5px;
+      font-weight: 800;
+      color: #92400E;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .modal-alert-desc {
+      font-size: 11.5px;
+      color: #78350F;
+      line-height: 1.45;
+    }
+
+    .instruction-title {
+      font-family: var(--font-display);
+      font-size: 15px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: -0.01em;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .instruction-steps {
+      padding-left: 20px;
+      font-size: 12px;
+      line-height: 1.6;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .instruction-steps strong {
+      color: #000000;
+      background: #FEF08A;
+      padding: 0 4px;
+    }
+
+    .instruction-quote {
+      display: block;
+      margin: 4px 0;
+      padding: 4px 8px;
+      background: #F3F4F6;
+      border-left: 3px solid #000;
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      font-style: normal;
+      color: #1F2937;
+    }
+
+    .modal-code-row {
+      margin-top: 6px;
+      background: #0D0E12;
+      color: #00E5FF;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      border: 1px solid #333;
+    }
+
+    .modal-code-row code {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      word-break: break-all;
+    }
+
+    .btn-copy-code {
+      background: #222;
+      color: #FFF;
+      border: 1px solid #555;
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      font-weight: 700;
+      padding: 3px 8px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .btn-copy-code:hover {
+      background: var(--color-accent-industrial);
+      border-color: var(--color-accent-industrial);
+    }
+
+    .modal-meta-row {
+      background: #F4F4F5;
+      border: 1px solid #D4D4D8;
+      padding: 8px 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+    }
+
+    .modal-footer {
+      background: #F9FAFB;
+      border-top: 2px solid var(--border-heavy);
+      padding: 12px 18px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+    }
+
+    .btn-modal-cancel {
+      background: transparent;
+      border: 2px solid var(--border-heavy);
+      color: #000;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 10px 16px;
+      cursor: pointer;
+    }
+
+    .btn-modal-cancel:hover {
+      background: #E5E5E5;
+    }
+
+    .btn-modal-confirm {
+      background: var(--color-accent-industrial);
+      color: #FFFFFF;
+      border: 2px solid var(--border-heavy);
+      box-shadow: 3px 3px 0px #000000;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      padding: 10px 20px;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    .btn-modal-confirm:hover {
+      background: #000000;
+      transform: translate(-1px, -1px);
+      box-shadow: 4px 4px 0px #000000;
+    }
   </style>
 </head>
 <body>
@@ -622,7 +894,7 @@
         <!-- Detected OS Quick Download -->
         <div style="margin-top: 10px;">
           <a id="btn-quick-download" href="#downloads" class="btn-download" style="font-size: 13px; padding: 14px 20px;">
-            [ ⬇ DOWNLOAD ANAHAT v1.0.0 FOR <span id="detected-os-label">DESKTOP</span> ]
+            [ ⬇ DOWNLOAD ANAHAT <span id="quick-version-label">v1.0.0</span> FOR <span id="detected-os-label">DESKTOP</span> ]
           </a>
         </div>
       </div>
@@ -642,11 +914,16 @@
     <div class="download-section" id="downloads">
       <div class="download-header">
         <div>
-          <h2>RELEASE BINARIES // v1.0.0</h2>
+          <h2>RELEASE BINARIES // <span id="release-version-tag">v1.0.0</span></h2>
           <p style="font-size: 12px; color: #666; margin-top: 4px;">Universal self-contained desktop builds without external runtime dependencies.</p>
         </div>
-        <div style="font-size: 11px; font-weight: 700; color: #000;">
-          CHECKSUM VERIFICATION: SHA-256
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
+          <div style="font-size: 11px; font-weight: 700; color: #000;">
+            CHECKSUM VERIFICATION: SHA-256
+          </div>
+          <div class="badge-unsigned-header" title="Application submitted to SignPath Foundation for trusted open-source code signing">
+            ⚠ UNSIGNED COMMUNITY RELEASE // SIGNPATH VERIFICATION IN REVIEW
+          </div>
         </div>
       </div>
 
@@ -656,16 +933,17 @@
           <div>
             <div class="dl-platform-title">
               <span>macOS</span>
-              <span class="dl-pill">UNIVERSAL</span>
+              <span class="dl-pill dl-pill--warn">UNSIGNED (OPEN SOURCE)</span>
             </div>
             <p class="dl-specs" style="margin-top: 8px;">
               Apple Silicon (M1/M2/M3/M4) & Intel x86_64<br />
               macOS 10.15 Catalina or newer<br />
-              Package: <code>Anahat_1.0.0_universal.dmg</code>
+              Package: <code id="pkg-name-macos">Anahat_universal.dmg</code><br />
+              <span style="display: inline-block; margin-top: 4px; font-size: 10px; color: #92400E; font-weight: 700;">⚠ First-launch Gatekeeper instructions shown on click</span>
             </p>
           </div>
-          <a class="btn-download" href="https://github.com/projects-jagadishk/anahat/releases/download/v1.0.0/Anahat_1.0.0_universal.dmg">
-            [ ⬇ DOWNLOAD DMG (22 MB) ]
+          <a class="btn-download" id="link-download-macos" href="https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_universal.dmg">
+            [ ⬇ DOWNLOAD DMG (UNIVERSAL) ]
           </a>
         </div>
 
@@ -674,16 +952,17 @@
           <div>
             <div class="dl-platform-title">
               <span>WINDOWS</span>
-              <span class="dl-pill">64-BIT</span>
+              <span class="dl-pill dl-pill--warn">UNSIGNED (OPEN SOURCE)</span>
             </div>
             <p class="dl-specs" style="margin-top: 8px;">
               Windows 10, 11 (x64)<br />
               Hardware-accelerated DirectX / WebGL<br />
-              Package: <code>Anahat_1.0.0_x64-setup.exe</code>
+              Package: <code id="pkg-name-windows">Anahat_x64-setup.exe</code><br />
+              <span style="display: inline-block; margin-top: 4px; font-size: 10px; color: #92400E; font-weight: 700;">⚠ First-launch SmartScreen instructions shown on click</span>
             </p>
           </div>
-          <a class="btn-download" href="https://github.com/projects-jagadishk/anahat/releases/download/v1.0.0/Anahat_1.0.0_x64-setup.exe">
-            [ ⬇ DOWNLOAD INSTALLER (18 MB) ]
+          <a class="btn-download" id="link-download-windows" href="https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_x64-setup.exe">
+            [ ⬇ DOWNLOAD INSTALLER (SETUP) ]
           </a>
         </div>
 
@@ -692,16 +971,17 @@
           <div>
             <div class="dl-platform-title">
               <span>LINUX</span>
-              <span class="dl-pill">APPIMAGE / DEB</span>
+              <span class="dl-pill">PORTABLE BINARY</span>
             </div>
             <p class="dl-specs" style="margin-top: 8px;">
               Ubuntu 20.04+, Fedora, Arch, Debian<br />
               Standalone portable binary<br />
-              Package: <code>Anahat_1.0.0_amd64.AppImage</code>
+              Package: <code id="pkg-name-linux">Anahat_amd64.AppImage</code><br />
+              <span style="display: inline-block; margin-top: 4px; font-size: 10px; color: #4B5563; font-weight: 700;">✓ Ready to execute via AppImage or DEB</span>
             </p>
           </div>
-          <a class="btn-download" href="https://github.com/projects-jagadishk/anahat/releases/download/v1.0.0/Anahat_1.0.0_amd64.AppImage">
-            [ ⬇ DOWNLOAD APPIMAGE (24 MB) ]
+          <a class="btn-download" id="link-download-linux" href="https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_amd64.AppImage">
+            [ ⬇ DOWNLOAD APPIMAGE ]
           </a>
         </div>
 
@@ -891,6 +1171,92 @@
 
   </div>
 
+  <!-- Unsigned Release Notice & Download Confirmation Modal -->
+  <div class="download-modal-overlay" id="download-modal" role="dialog" aria-modal="true" aria-labelledby="modal-alert-title">
+    <div class="download-modal-box">
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <div class="modal-header-tag">
+          <span class="status-dot"></span>
+          <span id="modal-platform-badge">MACOS UNIVERSAL // DOWNLOAD</span>
+        </div>
+        <button type="button" class="modal-close-btn" id="btn-modal-close" aria-label="Close dialog">✕ CLOSE [ESC]</button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="modal-body">
+        <div class="modal-alert-banner">
+          <span class="modal-alert-icon">⚠️</span>
+          <div>
+            <div class="modal-alert-title" id="modal-alert-title">OPEN-SOURCE UNSIGNED BINARY NOTICE</div>
+            <div class="modal-alert-desc">
+              Anahat is 100% free open-source software under the MIT License. Because this is an independent, non-commercial project, we do not pay for proprietary enterprise signing certificates. We have formally applied for free trusted open-source code signing through the <strong>SignPath Foundation</strong>. Until our review is finalized, your operating system will display a first-time security notice.
+            </div>
+          </div>
+        </div>
+
+        <!-- macOS Instructions -->
+        <div id="modal-instructions-macos" class="modal-instructions">
+          <div class="instruction-title">macOS Gatekeeper First-Launch Instructions</div>
+          <ol class="instruction-steps">
+            <li>Open the downloaded <code>Anahat_universal.dmg</code> and drag <strong>Anahat.app</strong> into your <strong>Applications</strong> folder.</li>
+            <li>On first launch, macOS Gatekeeper may say: <br/><em class="instruction-quote">"Anahat cannot be opened because Apple cannot check it for malicious software"</em>.</li>
+            <li><strong>How to open:</strong> In Finder, <strong>Right-Click (or Control-Click)</strong> <code>Anahat.app</code> &rarr; select <strong>Open</strong> &rarr; click <strong>Open</strong> in the dialog. (You only need to do this once).</li>
+            <li>
+              Or execute this one-line command in Terminal to clear the Gatekeeper quarantine bit:
+              <div class="modal-code-row">
+                <code>xattr -cr /Applications/Anahat.app</code>
+                <button type="button" class="btn-copy-code" data-code="xattr -cr /Applications/Anahat.app">[ 📋 COPY ]</button>
+              </div>
+            </li>
+          </ol>
+        </div>
+
+        <!-- Windows Instructions -->
+        <div id="modal-instructions-windows" class="modal-instructions" style="display: none;">
+          <div class="instruction-title">Windows Defender SmartScreen First-Launch Instructions</div>
+          <ol class="instruction-steps">
+            <li>Run the downloaded <code>Anahat_x64-setup.exe</code> installer.</li>
+            <li>When Windows Defender SmartScreen shows: <br/><em class="instruction-quote">"Windows protected your PC — Microsoft Defender SmartScreen prevented an unrecognized app from starting"</em>.</li>
+            <li>Click the underlined link: <strong>"More info"</strong>.</li>
+            <li>Click the button: <strong>"Run anyway"</strong> to begin setup.</li>
+          </ol>
+        </div>
+
+        <!-- Linux Instructions -->
+        <div id="modal-instructions-linux" class="modal-instructions" style="display: none;">
+          <div class="instruction-title">Linux AppImage / DEB Instructions</div>
+          <ol class="instruction-steps">
+            <li>Make the downloaded <code>Anahat_amd64.AppImage</code> executable:
+              <div class="modal-code-row">
+                <code>chmod +x Anahat_amd64.AppImage && ./Anahat_amd64.AppImage</code>
+                <button type="button" class="btn-copy-code" data-code="chmod +x Anahat_amd64.AppImage && ./Anahat_amd64.AppImage">[ 📋 COPY ]</button>
+              </div>
+            </li>
+            <li>Or install via Debian package: <code>sudo dpkg -i anahat_amd64.deb</code></li>
+          </ol>
+        </div>
+
+        <!-- Metadata Row -->
+        <div class="modal-meta-row">
+          <span>PACKAGE: <strong id="modal-target-pkg">Anahat_universal.dmg</strong></span>
+          <span>EST. SIZE: <strong id="modal-target-size">~22 MB</strong></span>
+          <span>STATUS: <strong style="color: #92400E;">UNSIGNED (SIGNPATH PENDING)</strong></span>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="modal-footer">
+        <button type="button" class="btn-modal-cancel" id="btn-modal-cancel">
+          [ ✕ CANCEL ]
+        </button>
+        <button type="button" class="btn-modal-confirm" id="btn-modal-confirm">
+          [ ⬇ I UNDERSTAND — PROCEED WITH DOWNLOAD ]
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Industrial Footer -->
   <footer>
     <div class="footer-links">
@@ -921,31 +1287,213 @@
     setInterval(updateClock, 1000);
     updateClock();
 
-    // OS Auto-Detection for Quick Download Button
+    // OS Auto-Detection for Quick Download Button & Platform Highlight
     (function detectOS() {
       const userAgent = window.navigator.userAgent.toLowerCase();
-      let os = "macOS";
+      let os = "DESKTOP";
       let cardId = "card-macos";
+      let downloadUrl = "https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_universal.dmg";
 
       if (userAgent.includes("win")) {
         os = "WINDOWS";
         cardId = "card-windows";
+        downloadUrl = "https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_x64-setup.exe";
       } else if (userAgent.includes("linux")) {
         os = "LINUX";
         cardId = "card-linux";
+        downloadUrl = "https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_amd64.AppImage";
       } else if (userAgent.includes("mac")) {
-        os = "MACOS (UNIVERSAL)";
+        os = "MACOS";
         cardId = "card-macos";
+        downloadUrl = "https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_universal.dmg";
       }
 
       const osLabel = document.getElementById("detected-os-label");
       if (osLabel) osLabel.textContent = os;
+
+      const quickBtn = document.getElementById("btn-quick-download");
+      if (quickBtn) {
+        quickBtn.href = downloadUrl;
+      }
 
       const targetCard = document.getElementById(cardId);
       if (targetCard) {
         targetCard.classList.add("dl-card--highlight");
       }
     })();
+
+    // Dynamic GitHub Release Synchronizer (Real-time metadata, file sizes, version numbers)
+    (async function syncLatestRelease() {
+      try {
+        const response = await fetch("https://api.github.com/repos/projects-jagadishk/anahat/releases/latest");
+        if (!response.ok) return;
+        const release = await response.json();
+        const tag = release.tag_name;
+        if (!tag) return;
+
+        // Update displayed release tag in header and quick download
+        const tagElem = document.getElementById("release-version-tag");
+        if (tagElem) tagElem.textContent = tag;
+
+        const quickVerElem = document.getElementById("quick-version-label");
+        if (quickVerElem) quickVerElem.textContent = tag;
+
+        // Parse release assets for exact bundle names and file sizes
+        if (Array.isArray(release.assets)) {
+          release.assets.forEach((asset) => {
+            const sizeMB = (asset.size / (1024 * 1024)).toFixed(0);
+            if (asset.name.endsWith(".dmg")) {
+              const btn = document.getElementById("link-download-macos");
+              if (btn) btn.textContent = `[ ⬇ DOWNLOAD DMG (${sizeMB} MB) ]`;
+              const pkg = document.getElementById("pkg-name-macos");
+              if (pkg) pkg.textContent = asset.name;
+            } else if (asset.name.endsWith(".exe") || asset.name.endsWith("-setup.exe")) {
+              const btn = document.getElementById("link-download-windows");
+              if (btn) btn.textContent = `[ ⬇ DOWNLOAD INSTALLER (${sizeMB} MB) ]`;
+              const pkg = document.getElementById("pkg-name-windows");
+              if (pkg) pkg.textContent = asset.name;
+            } else if (asset.name.endsWith(".AppImage")) {
+              const btn = document.getElementById("link-download-linux");
+              if (btn) btn.textContent = `[ ⬇ DOWNLOAD APPIMAGE (${sizeMB} MB) ]`;
+              const pkg = document.getElementById("pkg-name-linux");
+              if (pkg) pkg.textContent = asset.name;
+            }
+          });
+        }
+      } catch (_) {
+        // Fallback remains completely operational with static permalinks
+      }
+    })();
+
+    // ═══════════════════════════════════════════════════════════
+    // UNSIGNED RELEASE DOWNLOAD MODAL & FIRST-LAUNCH INSTRUCTIONS
+    // ═══════════════════════════════════════════════════════════
+    const downloadModal = document.getElementById("download-modal");
+    const modalPlatformBadge = document.getElementById("modal-platform-badge");
+    const modalTargetPkg = document.getElementById("modal-target-pkg");
+    const modalTargetSize = document.getElementById("modal-target-size");
+    const modalInstrMac = document.getElementById("modal-instructions-macos");
+    const modalInstrWin = document.getElementById("modal-instructions-windows");
+    const modalInstrLin = document.getElementById("modal-instructions-linux");
+    const btnModalConfirm = document.getElementById("btn-modal-confirm");
+    const btnModalCancel = document.getElementById("btn-modal-cancel");
+    const btnModalClose = document.getElementById("btn-modal-close");
+
+    let activeDownloadUrl = "";
+
+    function openDownloadModal(platform, url, pkgName, size) {
+      activeDownloadUrl = url;
+      if (modalPlatformBadge) {
+        modalPlatformBadge.textContent = `${platform} // DOWNLOAD & FIRST-LAUNCH VERIFICATION`;
+      }
+      if (modalTargetPkg) {
+        modalTargetPkg.textContent = pkgName || "Anahat Desktop Bundle";
+      }
+      if (modalTargetSize) {
+        modalTargetSize.textContent = size || "~20 MB";
+      }
+
+      if (modalInstrMac) modalInstrMac.style.display = platform === "MACOS" ? "block" : "none";
+      if (modalInstrWin) modalInstrWin.style.display = platform === "WINDOWS" ? "block" : "none";
+      if (modalInstrLin) modalInstrLin.style.display = platform === "LINUX" ? "block" : "none";
+
+      if (downloadModal) {
+        downloadModal.classList.add("active");
+        document.body.style.overflow = "hidden";
+      }
+    }
+
+    function closeDownloadModal() {
+      if (downloadModal) {
+        downloadModal.classList.remove("active");
+        document.body.style.overflow = "";
+      }
+      activeDownloadUrl = "";
+    }
+
+    btnModalClose?.addEventListener("click", closeDownloadModal);
+    btnModalCancel?.addEventListener("click", closeDownloadModal);
+    downloadModal?.addEventListener("click", (e) => {
+      if (e.target === downloadModal) closeDownloadModal();
+    });
+
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && downloadModal?.classList.contains("active")) {
+        closeDownloadModal();
+      }
+    });
+
+    btnModalConfirm?.addEventListener("click", () => {
+      if (activeDownloadUrl) {
+        // Trigger browser download via invisible anchor
+        const downloadLink = document.createElement("a");
+        downloadLink.href = activeDownloadUrl;
+        downloadLink.setAttribute("download", "");
+        downloadLink.style.display = "none";
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+      }
+      closeDownloadModal();
+    });
+
+    // Wire up Copy Code buttons in modal
+    document.querySelectorAll(".btn-copy-code").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const code = btn.getAttribute("data-code");
+        if (!code) return;
+        navigator.clipboard.writeText(code).then(() => {
+          const original = btn.textContent;
+          btn.textContent = "[ ✓ COPIED ]";
+          btn.style.background = "#00E5FF";
+          btn.style.color = "#000000";
+          setTimeout(() => {
+            btn.textContent = original;
+            btn.style.background = "";
+            btn.style.color = "";
+          }, 2000);
+        });
+      });
+    });
+
+    // Wire up direct platform download buttons to trigger modal
+    const macBtn = document.getElementById("link-download-macos");
+    macBtn?.addEventListener("click", (e) => {
+      e.preventDefault();
+      const pkg = document.getElementById("pkg-name-macos")?.textContent || "Anahat_universal.dmg";
+      openDownloadModal("MACOS", "https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_universal.dmg", pkg, "22 MB");
+    });
+
+    const winBtn = document.getElementById("link-download-windows");
+    winBtn?.addEventListener("click", (e) => {
+      e.preventDefault();
+      const pkg = document.getElementById("pkg-name-windows")?.textContent || "Anahat_x64-setup.exe";
+      openDownloadModal("WINDOWS", "https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_x64-setup.exe", pkg, "18 MB");
+    });
+
+    const linBtn = document.getElementById("link-download-linux");
+    linBtn?.addEventListener("click", (e) => {
+      e.preventDefault();
+      const pkg = document.getElementById("pkg-name-linux")?.textContent || "Anahat_amd64.AppImage";
+      openDownloadModal("LINUX", "https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_amd64.AppImage", pkg, "24 MB");
+    });
+
+    // Quick download button in hero section
+    const quickBtn = document.getElementById("btn-quick-download");
+    quickBtn?.addEventListener("click", (e) => {
+      e.preventDefault();
+      const osLabel = document.getElementById("detected-os-label")?.textContent || "DESKTOP";
+      if (osLabel.includes("WIN")) {
+        const pkg = document.getElementById("pkg-name-windows")?.textContent || "Anahat_x64-setup.exe";
+        openDownloadModal("WINDOWS", "https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_x64-setup.exe", pkg, "18 MB");
+      } else if (osLabel.includes("LIN")) {
+        const pkg = document.getElementById("pkg-name-linux")?.textContent || "Anahat_amd64.AppImage";
+        openDownloadModal("LINUX", "https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_amd64.AppImage", pkg, "24 MB");
+      } else {
+        const pkg = document.getElementById("pkg-name-macos")?.textContent || "Anahat_universal.dmg";
+        openDownloadModal("MACOS", "https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_universal.dmg", pkg, "22 MB");
+      }
+    });
 
     // In-Browser Real-Time Chladni Mathematical Particle Canvas
     (function initHeroCymatics() {

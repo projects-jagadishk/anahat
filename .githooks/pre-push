@@ -1,0 +1,33 @@
+#!/bin/sh
+# Prevent pushing directly to protected branches (main and develop)
+
+protected_branches="main develop"
+
+current_branch="$(git symbolic-ref --short HEAD 2>/dev/null || true)"
+
+# Check if pushing while on a protected branch
+for branch in $protected_branches; do
+  if [ "$current_branch" = "$branch" ]; then
+    echo "\033[1;31m❌ [GIT HOOK ERROR] Direct push from '$branch' is strictly prohibited.\033[0m"
+    echo "Remote rulesets reject direct pushes to '$branch'."
+    echo "Please push to a feature branch instead:"
+    echo "  git checkout -b feature/your-feature-name"
+    echo "  git push origin feature/your-feature-name"
+    echo "Then open a Pull Request on GitHub to merge into develop."
+    exit 1
+  fi
+done
+
+# Check if target ref being pushed is a protected branch
+while read -r local_ref local_sha remote_ref remote_sha; do
+  for branch in $protected_branches; do
+    if [ "$remote_ref" = "refs/heads/$branch" ]; then
+      echo "\033[1;31m❌ [GIT HOOK ERROR] Pushing directly to '$branch' is strictly prohibited.\033[0m"
+      echo "Remote rulesets reject direct pushes to 'refs/heads/$branch'."
+      echo "Please push to a feature branch instead and submit a PR on GitHub."
+      exit 1
+    fi
+  done
+done
+
+exit 0

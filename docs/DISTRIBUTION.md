@@ -190,10 +190,13 @@ The included `website/` directory is fully configured for deployment on Cloudfla
     ```bash
     npx wrangler pages deploy website --project-name anahat
     ```
-- Point the download buttons to the GitHub Releases asset URLs:
-  - `https://github.com/projects-jagadishk/anahat/releases/download/v1.0.0/Anahat_1.0.0_universal.dmg`
-  - `https://github.com/projects-jagadishk/anahat/releases/download/v1.0.0/Anahat_1.0.0_x64-setup.exe`
-  - `https://github.com/projects-jagadishk/anahat/releases/download/v1.0.0/Anahat_1.0.0_amd64.AppImage`
+- **Automated Latest Download Permalinks:**
+  The CI workflow (`.github/workflows/release.yml`) automatically attaches unversioned asset copies to every release, ensuring the website's download links never 404 across version bumps:
+  - macOS Universal: `https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_universal.dmg`
+  - Windows x64: `https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_x64-setup.exe`
+  - Linux AppImage: `https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_amd64.AppImage`
+  - Linux DEB: `https://github.com/projects-jagadishk/anahat/releases/latest/download/anahat_amd64.deb`
+  Additionally, `website/index.html` asynchronously queries the GitHub Releases API to populate exact version numbers and file sizes dynamically, and the `update-website` CI job automatically syncs static fallback versions back to `develop`.
 
 ### 5.2 Community Package Managers
 
@@ -234,30 +237,48 @@ Installers:
 
 ---
 
-## 6. Over-The-Air (OTA) Auto-Updates
+## 6. Code Signing & First-Launch Guidance (Option 1)
 
-Anahat is architected to support Tauri v2's auto-updater plugin (`@tauri-apps/plugin-updater`).
+Anahat desktop releases are free, open-source community builds under the MIT License. While our formal verification with the **SignPath Foundation** is in review, binaries are distributed unsigned (or ad-hoc signed for Apple Silicon compatibility).
 
-1. **Generate Keypair:**
-   ```bash
-   npx @tauri-apps/cli signer generate -w ~/.tauri/anahat.key
-   ```
-2. **Add Public Key to `tauri.conf.json`:**
-   ```json
-   "plugins": {
-     "updater": {
-       "endpoints": [
-         "https://releases.anahat.app/updates/{{target}}/{{current_version}}"
-       ],
-       "pubkey": "YOUR_TAURI_UPDATER_PUBLIC_KEY"
-     }
-   }
-   ```
-3. Whenever a new version is built, Tauri signs the update archive and outputs a `latest.json` manifest that clients poll in the background.
+### 6.1 First-Launch Instructions
+The download landing page (`website/index.html`) automatically presents an interactive confirmation modal before initiating downloads, providing clear first-launch bypass steps:
+
+- **macOS (Gatekeeper Bypass):**
+  1. Drag `Anahat.app` to `/Applications`.
+  2. Right-Click (or Control-Click) `Anahat.app` in Finder $\rightarrow$ select **Open** $\rightarrow$ click **Open** in the dialog (only required once).
+  3. Or run via Terminal: `xattr -cr /Applications/Anahat.app`.
+
+- **Windows (SmartScreen Bypass):**
+  1. Run `Anahat_x64-setup.exe`.
+  2. When the blue Defender screen appears, click **"More info"** $\rightarrow$ **"Run anyway"**.
 
 ---
 
-## 7. Pre-Flight Release Checklist
+## 7. Over-The-Air (OTA) In-App Auto-Updates
+
+Anahat utilizes Tauri v2's cryptographic updater:
+
+1. **Public Key in `tauri.conf.json`:**
+   Configured with Ed25519 minisign public key and GitHub releases endpoint:
+   ```json
+   "plugins": {
+     "updater": {
+       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEE4QUFFQ0JGQjhFNEYzQUEKUldTcTgrUzR2K3lxcU9qM2FmSFNmeHVRNEtHQzRKdElOM0JseXFmSmNLUVUvR0ZnVUV4VVFUVGsK",
+       "endpoints": [
+         "https://github.com/projects-jagadishk/anahat/releases/latest/download/latest.json"
+       ]
+     }
+   }
+   ```
+2. **Artifact Generation:**
+   `"bundle": { "createUpdaterArtifacts": true }` is enabled to automatically generate `.sig` signature files and `latest.json` on release builds.
+3. **CI Signing:**
+   GitHub secret `TAURI_SIGNING_PRIVATE_KEY` (or `TAURI_PRIVATE_KEY`) signs the update manifests automatically during the release workflow.
+
+---
+
+## 8. Pre-Flight Release Checklist
 
 - [x] **Version Parity:** `package.json`, `src-tauri/tauri.conf.json`, and `src-tauri/Cargo.toml` all synchronized to `1.0.0`.
 - [x] **TypeScript Check:** `npx tsc --noEmit` passes with 0 errors.
