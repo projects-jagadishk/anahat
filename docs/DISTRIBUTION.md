@@ -88,9 +88,42 @@ Unsigned desktop binaries trigger OS warnings (e.g., macOS Gatekeeper _"Anahat i
 
 ---
 
-## 4. Automated CI/CD Release Pipeline (GitHub Actions)
+## 4. Branching, Release & Deployment Model
 
-Create `.github/workflows/release.yml` to automatically build, package, sign, and release Anahat across macOS, Windows, and Linux whenever a version tag is pushed:
+Anahat follows a strict production-stable branching model:
+
+```
+feature/*  ──────> PR ──────> develop (Integration)
+                                 │
+                            PR (Release)
+                                 ▼
+hotfix/*   ──────> PR ──────>  main  (Production & Website Releases)
+                                 │
+             Automated Downmerge │ (downmerge-main-to-develop.yml)
+             Pull Request        ▼
+                              develop
+```
+
+- **`main` (Production):**
+  - **Releases:** Version release tags (`v*`) are cut **strictly from `main`**.
+  - **CI Verification:** The release pipeline verifies that the tag commit is an ancestor of `main`.
+  - **Website:** The production static website ([anahat.jagadishk.work](https://anahat.jagadishk.work)) deploys directly from `main`.
+  - **Protection:** Direct commits and direct pushes are strictly prohibited by branch rulesets and local Git hooks.
+- **`develop` (Integration):**
+  - Daily active integration branch.
+  - All feature branches (`feature/*`) target `develop` via pull requests.
+  - Protected against direct commits and pushes.
+- **`hotfix/*` (Emergency Fixes):**
+  - Hotfixes branch directly from `main` and submit pull requests **directly into `main`**.
+- **Automated Downmerge Workflow (`downmerge-main-to-develop.yml`):**
+  - Whenever a pull request (hotfix or release version bump) merges into `main`, GitHub Actions automatically checks if `develop` is behind `main`.
+  - If commits exist on `main` that are not yet on `develop`, an automated pull request (`chore(sync): downmerge main into develop`) is created to ensure `develop` never diverges.
+
+---
+
+## 5. Automated CI/CD Release Pipeline (GitHub Actions)
+
+The `.github/workflows/release.yml` workflow automatically builds, packages, signs, and releases Anahat across macOS, Windows, and Linux whenever a version tag (`v*`) is pushed on `main`:
 
 ```yaml
 name: Release Anahat
@@ -162,9 +195,9 @@ jobs:
 
 ---
 
-## 5. Distribution Channels
+## 6. Distribution Channels
 
-### 5.1 Static Download Website (`website/`)
+### 6.1 Static Download Website (`website/`)
 
 The included `website/` directory is fully configured for deployment on Cloudflare Pages under the custom domain **`anahat.jagadishk.work`**:
 
@@ -178,11 +211,12 @@ The included `website/` directory is fully configured for deployment on Cloudfla
   - **Option A — Cloudflare Pages Git Integration (Recommended):**
     1. In the Cloudflare Dashboard, navigate to **Compute (Workers) > Workers & Pages > Create application > Pages > Connect to Git**.
     2. Select the `anahat` repository.
-    3. Build Configuration:
+    3. Production branch: **`main`**.
+    4. Build Configuration:
        - Framework preset: `None`
        - Build output directory: `website`
        - Build command: *(leave empty)*
-    4. Custom Domain:
+    5. Custom Domain:
        - Go to the **Custom domains** tab in your Pages project.
        - Add `anahat.jagadishk.work`.
        - Cloudflare automatically routes the CNAME and issues an edge SSL certificate.
@@ -196,9 +230,9 @@ The included `website/` directory is fully configured for deployment on Cloudfla
   - Windows x64: `https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_x64-setup.exe`
   - Linux AppImage: `https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_amd64.AppImage`
   - Linux DEB: `https://github.com/projects-jagadishk/anahat/releases/latest/download/anahat_amd64.deb`
-  Additionally, `website/index.html` asynchronously queries the GitHub Releases API to populate exact version numbers and file sizes dynamically, and the `update-website` CI job automatically syncs static fallback versions back to `develop`.
+  Additionally, `website/index.html` asynchronously queries the GitHub Releases API to populate exact version numbers and file sizes dynamically, and the `update-website` CI job automatically syncs static fallback versions back to `main` (triggering an automated downmerge PR to `develop`).
 
-### 5.2 Community Package Managers
+### 6.2 Community Package Managers
 
 #### macOS (Homebrew Cask)
 
@@ -237,7 +271,7 @@ Installers:
 
 ---
 
-## 6. Code Signing & First-Launch Guidance (Option 1)
+## 7. Code Signing & First-Launch Guidance (Option 1)
 
 Anahat desktop releases are free, open-source community builds under the MIT License:
 
@@ -245,7 +279,7 @@ Anahat desktop releases are free, open-source community builds under the MIT Lic
 - **macOS:** Apple requires a recurring $99/year Apple Developer Program membership for official Gatekeeper notarization certificates, which is not feasible for this independent, free open-source project at the moment. macOS binaries are distributed with standard ad-hoc signing (satisfying local Apple Silicon execution); Gatekeeper first-launch bypass steps are documented for users.
 - **Linux:** Standard portable AppImage and Debian packages without external runtime requirements.
 
-### 6.1 First-Launch Instructions
+### 7.1 First-Launch Instructions
 The download landing page (`website/index.html`) automatically presents an interactive confirmation modal before initiating downloads, providing clear first-launch bypass steps:
 
 - **macOS (Gatekeeper Bypass):**
@@ -264,7 +298,7 @@ The download landing page (`website/index.html`) automatically presents an inter
 
 ---
 
-## 7. Over-The-Air (OTA) In-App Auto-Updates
+## 8. Over-The-Air (OTA) In-App Auto-Updates
 
 Anahat utilizes Tauri v2's cryptographic updater:
 
@@ -287,8 +321,9 @@ Anahat utilizes Tauri v2's cryptographic updater:
 
 ---
 
-## 8. Pre-Flight Release Checklist
+## 9. Pre-Flight Release Checklist
 
+- [x] **Branching Model:** Release tags (`v*`) created strictly on `main`; hotfixes PR to `main`; automatic downmerge PR syncs `main` into `develop`.
 - [x] **Version Parity:** `package.json`, `src-tauri/tauri.conf.json`, and `src-tauri/Cargo.toml` all synchronized to `1.0.0`.
 - [x] **TypeScript Check:** `npx tsc --noEmit` passes with 0 errors.
 - [x] **Astro Production Build:** `npm run build` generates `/dist` static bundle cleanly.

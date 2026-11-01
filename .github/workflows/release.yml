@@ -6,7 +6,28 @@ on:
       - 'v*'
 
 jobs:
+  verify-main-tag:
+    name: Verify Release Tag is on Main
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify Tag is on main branch
+        shell: bash
+        run: |
+          git fetch origin main:main
+          if git merge-base --is-ancestor HEAD main; then
+            echo "Verification passed: Tag ${{ github.ref_name }} originates from the 'main' branch."
+          else
+            echo "::error::Release tags (v*) must be created on the 'main' branch. Current tag commit is not reachable from 'main'."
+            exit 1
+          fi
+
   release:
+    needs: verify-main-tag
     permissions:
       contents: write
     strategy:
@@ -23,10 +44,10 @@ jobs:
     runs-on: ${{ matrix.platform }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
 
       - name: Install Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: 'npm'
@@ -135,14 +156,17 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
     steps:
-      - name: Checkout develop branch
-        uses: actions/checkout@v7
+      - name: Checkout main branch
+        uses: actions/checkout@v4
         with:
-          ref: develop
+          ref: main
           fetch-depth: 0
 
       - name: Update website release version & links
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: |
           VERSION="${{ github.ref_name }}"
@@ -159,5 +183,16 @@ jobs:
             echo "Website index.html is already up to date."
           else
             git commit -m "chore(release): update website release version to $VERSION [skip ci]"
-            git push origin develop
+            # Attempt direct push to main; if ruleset blocks, create PR targeting main
+            git push origin main || {
+              echo "Direct push to main was blocked by ruleset. Creating PR to update main..."
+              BRANCH="chore/update-website-${VERSION}"
+              git checkout -b "$BRANCH"
+              git push origin "$BRANCH"
+              gh pr create \
+                --base main \
+                --head "$BRANCH" \
+                --title "chore(release): update website version to $VERSION" \
+                --body "Automated website version update for release $VERSION."
+            }
           fi

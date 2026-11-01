@@ -10,10 +10,9 @@ for branch in $protected_branches; do
   if [ "$current_branch" = "$branch" ]; then
     echo "\033[1;31m❌ [GIT HOOK ERROR] Direct push from '$branch' is strictly prohibited.\033[0m"
     echo "Remote rulesets reject direct pushes to '$branch'."
-    echo "Please push to a feature branch instead:"
-    echo "  git checkout -b feature/your-feature-name"
-    echo "  git push origin feature/your-feature-name"
-    echo "Then open a Pull Request on GitHub to merge into develop."
+    echo "Please push to a branch instead:"
+    echo "  - Feature branch: git checkout -b feature/<name>  (PR targeting develop)"
+    echo "  - Hotfix branch:  git checkout -b hotfix/<name>   (PR targeting main)"
     exit 1
   fi
 done
@@ -24,7 +23,9 @@ while read -r local_ref local_sha remote_ref remote_sha; do
     if [ "$remote_ref" = "refs/heads/$branch" ]; then
       echo "\033[1;31m❌ [GIT HOOK ERROR] Pushing directly to '$branch' is strictly prohibited.\033[0m"
       echo "Remote rulesets reject direct pushes to 'refs/heads/$branch'."
-      echo "Please push to a feature branch instead and submit a PR on GitHub."
+      echo "Please push to a branch instead and submit a PR on GitHub:"
+      echo "  - Feature branches target 'develop'"
+      echo "  - Hotfix branches target 'main' (which automatically triggers downmerge PR to develop)"
       exit 1
     fi
   done
