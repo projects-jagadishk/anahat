@@ -190,10 +190,13 @@ The included `website/` directory is fully configured for deployment on Cloudfla
     ```bash
     npx wrangler pages deploy website --project-name anahat
     ```
-- Point the download buttons to the GitHub Releases asset URLs:
-  - `https://github.com/projects-jagadishk/anahat/releases/download/v1.0.0/Anahat_1.0.0_universal.dmg`
-  - `https://github.com/projects-jagadishk/anahat/releases/download/v1.0.0/Anahat_1.0.0_x64-setup.exe`
-  - `https://github.com/projects-jagadishk/anahat/releases/download/v1.0.0/Anahat_1.0.0_amd64.AppImage`
+- **Automated Latest Download Permalinks:**
+  The CI workflow (`.github/workflows/release.yml`) automatically attaches unversioned asset copies to every release, ensuring the website's download links never 404 across version bumps:
+  - macOS Universal: `https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_universal.dmg`
+  - Windows x64: `https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_x64-setup.exe`
+  - Linux AppImage: `https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_amd64.AppImage`
+  - Linux DEB: `https://github.com/projects-jagadishk/anahat/releases/latest/download/anahat_amd64.deb`
+  Additionally, `website/index.html` asynchronously queries the GitHub Releases API to populate exact version numbers and file sizes dynamically, and the `update-website` CI job automatically syncs static fallback versions back to `develop`.
 
 ### 5.2 Community Package Managers
 

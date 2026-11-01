@@ -78,3 +78,82 @@ jobs:
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
+
+      - name: Upload Unversioned Latest Release Assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          echo "Scanning built bundles to upload unversioned permalinks..."
+
+          # macOS Universal DMG
+          for f in $(find src-tauri/target -name "*.dmg" -not -name "Anahat_universal.dmg" 2>/dev/null); do
+            echo "Uploading unversioned macOS DMG: $f -> Anahat_universal.dmg"
+            cp "$f" Anahat_universal.dmg
+            gh release upload "${{ github.ref_name }}" Anahat_universal.dmg --clobber --repo "${{ github.repository }}"
+            break
+          done
+
+          # Linux AppImage
+          for f in $(find src-tauri/target -name "*.AppImage" -not -name "Anahat_amd64.AppImage" 2>/dev/null); do
+            echo "Uploading unversioned Linux AppImage: $f -> Anahat_amd64.AppImage"
+            cp "$f" Anahat_amd64.AppImage
+            gh release upload "${{ github.ref_name }}" Anahat_amd64.AppImage --clobber --repo "${{ github.repository }}"
+            break
+          done
+
+          # Linux DEB
+          for f in $(find src-tauri/target -name "*.deb" -not -name "anahat_amd64.deb" 2>/dev/null); do
+            echo "Uploading unversioned Linux DEB: $f -> anahat_amd64.deb"
+            cp "$f" anahat_amd64.deb
+            gh release upload "${{ github.ref_name }}" anahat_amd64.deb --clobber --repo "${{ github.repository }}"
+            break
+          done
+
+          # Windows NSIS Setup (.exe)
+          for f in $(find src-tauri/target -name "*setup.exe" -not -name "Anahat_x64-setup.exe" 2>/dev/null); do
+            echo "Uploading unversioned Windows Setup: $f -> Anahat_x64-setup.exe"
+            cp "$f" Anahat_x64-setup.exe
+            gh release upload "${{ github.ref_name }}" Anahat_x64-setup.exe --clobber --repo "${{ github.repository }}"
+            break
+          done
+
+          # Windows MSI Installer (.msi)
+          for f in $(find src-tauri/target -name "*.msi" -not -name "Anahat_x64.msi" 2>/dev/null); do
+            echo "Uploading unversioned Windows MSI: $f -> Anahat_x64.msi"
+            cp "$f" Anahat_x64.msi
+            gh release upload "${{ github.ref_name }}" Anahat_x64.msi --clobber --repo "${{ github.repository }}"
+            break
+          done
+
+  update-website:
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout develop branch
+        uses: actions/checkout@v7
+        with:
+          ref: develop
+          fetch-depth: 0
+
+      - name: Update website release version & links
+        shell: bash
+        run: |
+          VERSION="${{ github.ref_name }}"
+          echo "Updating website references for release: $VERSION"
+
+          # Update version strings in website/index.html
+          sed -i -E "s/RELEASE BINARIES \/\/ v[0-9\.]+/RELEASE BINARIES \/\/ $VERSION/g" website/index.html
+          sed -i -E "s/DOWNLOAD ANAHAT v[0-9\.]+/DOWNLOAD ANAHAT $VERSION/g" website/index.html
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add website/index.html
+          if git diff --staged --quiet; then
+            echo "Website index.html is already up to date."
+          else
+            git commit -m "chore(release): update website release version to $VERSION [skip ci]"
+            git push origin develop
+          fi
