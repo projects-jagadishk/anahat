@@ -162,6 +162,12 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
           <span class="burst-banner__text">INTERVAL CHIME // 528 HZ SINE BURST</span>
         </div>
 
+        <!-- Breath Sync Cadence Guidance Toast (Main Deck) -->
+        <div class="deck__cadence-toast" id="cadence-toast">
+          <span class="cadence-toast__badge cadence-toast__badge--inhale" id="cadence-toast-phase">INHALE</span>
+          <span class="cadence-toast__text" id="cadence-toast-text">BREATHE IN // 4S</span>
+        </div>
+
         <!-- Studio Cyberdeck 2-Row Toolbar directly above visualizer canvas -->
         <div class="deck__canvas-bar">
           <!-- Row 1: Primary Engine Navigation & Ingest Source & Fullscreen Theater -->
@@ -502,6 +508,13 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
       <button class="theater-ctrl-btn" id="theater-btn-detail" type="button" data-tooltip="Cycle geometry density and resolution (Hotkey: D)">DET: HIGH</button>
       <button class="theater-ctrl-btn" id="theater-btn-reset-view" type="button" data-tooltip="Reset 3D camera perspective and zoom to default front view (Hotkey: R or Double-Click)">⟲ RESET</button>
     </div>
+
+    <!-- Breath Sync Cadence Guidance Toast (Theater Mode) -->
+    <div class="theater__cadence-toast" id="theater-cadence-toast">
+      <span class="cadence-toast__badge cadence-toast__badge--inhale" id="theater-toast-phase">INHALE</span>
+      <span class="cadence-toast__text" id="theater-toast-text">BREATHE IN // 4S</span>
+    </div>
+
     <div class="theater-canvas-container" id="theater-canvas"></div>
     <div class="theater-hud">
       <span class="theater-hud__label">ANAHAT // THEATER PROJECTION</span>
@@ -2073,6 +2086,111 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
 
   .deck__burst-banner--active {
     display: flex;
+  }
+
+  /* Breath Sync Cadence Guidance Toast (Main Deck) */
+  .deck__cadence-toast {
+    display: none;
+    position: absolute;
+    top: 72px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 35;
+    background: #0D0E12;
+    border: 2px solid #333842;
+    box-shadow: 4px 4px 0px #000000;
+    padding: 6px 14px;
+    align-items: center;
+    gap: 10px;
+    pointer-events: none;
+    white-space: nowrap;
+    transition: opacity 0.2s ease;
+  }
+
+  .deck__cadence-toast--active {
+    display: inline-flex !important;
+  }
+
+  /* Breath Sync Cadence Guidance Toast (Theater Mode) */
+  .theater__cadence-toast {
+    display: none;
+    position: absolute;
+    top: 76px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10002;
+    background: rgba(13, 14, 18, 0.94);
+    border: 2px solid #333842;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(12px);
+    padding: 8px 18px;
+    align-items: center;
+    gap: 12px;
+    pointer-events: none;
+    white-space: nowrap;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+  }
+
+  .theater__cadence-toast--active {
+    display: inline-flex !important;
+  }
+
+  .cadence-toast__badge {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 800;
+    padding: 2px 7px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+
+  .cadence-toast__badge--inhale {
+    background: #00E5FF;
+    color: #000000;
+  }
+
+  .cadence-toast__badge--hold {
+    background: #FFB000;
+    color: #000000;
+  }
+
+  .cadence-toast__badge--exhale {
+    background: var(--color-accent-industrial, #FF1433);
+    color: #FFFFFF;
+  }
+
+  .cadence-toast__badge--empty {
+    background: #4E5566;
+    color: #FFFFFF;
+  }
+
+  .cadence-toast__text {
+    font-family: var(--font-display);
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #FFFFFF;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .theater__cadence-toast .cadence-toast__text {
+    font-size: 13px;
+  }
+
+  .cadence-toast--pop {
+    animation: cadence-pop 0.25s ease-out;
+  }
+
+  @keyframes cadence-pop {
+    0% {
+      transform: translateX(-50%) scale(0.95);
+      opacity: 0.8;
+    }
+    100% {
+      transform: translateX(-50%) scale(1.0);
+      opacity: 1;
+    }
   }
 
   .burst-banner__icon {
@@ -4604,6 +4722,136 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     const hudPhaseLabel = document.getElementById("hud-phase-label");
     const canvasCard = document.getElementById("canvas-card");
 
+    // Breath Cadence Guidance Toast DOM references (Main Deck + Theater Mode)
+    const cadenceToast = document.getElementById("cadence-toast");
+    const cadenceToastPhase = document.getElementById("cadence-toast-phase");
+    const cadenceToastText = document.getElementById("cadence-toast-text");
+
+    const theaterCadenceToast = document.getElementById("theater-cadence-toast");
+    const theaterToastPhase = document.getElementById("theater-toast-phase");
+    const theaterToastText = document.getElementById("theater-toast-text");
+
+    function updateCadenceToast(phase: string, durationSec: number) {
+      if (activeCadence === "off" || phase === "idle") {
+        cadenceToast?.classList.remove("deck__cadence-toast--active");
+        theaterCadenceToast?.classList.remove("theater__cadence-toast--active");
+        return;
+      }
+
+      cadenceToast?.classList.add("deck__cadence-toast--active");
+      theaterCadenceToast?.classList.add("theater__cadence-toast--active");
+
+      // Trigger pop transition
+      cadenceToast?.classList.remove("cadence-toast--pop");
+      theaterCadenceToast?.classList.remove("cadence-toast--pop");
+      void cadenceToast?.offsetWidth;
+      void theaterCadenceToast?.offsetWidth;
+      cadenceToast?.classList.add("cadence-toast--pop");
+      theaterCadenceToast?.classList.add("cadence-toast--pop");
+
+      let badgeLabel = phase.toUpperCase();
+      let badgeModifier = "cadence-toast__badge--inhale";
+      let message = `BREATHE IN // ${durationSec}S`;
+
+      if (activeCadence === "box") {
+        switch (phase) {
+          case "inhale":
+            badgeLabel = "INHALE";
+            badgeModifier = "cadence-toast__badge--inhale";
+            message = `BREATHE IN // ${durationSec}S`;
+            break;
+          case "hold-in":
+            badgeLabel = "HOLD FULL";
+            badgeModifier = "cadence-toast__badge--hold";
+            message = `HOLD BREATH // ${durationSec}S`;
+            break;
+          case "exhale":
+            badgeLabel = "EXHALE";
+            badgeModifier = "cadence-toast__badge--exhale";
+            message = `BREATHE OUT // ${durationSec}S`;
+            break;
+          case "hold-out":
+            badgeLabel = "HOLD EMPTY";
+            badgeModifier = "cadence-toast__badge--empty";
+            message = `HOLD EMPTY // ${durationSec}S`;
+            break;
+        }
+      } else if (activeCadence === "478") {
+        switch (phase) {
+          case "inhale":
+            badgeLabel = "INHALE";
+            badgeModifier = "cadence-toast__badge--inhale";
+            message = `INHALE NOSE // ${durationSec}S`;
+            break;
+          case "hold-in":
+            badgeLabel = "HOLD";
+            badgeModifier = "cadence-toast__badge--hold";
+            message = `HOLD GENTLY // ${durationSec}S`;
+            break;
+          case "exhale":
+            badgeLabel = "EXHALE";
+            badgeModifier = "cadence-toast__badge--exhale";
+            message = `EXHALE MOUTH // ${durationSec}S`;
+            break;
+        }
+      } else if (activeCadence === "coherent") {
+        switch (phase) {
+          case "inhale":
+            badgeLabel = "INHALE";
+            badgeModifier = "cadence-toast__badge--inhale";
+            message = `SLOW INHALE // ${durationSec}S`;
+            break;
+          case "exhale":
+            badgeLabel = "EXHALE";
+            badgeModifier = "cadence-toast__badge--exhale";
+            message = `SLOW EXHALE // ${durationSec}S`;
+            break;
+        }
+      } else {
+        if (phase === "inhale") {
+          badgeLabel = "INHALE";
+          badgeModifier = "cadence-toast__badge--inhale";
+          message = `BREATHE IN // ${durationSec}S`;
+        } else if (phase === "hold-in") {
+          badgeLabel = "HOLD FULL";
+          badgeModifier = "cadence-toast__badge--hold";
+          message = `HOLD BREATH // ${durationSec}S`;
+        } else if (phase === "exhale") {
+          badgeLabel = "EXHALE";
+          badgeModifier = "cadence-toast__badge--exhale";
+          message = `BREATHE OUT // ${durationSec}S`;
+        } else if (phase === "hold-out") {
+          badgeLabel = "HOLD EMPTY";
+          badgeModifier = "cadence-toast__badge--empty";
+          message = `HOLD EMPTY // ${durationSec}S`;
+        }
+      }
+
+      const allBadges = [
+        "cadence-toast__badge--inhale",
+        "cadence-toast__badge--hold",
+        "cadence-toast__badge--exhale",
+        "cadence-toast__badge--empty",
+      ];
+
+      if (cadenceToastPhase) {
+        cadenceToastPhase.classList.remove(...allBadges);
+        cadenceToastPhase.classList.add(badgeModifier);
+        cadenceToastPhase.textContent = badgeLabel;
+      }
+      if (theaterToastPhase) {
+        theaterToastPhase.classList.remove(...allBadges);
+        theaterToastPhase.classList.add(badgeModifier);
+        theaterToastPhase.textContent = badgeLabel;
+      }
+      if (cadenceToastText) {
+        cadenceToastText.textContent = message;
+      }
+      if (theaterToastText) {
+        theaterToastText.textContent = message;
+      }
+    }
+
     function syncChimeToggleUI() {
       const enabled = audioEngine.isChimesEnabled();
       if (btnChimeToggle) {
@@ -4642,6 +4890,9 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
         selectCadence.value = activeCadence;
       }
       syncCadenceBadge();
+      if (isOff) {
+        updateCadenceToast("idle", 0);
+      }
     }
 
     // Direct Breath Sync Toggle Switch click handler
@@ -4660,6 +4911,9 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
       const theaterPhase = document.getElementById("theater-phase");
       if (theaterPhase) {
         theaterPhase.textContent = activeCadence === "off" ? "CADENCE: OFF" : "CADENCE: IDLE";
+      }
+      if (activeCadence === "off") {
+        updateCadenceToast("idle", 0);
       }
     });
 
@@ -4693,6 +4947,9 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
       // Interval Chime on breath phase shift
       if (activeCadence !== "off") {
         audioEngine.playCadenceChime(phase);
+        updateCadenceToast(phase, durationSec);
+      } else {
+        updateCadenceToast("idle", 0);
       }
     });
 
@@ -4715,6 +4972,9 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
       const theaterPhase = document.getElementById("theater-phase");
       if (theaterPhase) {
         theaterPhase.textContent = activeCadence === "off" ? "CADENCE: OFF" : "CADENCE: IDLE";
+      }
+      if (activeCadence === "off") {
+        updateCadenceToast("idle", 0);
       }
     });
 
@@ -4756,6 +5016,7 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
       if (theaterPhase) {
         theaterPhase.textContent = "CADENCE: IDLE";
       }
+      updateCadenceToast("idle", 0);
 
       setTimeout(() => {
         (visualizer as any)?.handleResize?.();
