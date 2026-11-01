@@ -4,4 +4,4 @@ pages_build_output_dir = "./website"
 compatibility_date = "2026-10-31"
 
 [assets]
-  directory = "./website"
+    directory = "./website"
