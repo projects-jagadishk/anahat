@@ -249,9 +249,14 @@ Anahat desktop releases are free, open-source community builds under the MIT Lic
 The download landing page (`website/index.html`) automatically presents an interactive confirmation modal before initiating downloads, providing clear first-launch bypass steps:
 
 - **macOS (Gatekeeper Bypass):**
-  1. Drag `Anahat.app` to `/Applications`.
-  2. Right-Click (or Control-Click) `Anahat.app` in Finder $\rightarrow$ select **Open** $\rightarrow$ click **Open** in the dialog (only required once).
-  3. Or run via Terminal: `xattr -cr /Applications/Anahat.app`.
+  On macOS 15 Sequoia (and Sonoma/Ventura), Gatekeeper blocks unnotarized apps with _"Apple could not verify 'Anahat' is free of malware..."_:
+  - **Method 1 (System Settings - GUI):**
+    1. Drag `Anahat.app` to `/Applications` and attempt to launch it (click **Done** on the alert).
+    2. Open **System Settings  > Privacy & Security**.
+    3. Scroll down to **Security** and click **"Open Anyway"** next to _"“Anahat” was blocked to use because it is not from an identified developer"_.
+    4. Authenticate with your Mac password/Touch ID and click **Open** (only required once).
+  - **Method 2 (Terminal - Instant):**
+    Run: `xattr -cr /Applications/Anahat.app` to clear the quarantine flag, then launch normally.
 
 - **Windows (SmartScreen Bypass):**
   1. Run `Anahat_x64-setup.exe`.

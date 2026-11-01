@@ -1197,20 +1197,41 @@
 
         <!-- macOS Instructions -->
         <div id="modal-instructions-macos" class="modal-instructions">
-          <div class="instruction-title">macOS Gatekeeper First-Launch Instructions</div>
+          <div class="instruction-title">macOS Gatekeeper First-Launch Instructions (macOS Sequoia / Sonoma / Ventura)</div>
+          <div style="font-size: 12px; color: #333; margin-bottom: 8px;">
+            On first launch, macOS Gatekeeper blocks unnotarized apps with the security prompt:
+            <br/><em class="instruction-quote">“Apple could not verify ‘Anahat’ is free of malware that may harm your Mac or compromise your privacy.”</em>
+          </div>
+
+          <div style="font-weight: 700; font-size: 11px; margin-top: 10px; margin-bottom: 4px; color: #000; letter-spacing: 0.04em;">
+            METHOD 1: SYSTEM SETTINGS (RECOMMENDED GUI WORKFLOW)
+          </div>
           <ol class="instruction-steps">
             <li>Open the downloaded <code>Anahat_universal.dmg</code> and drag <strong>Anahat.app</strong> into your <strong>Applications</strong> folder.</li>
-            <li>On first launch, macOS Gatekeeper may say: <br/><em class="instruction-quote">"Anahat cannot be opened because Apple cannot check it for malicious software"</em>.</li>
-            <li><strong>How to open:</strong> In Finder, <strong>Right-Click (or Control-Click)</strong> <code>Anahat.app</code> &rarr; select <strong>Open</strong> &rarr; click <strong>Open</strong> in the dialog. (You only need to do this once).</li>
-            <li>
-              Or execute this one-line command in Terminal to clear the Gatekeeper quarantine bit:
-              <div class="modal-code-row">
-                <code>xattr -cr /Applications/Anahat.app</code>
-                <button type="button" class="btn-copy-code" data-code="xattr -cr /Applications/Anahat.app">[ 📋 COPY ]</button>
-              </div>
+            <li>Double-click <code>Anahat.app</code>. When the verification warning dialog appears, click <strong>Done</strong>.</li>
+            <li>Open <strong>System Settings</strong> (from the Apple  menu) &rarr; select <strong>Privacy & Security</strong>.</li>
+            <li>Scroll down to the <strong>Security</strong> section. You will see:<br/>
+              <em>“Anahat” was blocked to use because it is not from an identified developer</em>.
             </li>
+            <li>Click the button: <strong>"Open Anyway"</strong> (enter your Mac login password or Touch ID).</li>
+            <li>Click <strong>Open</strong> in the confirmation prompt. <em>(Required only once; subsequent launches open normally)</em>.</li>
           </ol>
-          <div style="font-size: 11px; color: #555; margin-top: 8px; padding: 6px 10px; background: #F4F4F5; border-left: 2px solid #888;">
+
+          <div style="font-weight: 700; font-size: 11px; margin-top: 12px; margin-bottom: 4px; color: #000; letter-spacing: 0.04em;">
+            METHOD 2: INSTANT TERMINAL COMMAND (QUICKEST)
+          </div>
+          <p style="font-size: 12px; color: #444; margin: 0 0 6px 0;">
+            Drag <strong>Anahat.app</strong> to Applications, then paste this command in Terminal to clear the quarantine flag:
+          </p>
+          <div class="modal-code-row">
+            <code>xattr -cr /Applications/Anahat.app</code>
+            <button type="button" class="btn-copy-code" data-code="xattr -cr /Applications/Anahat.app">[ 📋 COPY ]</button>
+          </div>
+          <p style="font-size: 11px; color: #666; margin: 4px 0 0 0;">
+            Then double-click <strong>Anahat.app</strong> to launch instantly without any prompts.
+          </p>
+
+          <div style="font-size: 11px; color: #555; margin-top: 10px; padding: 6px 10px; background: #F4F4F5; border-left: 2px solid #888;">
             ℹ <em>Why this occurs:</em> Apple requires a recurring $99/year commercial membership for automated Gatekeeper notarization, which is not feasible for this free open-source project at the moment. The app is ad-hoc signed and 100% safe to inspect on GitHub.
           </div>
         </div>
