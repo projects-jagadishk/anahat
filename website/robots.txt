@@ -1,0 +1,94 @@
+# ═══════════════════════════════════════════════════════════
+# ANAHAT // ROBOTS.TXT
+# Host: anahat.jagadishk.work
+# Policy: Allow basic search engine discovery & meta search.
+#         Strictly block autonomous AI agents, LLM scrapers & training harvesters.
+# ═══════════════════════════════════════════════════════════
+
+# 1. ALLOWED SEARCH ENGINE CRAWLERS (Discovery & Meta Search)
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+User-agent: Slurp
+Allow: /
+
+User-agent: Baiduspider
+Allow: /
+
+User-agent: YandexBot
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
+# 2. DISALLOW KNOWN AI SCRAPERS, TRAINING HARVESTERS & AGENTS
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: Anthropic-ai
+Disallow: /
+
+User-agent: Claude-Web
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: PerplexityBot
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
+
+User-agent: cohere-ai
+Disallow: /
+
+User-agent: FacebookBot
+Disallow: /
+
+User-agent: Meta-ExternalAgent
+Disallow: /
+
+User-agent: Applebot-Extended
+Disallow: /
+
+User-agent: Diffbot
+Disallow: /
+
+User-agent: ImagesiftBot
+Disallow: /
+
+User-agent: Omgilibot
+Disallow: /
+
+User-agent: Amazonbot
+Disallow: /
+
+User-agent: Timpibot
+Disallow: /
+
+User-agent: Scrapy
+Disallow: /
+
+# 3. DEFAULT POLICY FOR OTHER AUTOMATED CRAWLERS
+User-agent: *
+Allow: /
+Crawl-delay: 5
+
+# 4. SITEMAP LOCATION
+Sitemap: https://anahat.jagadishk.work/sitemap.xml
