@@ -26,7 +26,8 @@ export type VisualizerMode =
   | "voxel_grid"
   | "tunnel"
   | "digital_scope"
-  | "wire_tunnel";
+  | "wire_tunnel"
+  | "ethereal_mist";
 
 export type VisualPalette = "pastel" | "stark" | "monochrome" | "amber_crt" | "green_crt" | "cyber_blue";
 export type GeometryDetail = "low" | "mid" | "high" | "ultra";
@@ -54,6 +55,7 @@ export const VISUALIZER_ENGINES: EngineMeta[] = [
   { id: "tunnel", code: "ENG_08", num: "08", name: "WARP TUNNEL", category: "PERSPECTIVE", description: "Infinite 3D acoustic perspective corridor", hotkey: "8" },
   { id: "digital_scope", code: "ENG_09", num: "09", name: "DIGITAL SCOPE", category: "LABORATORY", description: "Precision DSO lab oscilloscope with edge trigger", hotkey: "9" },
   { id: "wire_tunnel", code: "ENG_10", num: "10", name: "NEON WIRE TUNNEL", category: "CYBERSPACE", description: "Retro-futuristic wireframe tunnel with neon conduits", hotkey: "0" },
+  { id: "ethereal_mist", code: "ENG_11", num: "11", name: "ETHEREAL MIST", category: "AURA", description: "Wispy smoke tendrils, curl turbulence & whispering particle mist", hotkey: "E" },
 ];
 
 export interface VisualizerUniforms {
@@ -188,10 +190,34 @@ export class ChladniCanvas {
   private wireRingRadius: number[] = [];
   private wireConduitsLine: THREE.LineSegments | null = null;
   private wireConduitsPos: Float32Array = new Float32Array(0);
+  private wireConduitsCol: Float32Array = new Float32Array(0);
   private wireLatticeLine: THREE.LineSegments | null = null;
   private wireLatticePos: Float32Array = new Float32Array(0);
   private readonly wireRingCount = 30;
   private readonly wireSides = 12;
+
+  // 12 // Ethereal Mist (Curled blurry smoke tendrils, volumetric puffs, beat-reactive aura)
+  private etherealGroup: THREE.Group | null = null;
+  private etherealTendrilCount = 16;
+  private etherealTendrilSegments = 32;
+  private etherealTendrilPoints: THREE.Points | null = null;
+  private etherealTendrilPositions: Float32Array = new Float32Array(0);
+  private etherealTendrilColors: Float32Array = new Float32Array(0);
+  private etherealTendrilSizes: Float32Array = new Float32Array(0);
+  private etherealTendrilHeads: Array<{ x: number; y: number; z: number; vx: number; vy: number; vz: number; seed: number }> = [];
+  private etherealParticles: THREE.Points | null = null;
+  private etherealParticleCount = 2000;
+  private etherealParticlePos: Float32Array = new Float32Array(0);
+  private etherealParticleVel: Float32Array = new Float32Array(0);
+  private etherealParticleCol: Float32Array = new Float32Array(0);
+  private etherealParticleLife: Float32Array = new Float32Array(0);
+  private etherealSmokePoints: THREE.Points | null = null;
+  private etherealSmokeCount = 250;
+  private etherealSmokePos: Float32Array = new Float32Array(0);
+  private etherealSmokeCol: Float32Array = new Float32Array(0);
+  private etherealSmokeSize: Float32Array = new Float32Array(0);
+  private etherealSmokeLife: Float32Array = new Float32Array(0);
+  private etherealPuffTexture: THREE.CanvasTexture | null = null;
 
   mount(container: HTMLElement): void {
     this.container = container;
@@ -227,6 +253,7 @@ export class ChladniCanvas {
     this.initTunnel();       // 08 // Warp Tunnel
     this.initDigitalScope(); // 09 // Digital Scope
     this.initWireTunnel();   // 10 // Neon Wire Tunnel
+    this.initEtherealMist(); // 11 // Ethereal Mist
 
     // Initialize visible shockwave ring
     this.initShockwave();
@@ -585,6 +612,7 @@ export class ChladniCanvas {
     if (this.tunnelGroup) this.tunnelGroup.visible = this.mode === "tunnel";
     if (this.digitalScopeGroup) this.digitalScopeGroup.visible = this.mode === "digital_scope";
     if (this.wireTunnelGroup) this.wireTunnelGroup.visible = this.mode === "wire_tunnel";
+    if (this.etherealGroup) this.etherealGroup.visible = this.mode === "ethereal_mist";
   }
 
   updateUniforms(uniforms: Partial<VisualizerUniforms>): void {
@@ -1065,12 +1093,17 @@ export class ChladniCanvas {
     const innerR = 0.29 * breath;
     const maxExcursion = 0.58 * breath;
 
-    // Palette colors
-    const colBase = this.isDark
-      ? new THREE.Color(0.0, 0.9, 0.5) // Emerald in dark
-      : new THREE.Color(0.08, 0.08, 0.10); // Charcoal in light
-    const colPeak = new THREE.Color(1.0, 0.18, 0.22); // Crimson
-    const colCobalt = new THREE.Color(0.02, 0.45, 0.95);
+    // Dynamic palette-aware harmonic colors
+    const colBase = this.samplePalette(0.05);
+    const colPeak = this.samplePalette(0.92);
+    const colMid = this.samplePalette(0.48);
+
+    if (this.radarPeakLine) {
+      (this.radarPeakLine.material as THREE.LineBasicMaterial).color.copy(colPeak);
+    }
+    if (this.radarSweepLine) {
+      (this.radarSweepLine.material as THREE.LineBasicMaterial).color.copy(this.samplePalette(0.68));
+    }
 
     for (let b = 0; b < barCount; b++) {
       const theta = (b / barCount) * Math.PI * 2.0;
@@ -1109,9 +1142,9 @@ export class ChladniCanvas {
       bPos[idx + 4] = sinT * rOuter;
       bPos[idx + 5] = 0;
 
-      // Dynamic color: transition from charcoal/cobalt to crimson at high amplitudes
+      // Dynamic color: transition smoothly across palette spectrum with energy
       const normH = Math.min(1.0, barH / (maxExcursion * 0.8));
-      const barCol = colBase.clone().lerp(normH > 0.6 ? colPeak : colCobalt, normH);
+      const barCol = colBase.clone().lerp(normH > 0.5 ? colPeak : colMid, normH);
       bCols[idx] = colBase.r; bCols[idx + 1] = colBase.g; bCols[idx + 2] = colBase.b;
       bCols[idx + 3] = barCol.r; bCols[idx + 4] = barCol.g; bCols[idx + 5] = barCol.b;
 
@@ -1367,10 +1400,14 @@ export class ChladniCanvas {
   private updateTorus(delta: number, time: number): void {
     if (!this.torusGroup) return;
 
+    if (this.freqProvider) {
+      this.freqProvider(this.freqDataBuffer);
+    }
+
     const breath = this.currentBreathScale;
     const amp = this.uAmplitude;
     const R = 0.72 * breath;
-    const r = 0.28 * breath * (1.0 + amp * 0.25);
+    const baseR = 0.28 * breath * (1.0 + amp * 0.20);
     const n = Math.max(1, Math.min(8, Math.round(this.uN)));
 
     const streamCount = this.torusStreamlines.length;
@@ -1380,6 +1417,15 @@ export class ChladniCanvas {
       const pos = this.torusStreamlinePos[s];
       const line = this.torusStreamlines[s];
       const phaseOffset = (s / streamCount) * Math.PI * 2.0;
+
+      // Audio-reactive plasma expansion per streamline
+      const fftBin = (s * 8) % 128;
+      const fftVal = (this.freqDataBuffer[fftBin] / 255.0) * 0.32 * amp * this.visualGain;
+      const r = baseR * (1.0 + fftVal);
+
+      // Dynamic harmonic palette color assignment
+      const col = this.samplePalette((s / streamCount + time * 0.035) % 1.0);
+      (line.material as THREE.LineBasicMaterial).color.copy(col);
 
       for (let i = 0; i <= segsPerStream; i++) {
         const u = (i / segsPerStream) * Math.PI * 2.0;
@@ -1402,6 +1448,10 @@ export class ChladniCanvas {
     this.torusGroup.rotation.y = time * 0.35;
     if (this.torusMesh) {
       this.torusMesh.rotation.z = time * 0.2;
+      const cageMat = this.torusMesh.material as THREE.MeshBasicMaterial;
+      if (cageMat) {
+        cageMat.color.copy(this.samplePalette(0.1));
+      }
     }
   }
 
@@ -2121,12 +2171,15 @@ export class ChladniCanvas {
     // Longitudinal Neon Conduits (connecting vertex k across adjacent rings)
     const conduitFloats = (ringCount - 1) * sides * 2 * 3;
     this.wireConduitsPos = new Float32Array(conduitFloats);
+    this.wireConduitsCol = new Float32Array(conduitFloats);
     const conduitGeo = new THREE.BufferGeometry();
     conduitGeo.setAttribute("position", new THREE.BufferAttribute(this.wireConduitsPos, 3));
+    conduitGeo.setAttribute("color", new THREE.BufferAttribute(this.wireConduitsCol, 3));
     const conduitMat = new THREE.LineBasicMaterial({
-      color: 0xFF0077, // Neon Magenta / Electric Wire
+      color: 0xFFFFFF,
+      vertexColors: true,
       transparent: true,
-      opacity: 0.90,
+      opacity: 0.92,
     });
     this.wireConduitsLine = new THREE.LineSegments(conduitGeo, conduitMat);
     this.wireTunnelGroup.add(this.wireConduitsLine);
@@ -2247,6 +2300,20 @@ export class ChladniCanvas {
         this.wireConduitsPos[cIdx + 3] = p2[0];
         this.wireConduitsPos[cIdx + 4] = p2[1];
         this.wireConduitsPos[cIdx + 5] = p2[2];
+
+        // Multi-chromatic neon wire conduits matching active palette
+        const wireCol = this.samplePalette((s / sides + time * 0.03) % 1.0);
+        const depth1 = Math.max(0.12, Math.min(1.0, (z1 + 15.0) / 16.0));
+        const depth2 = Math.max(0.12, Math.min(1.0, (z2 + 15.0) / 16.0));
+
+        this.wireConduitsCol[cIdx]     = wireCol.r * depth1;
+        this.wireConduitsCol[cIdx + 1] = wireCol.g * depth1;
+        this.wireConduitsCol[cIdx + 2] = wireCol.b * depth1;
+
+        this.wireConduitsCol[cIdx + 3] = wireCol.r * depth2;
+        this.wireConduitsCol[cIdx + 4] = wireCol.g * depth2;
+        this.wireConduitsCol[cIdx + 5] = wireCol.b * depth2;
+
         cIdx += 6;
 
         // Diagonal cyber lattice brace
@@ -2260,15 +2327,414 @@ export class ChladniCanvas {
       }
     }
 
+    this.wireConduitsLine.geometry.setDrawRange(0, cIdx / 3);
+    this.wireLatticeLine.geometry.setDrawRange(0, lIdx / 3);
     (this.wireConduitsLine.geometry.getAttribute("position") as THREE.BufferAttribute).needsUpdate = true;
+    (this.wireConduitsLine.geometry.getAttribute("color") as THREE.BufferAttribute).needsUpdate = true;
     (this.wireLatticeLine.geometry.getAttribute("position") as THREE.BufferAttribute).needsUpdate = true;
 
-    // Palette updates on conduits
-    const conduitCol = this.samplePalette(0.3);
-    (this.wireConduitsLine.material as THREE.LineBasicMaterial).color.copy(conduitCol);
+    // Palette updates on lattice
+    const latticeMat = this.wireLatticeLine.material as THREE.LineBasicMaterial;
+    if (latticeMat) {
+      latticeMat.color.copy(this.samplePalette(0.85));
+      latticeMat.opacity = Math.min(0.85, 0.35 + bass * 0.50);
+    }
 
     // Subtle hypnotic corridor roll
     this.wireTunnelGroup.rotation.z = time * 0.15;
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 12 // ETHEREAL MIST (WISPY SMOKE TRAILS & ETHEREAL PARTICLES)
+  // ═══════════════════════════════════════════════════════════
+
+  private initEtherealMist(): void {
+    this.etherealGroup = new THREE.Group();
+
+    // 1. Procedural Soft Blurry Gaussian Smoke Texture
+    const puffCanvas = document.createElement("canvas");
+    puffCanvas.width = 128;
+    puffCanvas.height = 128;
+    const ctx = puffCanvas.getContext("2d");
+    if (ctx) {
+      const grad = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+      grad.addColorStop(0, "rgba(255, 255, 255, 0.95)");
+      grad.addColorStop(0.2, "rgba(255, 255, 255, 0.65)");
+      grad.addColorStop(0.5, "rgba(255, 255, 255, 0.22)");
+      grad.addColorStop(0.8, "rgba(255, 255, 255, 0.05)");
+      grad.addColorStop(1.0, "rgba(255, 255, 255, 0.0)");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 128, 128);
+    }
+    this.etherealPuffTexture = new THREE.CanvasTexture(puffCanvas);
+
+    // 2. Volumetric Curled Smoke Tendrils (16 streamers × 32 overlapping blurry puffs = 512 sprites)
+    this.etherealTendrilCount = 16;
+    this.etherealTendrilSegments = 32;
+    const totalTendrilPoints = this.etherealTendrilCount * this.etherealTendrilSegments;
+
+    this.etherealTendrilPositions = new Float32Array(totalTendrilPoints * 3);
+    this.etherealTendrilColors = new Float32Array(totalTendrilPoints * 3);
+    this.etherealTendrilSizes = new Float32Array(totalTendrilPoints);
+    this.etherealTendrilHeads = [];
+
+    for (let t = 0; t < this.etherealTendrilCount; t++) {
+      const angle = (t / this.etherealTendrilCount) * Math.PI * 2;
+      const r = 0.12 + Math.random() * 0.28;
+      const startX = Math.cos(angle) * r;
+      const startY = -0.75 - Math.random() * 0.25;
+      const startZ = Math.sin(angle) * r;
+
+      this.etherealTendrilHeads.push({
+        x: startX,
+        y: startY,
+        z: startZ,
+        vx: (Math.random() - 0.5) * 0.005,
+        vy: 0.006 + Math.random() * 0.006,
+        vz: (Math.random() - 0.5) * 0.005,
+        seed: Math.random() * 100,
+      });
+
+      for (let s = 0; s < this.etherealTendrilSegments; s++) {
+        const pIdx = t * this.etherealTendrilSegments + s;
+        this.etherealTendrilPositions[pIdx * 3] = startX;
+        this.etherealTendrilPositions[pIdx * 3 + 1] = startY + s * 0.02;
+        this.etherealTendrilPositions[pIdx * 3 + 2] = startZ;
+
+        this.etherealTendrilColors[pIdx * 3] = 0.5;
+        this.etherealTendrilColors[pIdx * 3 + 1] = 0.5;
+        this.etherealTendrilColors[pIdx * 3 + 2] = 0.5;
+
+        this.etherealTendrilSizes[pIdx] = 0.12 + (s / this.etherealTendrilSegments) * 0.25;
+      }
+    }
+
+    const tendrilGeo = new THREE.BufferGeometry();
+    tendrilGeo.setAttribute("position", new THREE.BufferAttribute(this.etherealTendrilPositions, 3));
+    tendrilGeo.setAttribute("color", new THREE.BufferAttribute(this.etherealTendrilColors, 3));
+
+    const tendrilMat = new THREE.PointsMaterial({
+      size: 0.24,
+      map: this.etherealPuffTexture,
+      transparent: true,
+      opacity: 0.70,
+      vertexColors: true,
+      blending: THREE.NormalBlending,
+      depthWrite: false,
+    });
+    this.etherealTendrilPoints = new THREE.Points(tendrilGeo, tendrilMat);
+    this.etherealGroup.add(this.etherealTendrilPoints);
+
+    // 3. Ethereal Micro-Particle Mist (2,000 sparkling whispering particles)
+    this.etherealParticleCount = 2000;
+    this.etherealParticlePos = new Float32Array(this.etherealParticleCount * 3);
+    this.etherealParticleVel = new Float32Array(this.etherealParticleCount * 3);
+    this.etherealParticleCol = new Float32Array(this.etherealParticleCount * 3);
+    this.etherealParticleLife = new Float32Array(this.etherealParticleCount);
+
+    for (let i = 0; i < this.etherealParticleCount; i++) {
+      const idx = i * 3;
+      const theta = Math.random() * Math.PI * 2;
+      const rad = Math.sqrt(Math.random()) * 0.9;
+      this.etherealParticlePos[idx] = Math.cos(theta) * rad;
+      this.etherealParticlePos[idx + 1] = (Math.random() - 0.5) * 1.8;
+      this.etherealParticlePos[idx + 2] = Math.sin(theta) * rad;
+
+      this.etherealParticleVel[idx] = (Math.random() - 0.5) * 0.004;
+      this.etherealParticleVel[idx + 1] = 0.002 + Math.random() * 0.005;
+      this.etherealParticleVel[idx + 2] = (Math.random() - 0.5) * 0.004;
+
+      this.etherealParticleCol[idx] = 0.5;
+      this.etherealParticleCol[idx + 1] = 0.5;
+      this.etherealParticleCol[idx + 2] = 0.5;
+      this.etherealParticleLife[i] = Math.random();
+    }
+
+    const pGeo = new THREE.BufferGeometry();
+    pGeo.setAttribute("position", new THREE.BufferAttribute(this.etherealParticlePos, 3));
+    pGeo.setAttribute("color", new THREE.BufferAttribute(this.etherealParticleCol, 3));
+    const pMat = new THREE.PointsMaterial({
+      size: 0.038,
+      map: this.etherealPuffTexture,
+      transparent: true,
+      opacity: 0.65,
+      vertexColors: true,
+      blending: THREE.NormalBlending,
+      depthWrite: false,
+    });
+    this.etherealParticles = new THREE.Points(pGeo, pMat);
+    this.etherealGroup.add(this.etherealParticles);
+
+    // 4. Soft Volumetric Ambient Smoke Cloud Puffs (250 gentle billowing puffs)
+    this.etherealSmokeCount = 250;
+    this.etherealSmokePos = new Float32Array(this.etherealSmokeCount * 3);
+    this.etherealSmokeCol = new Float32Array(this.etherealSmokeCount * 3);
+    this.etherealSmokeSize = new Float32Array(this.etherealSmokeCount);
+    this.etherealSmokeLife = new Float32Array(this.etherealSmokeCount);
+
+    for (let i = 0; i < this.etherealSmokeCount; i++) {
+      const idx = i * 3;
+      const theta = Math.random() * Math.PI * 2;
+      const rad = 0.08 + Math.random() * 0.75;
+      this.etherealSmokePos[idx] = Math.cos(theta) * rad;
+      this.etherealSmokePos[idx + 1] = -0.85 + Math.random() * 1.7;
+      this.etherealSmokePos[idx + 2] = Math.sin(theta) * rad;
+
+      this.etherealSmokeCol[idx] = 0.5;
+      this.etherealSmokeCol[idx + 1] = 0.5;
+      this.etherealSmokeCol[idx + 2] = 0.5;
+
+      this.etherealSmokeSize[i] = 0.25 + Math.random() * 0.35;
+      this.etherealSmokeLife[i] = Math.random();
+    }
+
+    const sGeo = new THREE.BufferGeometry();
+    sGeo.setAttribute("position", new THREE.BufferAttribute(this.etherealSmokePos, 3));
+    sGeo.setAttribute("color", new THREE.BufferAttribute(this.etherealSmokeCol, 3));
+    const sMat = new THREE.PointsMaterial({
+      size: 0.45,
+      map: this.etherealPuffTexture,
+      transparent: true,
+      opacity: 0.30,
+      vertexColors: true,
+      blending: THREE.NormalBlending,
+      depthWrite: false,
+    });
+    this.etherealSmokePoints = new THREE.Points(sGeo, sMat);
+    this.etherealGroup.add(this.etherealSmokePoints);
+
+    this.scene?.add(this.etherealGroup);
+  }
+
+  private updateEtherealMist(delta: number, time: number): void {
+    if (!this.etherealGroup) return;
+
+    if (this.freqProvider) {
+      this.freqProvider(this.freqDataBuffer);
+    }
+
+    let bass = 0;
+    for (let i = 0; i < 7; i++) bass += this.freqDataBuffer[i];
+    bass = (bass / 7) / 255.0;
+
+    let mids = 0;
+    for (let i = 7; i < 32; i++) mids += this.freqDataBuffer[i];
+    mids = (mids / 25) / 255.0;
+
+    let highs = 0;
+    for (let i = 32; i < 80; i++) highs += this.freqDataBuffer[i];
+    highs = (highs / 48) / 255.0;
+
+    const breath = this.currentBreathScale;
+    const isDark = this.isDark;
+    const beatPulse = 1.0 + bass * 0.95;
+
+    // Pulse points material size with live beat
+    if (this.etherealTendrilPoints) {
+      const mat = this.etherealTendrilPoints.material as THREE.PointsMaterial;
+      if (mat) mat.size = 0.22 * beatPulse;
+    }
+    if (this.etherealSmokePoints) {
+      const mat = this.etherealSmokePoints.material as THREE.PointsMaterial;
+      if (mat) mat.size = 0.42 * (1.0 + bass * 0.6);
+    }
+
+    // 1. Update Sinuous Volumetric Smoke Tendrils
+    if (this.etherealTendrilPoints) {
+      const pos = this.etherealTendrilPositions;
+      const col = this.etherealTendrilColors;
+      const segCount = this.etherealTendrilSegments;
+
+      for (let t = 0; t < this.etherealTendrilCount; t++) {
+        const head = this.etherealTendrilHeads[t];
+        const s = head.seed;
+
+        // Slow multi-frequency 3D curl eddies
+        const swirl1 = time * 0.32 + s * 6.28;
+        const swirl2 = time * 0.50 + s * 3.14;
+
+        // 3D curl vectors (producing tight curving loops and curls of smoke)
+        const curlX = Math.sin(head.y * 3.2 + swirl1) * Math.cos(head.z * 2.6 + s) * 0.038
+                    + Math.sin(head.z * 5.2 - swirl2) * 0.022;
+
+        const curlY = (0.005 + bass * 0.013) // slow gentle upward draft
+                    + Math.cos(head.x * 2.8 + swirl1) * Math.sin(head.z * 2.8) * 0.014;
+
+        const curlZ = Math.cos(head.y * 3.0 + swirl1) * Math.sin(head.x * 2.6 + s) * 0.038
+                    + Math.cos(head.x * 5.0 + swirl2) * 0.022;
+
+        // Tangential spiral coiling around streamer's plume
+        const theta = time * 0.45 + s * 2.5;
+        const coilX = Math.cos(theta) * (0.010 + bass * 0.012);
+        const coilZ = Math.sin(theta) * (0.010 + bass * 0.012);
+
+        head.vx += (curlX + coilX - head.vx) * 0.08;
+        head.vy += (curlY - head.vy) * 0.06;
+        head.vz += (curlZ + coilZ - head.vz) * 0.08;
+
+        head.x += head.vx * breath;
+        head.y += head.vy * breath;
+        head.z += head.vz * breath;
+
+        // Respawn streamer if too high or drifted away
+        const distXZ = Math.sqrt(head.x * head.x + head.z * head.z);
+        if (head.y > 1.1 || distXZ > 1.35) {
+          const ang = Math.random() * Math.PI * 2;
+          const rad = 0.06 + Math.random() * 0.22;
+          head.x = Math.cos(ang) * rad;
+          head.y = -0.75 - Math.random() * 0.2;
+          head.z = Math.sin(ang) * rad;
+          head.vx = 0;
+          head.vy = 0.006 + Math.random() * 0.008;
+          head.vz = 0;
+          head.seed = Math.random() * 100;
+        }
+
+        // Propagate curvy serpentine coordinates along the streamer
+        for (let i = segCount - 1; i > 0; i--) {
+          const pIdx = (t * segCount + i) * 3;
+          const prevIdx = (t * segCount + (i - 1)) * 3;
+
+          // Sinuous lateral wave curl through the spine
+          const wavePhase = i * 0.42 - time * 0.75 + s * 2.0;
+          const curlAmp = (i / segCount) * (0.005 + bass * 0.009);
+
+          pos[pIdx] = pos[prevIdx] + Math.sin(wavePhase) * curlAmp;
+          pos[pIdx + 1] = pos[prevIdx + 1] + 0.0018 * breath;
+          pos[pIdx + 2] = pos[prevIdx + 2] + Math.cos(wavePhase) * curlAmp;
+        }
+
+        pos[t * segCount * 3] = head.x;
+        pos[t * segCount * 3 + 1] = head.y;
+        pos[t * segCount * 3 + 2] = head.z;
+
+        // Colors & Alpha: adapted for dark background and light background!
+        const palColor = this.samplePalette((t / this.etherealTendrilCount + time * 0.04) % 1.0);
+        const palAccent = this.samplePalette(((t + 3) / this.etherealTendrilCount) % 1.0);
+
+        for (let i = 0; i < segCount; i++) {
+          const pIdx = (t * segCount + i) * 3;
+          const factor = i / segCount;
+          const alphaCurve = Math.sin(Math.pow(1.0 - factor, 0.75) * Math.PI * 0.95);
+          const alpha = alphaCurve * (0.42 + highs * 0.35 + bass * 0.25);
+
+          const c = palColor.clone().lerp(palAccent, factor);
+          if (!isDark) {
+            // Main deck (white background): deepen smoke color into rich velvety tones so it's clearly visible
+            const darkSmoke = new THREE.Color(0.20, 0.16, 0.26);
+            c.lerp(darkSmoke, 0.45);
+            col[pIdx] = c.r * (0.65 + 0.35 * (1.0 - alpha));
+            col[pIdx + 1] = c.g * (0.65 + 0.35 * (1.0 - alpha));
+            col[pIdx + 2] = c.b * (0.65 + 0.35 * (1.0 - alpha));
+          } else {
+            // Theater mode (dark background): luminous glowing smoke
+            col[pIdx] = c.r * (0.8 + 0.4 * beatPulse);
+            col[pIdx + 1] = c.g * (0.8 + 0.4 * beatPulse);
+            col[pIdx + 2] = c.b * (0.8 + 0.4 * beatPulse);
+          }
+        }
+      }
+
+      this.etherealTendrilPoints.geometry.attributes.position.needsUpdate = true;
+      this.etherealTendrilPoints.geometry.attributes.color.needsUpdate = true;
+    }
+
+    // 2. Update Micro-Particles
+    if (this.etherealParticles) {
+      const pos = this.etherealParticlePos;
+      const vel = this.etherealParticleVel;
+      const col = this.etherealParticleCol;
+      const life = this.etherealParticleLife;
+
+      for (let i = 0; i < this.etherealParticleCount; i++) {
+        const idx = i * 3;
+        life[i] += delta * (0.15 + bass * 0.25);
+        if (life[i] > 1.0) {
+          life[i] = 0;
+          const th = Math.random() * Math.PI * 2;
+          const r = Math.sqrt(Math.random()) * 0.65;
+          pos[idx] = Math.cos(th) * r;
+          pos[idx + 1] = -0.85;
+          pos[idx + 2] = Math.sin(th) * r;
+        }
+
+        const x = pos[idx];
+        const y = pos[idx + 1];
+        const z = pos[idx + 2];
+
+        vel[idx] += (Math.sin(y * 2.8 + time * 0.5) * 0.003 - vel[idx]) * 0.05;
+        vel[idx + 1] += (0.003 + bass * 0.009 - vel[idx + 1]) * 0.05;
+        vel[idx + 2] += (Math.cos(x * 2.8 + time * 0.5) * 0.003 - vel[idx + 2]) * 0.05;
+
+        pos[idx] += vel[idx] * breath;
+        pos[idx + 1] += vel[idx + 1] * breath;
+        pos[idx + 2] += vel[idx + 2] * breath;
+
+        const pCol = this.samplePalette((i / this.etherealParticleCount + time * 0.06) % 1.0);
+        const shimmer = Math.sin(life[i] * Math.PI) * (0.55 + highs * 0.55);
+
+        if (!isDark) {
+          // On white background: deep visible particles
+          const darkTone = new THREE.Color(0.25, 0.2, 0.35);
+          pCol.lerp(darkTone, 0.45);
+          col[idx] = pCol.r * 0.75;
+          col[idx + 1] = pCol.g * 0.75;
+          col[idx + 2] = pCol.b * 0.75;
+        } else {
+          // On dark background: sparkling luminous stars
+          col[idx] = pCol.r * shimmer * beatPulse;
+          col[idx + 1] = pCol.g * shimmer * beatPulse;
+          col[idx + 2] = pCol.b * shimmer * beatPulse;
+        }
+      }
+
+      this.etherealParticles.geometry.attributes.position.needsUpdate = true;
+      this.etherealParticles.geometry.attributes.color.needsUpdate = true;
+    }
+
+    // 3. Update Ambient Volumetric Smoke Puffs
+    if (this.etherealSmokePoints) {
+      const pos = this.etherealSmokePos;
+      const col = this.etherealSmokeCol;
+      const life = this.etherealSmokeLife;
+
+      for (let i = 0; i < this.etherealSmokeCount; i++) {
+        const idx = i * 3;
+        life[i] += delta * 0.10;
+        if (life[i] > 1.0) {
+          life[i] = 0;
+          const th = Math.random() * Math.PI * 2;
+          const r = 0.08 + Math.random() * 0.55;
+          pos[idx] = Math.cos(th) * r;
+          pos[idx + 1] = -0.78 - Math.random() * 0.2;
+          pos[idx + 2] = Math.sin(th) * r;
+        }
+
+        pos[idx] += Math.sin(pos[idx + 1] * 1.4 + time * 0.4) * 0.0016 * breath;
+        pos[idx + 1] += (0.004 + bass * 0.008) * breath;
+        pos[idx + 2] += Math.cos(pos[idx] * 1.4 + time * 0.4) * 0.0016 * breath;
+
+        const puffCol = this.samplePalette((i / this.etherealSmokeCount) % 1.0);
+        const puffAlpha = Math.sin(life[i] * Math.PI) * (0.18 + mids * 0.22);
+
+        if (!isDark) {
+          puffCol.lerp(new THREE.Color(0.25, 0.22, 0.3), 0.4);
+          col[idx] = puffCol.r * 0.75;
+          col[idx + 1] = puffCol.g * 0.75;
+          col[idx + 2] = puffCol.b * 0.75;
+        } else {
+          col[idx] = puffCol.r * puffAlpha * beatPulse;
+          col[idx + 1] = puffCol.g * puffAlpha * beatPulse;
+          col[idx + 2] = puffCol.b * puffAlpha * beatPulse;
+        }
+      }
+
+      this.etherealSmokePoints.geometry.attributes.position.needsUpdate = true;
+      this.etherealSmokePoints.geometry.attributes.color.needsUpdate = true;
+    }
+
+    // Slow spiritual aura rotation
+    this.etherealGroup.rotation.y = time * 0.04;
   }
 
   private chladni(x: number, y: number, n: number, m: number): number {
@@ -2455,6 +2921,8 @@ export class ChladniCanvas {
       this.updateDigitalScope(delta, elapsedTime);
     } else if (this.mode === "wire_tunnel") {
       this.updateWireTunnel(delta, elapsedTime);
+    } else if (this.mode === "ethereal_mist") {
+      this.updateEtherealMist(delta, elapsedTime);
     }
 
     // 3D Camera kinematics (Static, no automatic orbital rotation)
@@ -2838,10 +3306,10 @@ export class ChladniCanvas {
 
     // Neon Wire Tunnel
     if (this.wireConduitsLine) {
-      (this.wireConduitsLine.material as THREE.LineBasicMaterial).color.copy(primary);
+      (this.wireConduitsLine.material as THREE.LineBasicMaterial).color.setHex(0xFFFFFF);
     }
     if (this.wireLatticeLine) {
-      (this.wireLatticeLine.material as THREE.LineBasicMaterial).color.copy(secondary);
+      (this.wireLatticeLine.material as THREE.LineBasicMaterial).color.copy(accent);
     }
   }
 

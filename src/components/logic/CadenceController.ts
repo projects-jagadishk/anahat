@@ -54,14 +54,14 @@ export const CADENCE_PRESETS: Record<CadenceType, CadenceDefinition> = {
 
 export class CadenceController {
   private timeline: gsap.core.Timeline | null = null;
-  private currentCadence: CadenceType = "box";
-  private onPhaseChange?: (phase: "inhale" | "hold-in" | "exhale" | "hold-out", remainingPhaseSec: number) => void;
+  private currentCadence: CadenceType = "off";
+  private onPhaseChange?: (phase: "inhale" | "hold-in" | "exhale" | "hold-out" | "idle", remainingPhaseSec: number) => void;
 
   init(): void {
     this.applyCadence(this.currentCadence);
   }
 
-  setPhaseCallback(cb: (phase: "inhale" | "hold-in" | "exhale" | "hold-out", remainingPhaseSec: number) => void): void {
+  setPhaseCallback(cb: (phase: "inhale" | "hold-in" | "exhale" | "hold-out" | "idle", remainingPhaseSec: number) => void): void {
     this.onPhaseChange = cb;
   }
 
@@ -74,12 +74,12 @@ export class CadenceController {
       this.timeline = null;
     }
 
-    this.timeline = gsap.timeline({ repeat: -1 });
-
     if (cadence === "off") {
-      this.onPhaseChange?.("inhale", def.inhale);
+      this.onPhaseChange?.("idle", 0);
       return;
     }
+
+    this.timeline = gsap.timeline({ repeat: -1 });
 
     if (def.inhale > 0) {
       this.timeline.call(() => this.onPhaseChange?.("inhale", def.inhale));

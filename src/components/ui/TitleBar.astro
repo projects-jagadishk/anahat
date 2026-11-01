@@ -39,19 +39,20 @@
     <span id="titlebar-route-label">[ ROUTE AUDIO ]</span>
   </button>
 
-  <!-- Window controls (Windows/Linux — hidden on macOS) -->
+  <!-- Window controls: Minimise to tray & Close (Visible across all platforms) -->
   <div class="titlebar__controls" id="window-controls">
-    <button class="titlebar__btn" id="btn-minimize" aria-label="Minimize"
-      >—</button
-    >
-    <button class="titlebar__btn" id="btn-maximize" aria-label="Maximize"
-      >◻</button
-    >
+    <button
+      class="titlebar__btn"
+      id="btn-minimize"
+      aria-label="Minimise to System Tray"
+      data-tooltip="Minimise to System Tray (Click tray icon to restore)"
+    >—</button>
     <button
       class="titlebar__btn titlebar__btn--close"
       id="btn-close"
-      aria-label="Close">✕</button
-    >
+      aria-label="Close"
+      data-tooltip="Close Anahat"
+    >✕</button>
   </div>
 </header>
 
@@ -175,32 +176,25 @@
 
 <script>
   import { getCurrentWindow } from "@tauri-apps/api/window";
+  import { invoke } from "@tauri-apps/api/core";
 
   const appWindow = getCurrentWindow();
 
-  // Detect macOS — hide custom window controls (traffic lights are native)
-  const isMacOS = navigator.userAgent.includes("Macintosh");
-  const controlsEl = document.getElementById("window-controls");
-  if (isMacOS && controlsEl) {
-    controlsEl.style.display = "none";
-  }
-
-  document.getElementById("btn-minimize")?.addEventListener("click", () => {
-    appWindow.minimize();
+  // Minimise to system tray
+  document.getElementById("btn-minimize")?.addEventListener("click", async () => {
+    try {
+      await invoke("app_minimize_to_tray");
+    } catch (_) {
+      try { await appWindow.hide(); } catch {}
+    }
   });
 
-  document
-    .getElementById("btn-maximize")
-    ?.addEventListener("click", async () => {
-      const isMaximized = await appWindow.isMaximized();
-      if (isMaximized) {
-        appWindow.unmaximize();
-      } else {
-        appWindow.maximize();
-      }
-    });
-
-  document.getElementById("btn-close")?.addEventListener("click", () => {
-    appWindow.hide();
+  // Close Application
+  document.getElementById("btn-close")?.addEventListener("click", async () => {
+    try {
+      await invoke("app_close");
+    } catch (_) {
+      try { await appWindow.close(); } catch {}
+    }
   });
 </script>

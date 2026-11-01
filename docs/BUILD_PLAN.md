@@ -75,3 +75,86 @@
   - Hotkey `R` / `r`: Instantly resets camera elevation ($0^\circ$), azimuth ($0^\circ$), and distance ($2.4$) to default canonical front projection.
   - Canvas Double-Click: Double-clicking either the main deck canvas or fullscreen theater canvas resets perspective and zoom.
 - **Documentation**: Documented `[ R ]` in both `#modal-hotkeys` and `#modal-info`.
+
+### 9. Window Controls & System Tray Minimisation
+- **Visible Window Controls**: Enabled brutalist TitleBar buttons across macOS and all platforms (`btn-minimize` and `btn-close`).
+- **Minimise to Tray**: Clicking `—` invokes `app_minimize_to_tray` and hides the window into the system tray.
+- **Restore from Tray**: Left-clicking or double-clicking the system tray icon or selecting "Show Anahat" immediately unminimizes, shows, and focuses the application window.
+- **Close Action**: Clicking `✕` invokes `app_close` to cleanly exit the background process and audio threads.
+
+### 10. Meditation Cadence Chimes & Audio Transitions
+- **Tibetan Singing Bowl Physical Model**:
+  - Synthesizes 40ms organic mallet strike impulse transient.
+  - Generates 5 modal resonant partials ($1.0 \times f_0$, $1.002 \times f_0$ beating pair, $2.01 \times f_0$ octave overtone, $2.76 \times f_0$ bronze shimmer, $3.82 \times f_0$ crystal sparkle).
+  - Stereo spatial panning dispersion across overtones.
+  - Smooth carrier/noise ducking (22% dip for 1.8s) during chime strikes for clean, non-clashing acoustic presence.
+  - Breath-phase sacred tuning: Inhale (528 Hz), Hold-In (594 Hz), Exhale (432 Hz), Hold-Out (396 Hz).
+- **Chime Controls**:
+  - Default State: **OFF by default** (`chimesEnabled = false`, button initialized to `🔕 CHIMES: OFF`).
+  - Toggle Button: `[ 🔕 CHIMES: OFF ]` / `[ 🔔 CHIMES: ON ]` in the meditation row with hotkey `B`.
+
+### 11. Visual Polish on Remaining 3D Engines
+- **Neon Wire Tunnel**: Enabled `vertexColors: true` on longitudinal wire conduits with individual neon palette colors and depth attenuation. Added dynamic bass-reactive opacity pulsing to diagonal cyber lattice braces.
+- **Torus Vortex**: Streamlines now feature dynamic harmonic palette color cycling, live FFT audio-reactive plasma expansion, and secondary palette glow on the magnetic wireframe cage.
+- **Polar Radar**: Radial spectrum teeth, peak-hold markers, and rotating sonar sweep beam now fully synchronize with the active color palette.
+
+### 12. Breath Sync Widget & Timebox Control Layout
+- **Dedicated Timebox Row**:
+  - Timebox duration toggles moved from cramped subrow to a dedicated, full-width row (`.deck__timebox-row`).
+  - Buttons (`[ 10 MIN ]`, `[ 20 MIN ]`, `[ 60 MIN ]`, `[ ∞ CONT ]`) occupy equal flex space with enhanced 26px height and clear brutalist typography.
+- **Master Breath Sync Toggle Switch**:
+  - Added `#btn-cadence-toggle` (`.cadence-toggle-switch`) directly to the widget.
+  - Features an active LED indicator dot (`.toggle-switch-indicator`) and explicit status label (`SYNC: OFF` / `SYNC: ON`).
+  - Toggling directly disables/enables breath synchronization without requiring interaction with the dropdown menu.
+  - Automatically remembers the previous active cadence pattern (e.g. `box`, `478`, `coherent`) upon re-enabling.
+  - Two-way synchronized with `#select-cadence` dropdown and `#med-cadence-badge`.
+- **Tibetan Singing Bowl Chime Relocation**:
+  - Moved alongside `#btn-cadence-toggle` into the dual-toggle row (`.deck__med-toggles-row`).
+
+### 13. Ethereal Mist Visualizer & Dual-Mode Contrast Overhaul
+- **Curled Volumetric Smoke Tendrils**:
+  - Replaced sharp 1px aliased lines with 16 volumetric curled streamers composed of overlapping circular Gaussian puff point sprites (`THREE.Points`).
+  - Integrated procedural radial Gaussian alpha texture for soft, blurry, organic smoke borders without hard edges.
+  - Added multi-octave 3D vortex curl noise (frequencies 3.2 and 5.2) with spiral plume rotation for natural swirling, coiling, and twisting motions.
+- **Slow Motion & Live Beat Pulsing**:
+  - Reduced upward convection velocity by >60% and slowed curl phase progression for a calm, ethereal drift.
+  - Audio beat reactivity: smoke streamer expansion and puff sprite radii pulse dynamically with low-frequency audio energy `(1.0 + bass * 0.95)`.
+- **Main Deck & Theater Mode Dual Visibility**:
+  - Fixed visibility bug where `THREE.AdditiveBlending` washed out on the white main deck background (`#FFFFFF`).
+  - Converted materials to `THREE.NormalBlending` with `depthWrite: false`.
+  - Added background-adaptive color synthesis based on `this.isDark`:
+    - **Main Deck (Paper-White)**: Rich, velvety, deep-pigment smoke plumes (deep navy, indigo-violet, teal-slate).
+    - **Theater Mode (Onyx-Black)**: Luminous, glowing neon vapor (celestial cyan, ethereal violet).
+
+### 12. Breath Sync Information & Subtle Orangish Canvas Pulse
+- **Breath Sync Info Icon**:
+  - Added brutalist circular info badge `ⓘ` next to the `BREATH_SYNC` label (`#btn-breath-sync-info`).
+  - Displays comprehensive explanation tooltip on hover or immediate click:
+    *"BREATH SYNCHRONIZATION: Guides visual respiration rhythm to modulate Autonomic Nervous System tone and Heart Rate Variability (HRV). Box Breathing (4-4-4-4) resets cortisol and builds focus; 4-7-8 Breathing activates parasympathetic vagal toning to reduce anxiety; Coherent Breathing (5s-5s) balances cardiac-respiratory resonance."*
+- **Canvas Pulse Gated to Active Breath Sync**:
+  - Border pulsing animation (`.deck__canvas-wrap--pulse`) now triggers **strictly when breath sync is active** (`activeCadence !== "off"`), never when breath sync is turned off.
+- **Toast Removal**:
+  - Removed top toast banner (`#burst-banner`) activation from cadence transitions and chime bursts.
+- **Subtle Orangish Hue**:
+  - Restyled `.deck__canvas-wrap--pulse` from heavy red to a subtle, warm amber/orange aura (`border-color: rgba(255, 140, 0, 0.65)`, inset 1px spread, and soft 14px outer glow `rgba(255, 130, 0, 0.22)`).
+  - Added smooth CSS transitions on `.deck__canvas-wrap` (`transition: border-color 0.2s ease, box-shadow 0.25s ease;`) for a gentle decay.
+
+### 13. Subtle Breath-Decay Aura, Prominent Breath Deck & Ethereal Mist Visualizer
+- **Subtle Breath-Decay Animation**:
+  - Replaced snappy border pulse with a natural respiratory keyframe decay curve (`@keyframes breath-decay-glow 2.8s cubic-bezier(0.16, 1, 0.3, 1)`).
+  - Extremely subtle peak intensity (0.10 inset, 0.14 outer glow `rgba(245, 140, 20, ...)`) that gently blooms over 400ms and softly exhales/decays back to zero over 2.4s.
+  - Active strictly when breath sync is active (`activeCadence !== "off"`).
+- **Breath Sync Off by Default**:
+  - Initialized `activeCadence = "off"` and dropdown to `BREATH_SYNC // [ OFF ]`.
+  - HUD and cards display `OFF` state until user explicitly chooses a cadence pattern.
+- **Prominent Right Column Breath Synchronizer**:
+  - Moved Breath Synchronization section from the center column into a prominent top card in the right column (`#meditation-card`).
+  - Features dark header with `[OFF]` / active cadence badge, `ⓘ` info button, pattern dropdown, chime toggle, timebox selector, and prominent `[ START SESSION ⏵ ]` action button.
+- **Compact Provenance Widget**:
+  - Reduced height of `#deck__prov-card` to `flex: 1 1 0; min-height: 0;` with compact spec rows, scrollable abstract, and tight action buttons, fitting cleanly below the breath synchronizer without page overflow.
+- **Ethereal Mist Visualizer (`ENG_11` / Hotkey `E`)**:
+  - 18 flowing sinuous smoke tendril streamers with decaying 3D positions and alpha-fade ribbons.
+  - Harmonic 3D curl velocity fields with upward thermal convection and Chladni modal influence.
+  - 2,500 sparkling micro-particles with audio-reactive shimmer.
+  - 300 volumetric soft gaussian smoke cloud puffs.
+  - Seamless scaling with respiratory breath cycle (`this.currentBreathScale`) and all 6 harmonic palettes.

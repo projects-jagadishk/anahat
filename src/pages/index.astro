@@ -152,7 +152,7 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
           <div class="hud-countdown" id="hud-countdown">10:00</div>
           <div class="hud-phase-badge" id="hud-phase-badge">
             <span class="hud-dot terminal-blink">●</span>
-            <span id="hud-phase-label">PHASE: INHALE [ 4S ]</span>
+            <span id="hud-phase-label">PHASE: OFF</span>
           </div>
         </div>
 
@@ -298,38 +298,6 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
             </div>
           </div>
 
-          <!-- V1.5 Meditation Controls: Cadence Dropdown & Timebox Selector -->
-          <div class="deck__meditation-row">
-            <!-- Cadence Dropdown (Atom) -->
-            <div class="deck__cadence-box">
-              <label class="deck__med-label" for="select-cadence">BREATH_SYNC</label>
-              <div class="select-brutalist-wrap">
-                <select class="select-brutalist" id="select-cadence" data-tooltip="Select meditation breath synchronizer cadence: Box (4-4-4-4), 4-7-8 Relax, Coherent (6-sec), or Off">
-                  <option value="box">BREATH_SYNC // [ BOX ]</option>
-                  <option value="478">BREATH_SYNC // [ 4-7-8 ]</option>
-                  <option value="coherent">BREATH_SYNC // [ COHERENT ]</option>
-                  <option value="off">BREATH_SYNC // [ OFF ]</option>
-                </select>
-              </div>
-            </div>
-
-            <!-- Timebox Selector (Atom) -->
-            <div class="deck__timebox-box">
-              <span class="deck__med-label">TIMEBOX</span>
-              <div class="deck__timebox-toggles" id="timebox-toggles">
-                <button class="timebox-btn timebox-btn--active" data-mins="10" type="button" data-tooltip="Set meditation session length to 10 minutes">[ 10M ]</button>
-                <button class="timebox-btn" data-mins="20" type="button" data-tooltip="Set meditation session length to 20 minutes">[ 20M ]</button>
-                <button class="timebox-btn" data-mins="60" type="button" data-tooltip="Set meditation session length to 60 minutes">[ 60M ]</button>
-                <button class="timebox-btn" data-mins="infinity" type="button" data-tooltip="Continuous meditation session without automatic timebox limit">[ ∞ ]</button>
-              </div>
-            </div>
-
-            <!-- Session Takeover Trigger Button -->
-            <button class="btn-session" id="btn-session" type="button" data-tooltip="Start or pause guided breath and neuroacoustic meditation session (Hotkey: Space)">
-              [ START SESSION ⏵ ]
-            </button>
-          </div>
-
           <!-- Noise Blend Interactive Control Deck -->
           <div class="deck__noise-deck">
             <div class="deck__noise-header">
@@ -374,8 +342,81 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
       </div>
     </section>
 
-    <!-- ═══ RIGHT COLUMN: Provenance Spec Card (300×760) ═══ -->
+    <!-- ═══ RIGHT COLUMN: Breath Sync & Provenance (300px) ═══ -->
     <aside class="deck__provenance">
+      <!-- ── V1.5 Prominent Breath Synchronization & Meditation Deck ── -->
+      <div class="deck__meditation-card" id="meditation-card">
+        <div class="deck__med-header">
+          <div class="deck__med-header-left">
+            <span class="deck__med-title">BREATH SYNCHRONIZER</span>
+            <button
+              type="button"
+              class="deck__med-info-icon"
+              id="btn-breath-sync-info"
+              aria-label="Breath Synchronization Information"
+              data-tooltip="BREATH SYNCHRONIZATION: Guides visual respiration rhythm to modulate Autonomic Nervous System tone and Heart Rate Variability (HRV). Box Breathing (4-4-4-4) resets cortisol and builds focus; 4-7-8 Breathing activates parasympathetic vagal toning to reduce anxiety; Coherent Breathing (5s-5s) balances cardiac-respiratory resonance."
+              title="Breath Synchronization: Guides rhythmic breathing (Box 4-4-4-4, 4-7-8, Coherent) to balance HRV, autonomic nervous system tone, and mental focus."
+            >ⓘ</button>
+          </div>
+          <span class="deck__med-badge" id="med-cadence-badge">OFF</span>
+        </div>
+
+        <div class="deck__med-body">
+          <!-- Row 1: Cadence Dropdown -->
+          <div class="deck__med-field">
+            <label class="deck__med-label" for="select-cadence">CADENCE PATTERN</label>
+            <div class="select-brutalist-wrap">
+              <select class="select-brutalist" id="select-cadence" data-tooltip="Select meditation breath synchronizer cadence: Box (4-4-4-4), 4-7-8 Relax, Coherent (5-5), or Off">
+                <option value="off" selected>BREATH_SYNC // [ OFF ]</option>
+                <option value="box">BREATH_SYNC // [ BOX 4-4-4-4 ]</option>
+                <option value="478">BREATH_SYNC // [ 4-7-8 RELAX ]</option>
+                <option value="coherent">BREATH_SYNC // [ COHERENT 5-5 ]</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Row 2: Master Sync Toggle + Chime Toggle -->
+          <div class="deck__med-toggles-row">
+            <button
+              class="cadence-toggle-switch"
+              id="btn-cadence-toggle"
+              type="button"
+              data-tooltip="Directly toggle breath synchronization ON or OFF without opening dropdown"
+            >
+              <span class="toggle-switch-indicator"></span>
+              <span id="cadence-toggle-label">SYNC: OFF</span>
+            </button>
+
+            <!-- Tibetan Singing Bowl Cadence Chime Toggle (Off by default) -->
+            <button
+              class="chime-toggle-btn"
+              id="btn-chime-toggle"
+              type="button"
+              data-tooltip="Toggle Tibetan singing bowl chime and carrier ducking on breath phase transitions (Hotkey: B)"
+            >
+              <span id="chime-status-label">🔕 CHIMES: OFF</span>
+            </button>
+          </div>
+
+          <!-- Row 3: Dedicated Timebox Row (Full Width) -->
+          <div class="deck__timebox-row">
+            <span class="deck__med-label">TIMEBOX DURATION</span>
+            <div class="deck__timebox-toggles" id="timebox-toggles">
+              <button class="timebox-btn timebox-btn--active" data-mins="10" type="button" data-tooltip="Set meditation session length to 10 minutes">[ 10 MIN ]</button>
+              <button class="timebox-btn" data-mins="20" type="button" data-tooltip="Set meditation session length to 20 minutes">[ 20 MIN ]</button>
+              <button class="timebox-btn" data-mins="60" type="button" data-tooltip="Set meditation session length to 60 minutes">[ 60 MIN ]</button>
+              <button class="timebox-btn" data-mins="infinity" type="button" data-tooltip="Continuous meditation session without automatic timebox limit">[ ∞ CONT ]</button>
+            </div>
+          </div>
+
+          <!-- Row 4: Prominent Session Start Button -->
+          <button class="btn-session" id="btn-session" type="button" data-tooltip="Start or pause guided breath and neuroacoustic meditation session (Hotkey: Space)">
+            [ START SESSION ⏵ ]
+          </button>
+        </div>
+      </div>
+
+      <!-- Provenance Spec Card (Reduced Height) -->
       <div class="deck__prov-card">
         <!-- Dark header -->
         <div class="deck__prov-header">
@@ -466,7 +507,7 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
       <span class="theater-hud__label">ANAHAT // THEATER PROJECTION</span>
       <span class="theater-hud__code" id="theater-code">{initialPreset.code || "PRE-001"}</span>
       <span class="theater-hud__hz" id="theater-hz">{Number(initialPreset.target_hz).toFixed(1)} HZ</span>
-      <span class="theater-hud__phase" id="theater-phase">CADENCE: IDLE</span>
+      <span class="theater-hud__phase" id="theater-phase">CADENCE: OFF</span>
       <span class="theater-hud__source" id="theater-source">SRC: DSP</span>
     </div>
   </div>
@@ -807,6 +848,7 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
                 <strong>[ I ]</strong> Toggle Audio Source (Internal DSP ↔ Live Mic)<br/>
                 <strong>[ O ]</strong> Open Hardware Audio Routing Matrix<br/>
                 <strong>[ P ]</strong> Author New Custom Preset (.anahat)<br/>
+                <strong>[ B ]</strong> Toggle Tibetan Singing Bowl Cadence Chimes<br/>
                 <strong>[ Space ]</strong> Start / Pause Meditation session<br/>
                 <strong>[ ? / H ]</strong> Open Keyboard Shortcuts Command Matrix<br/>
                 <strong>[ Esc ]</strong> Dismiss active modals / Exit Theater mode
@@ -895,6 +937,10 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
               <span class="hotkey-desc">Engine 10: Neon Wire Tunnel</span>
             </div>
             <div class="hotkey-row">
+              <span class="hotkey-badge">E</span>
+              <span class="hotkey-desc">Engine 11: Ethereal Mist (Smoke & Particles)</span>
+            </div>
+            <div class="hotkey-row">
               <span class="hotkey-badge">[ / ]</span>
               <span class="hotkey-desc">Cycle Previous / Next Engine</span>
             </div>
@@ -951,6 +997,10 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
             <div class="hotkey-row">
               <span class="hotkey-badge">P</span>
               <span class="hotkey-desc">Open Custom Preset Specification Builder</span>
+            </div>
+            <div class="hotkey-row">
+              <span class="hotkey-badge">B</span>
+              <span class="hotkey-desc">Toggle Tibetan Singing Bowl Cadence Chimes</span>
             </div>
             <div class="hotkey-row">
               <span class="hotkey-badge">Space</span>
@@ -1075,10 +1125,19 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
             <div class="engine-tile__title">NEON WIRE TUNNEL</div>
             <div class="engine-tile__desc">Retro-futuristic polygonal wireframe tunnel with glowing data conduits.</div>
           </button>
+
+          <button class="engine-tile" data-engine="ethereal_mist" type="button">
+            <div class="engine-tile__top">
+              <span class="engine-tile__num">[11] KEY:E</span>
+              <span class="engine-tile__cat">AURA</span>
+            </div>
+            <div class="engine-tile__title">ETHEREAL MIST</div>
+            <div class="engine-tile__desc">Wispy smoke tendrils, curl turbulence & whispering particle mist.</div>
+          </button>
         </div>
 
         <div class="engine-matrix-footer-bar">
-          <span>SHORTCUTS: KEYS [1 - 9, 0] SELECT // [ [ / ] ] CYCLE // [S] RANDOM // [M] MATRIX // [I] AUDIO SRC // [ESC] DISMISS</span>
+          <span>SHORTCUTS: KEYS [1 - 9, 0, E] SELECT // [ [ / ] ] CYCLE // [S] RANDOM // [M] MATRIX // [I] AUDIO SRC // [ESC] DISMISS</span>
         </div>
       </div>
     </div>
@@ -1086,6 +1145,15 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
 
   <!-- Brutalist Hover Tooltip (Delayed 3 seconds) -->
   <div class="brutalist-tooltip" id="brutalist-tooltip" role="tooltip" aria-hidden="true"></div>
+
+  <!-- Drag-and-Drop Profile Import Overlay -->
+  <div class="drag-drop-overlay" id="drag-drop-overlay">
+    <div class="drag-drop-box">
+      <div class="drag-drop-icon">📥</div>
+      <div class="drag-drop-title">[ DROP .ANAHAT PROFILE TO IMPORT ]</div>
+      <div class="drag-drop-subtitle">Neuroacoustic synthesis specification & harmonic configuration JSON</div>
+    </div>
+  </div>
 </BaseLayout>
 
 <style>
@@ -1304,7 +1372,7 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     position: relative;
     overflow: hidden;
     box-sizing: border-box;
-    transition: border-color 0.1s ease;
+    transition: border-color 0.2s ease, box-shadow 0.25s ease;
   }
 
   /* Screen 5: Recording Active State Clamped Border */
@@ -1410,6 +1478,56 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
   .brutalist-tooltip--visible {
     opacity: 1;
     visibility: visible;
+  }
+
+  /* ── Drag & Drop Profile Import Overlay ── */
+  .drag-drop-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    background: rgba(8, 9, 12, 0.94);
+    backdrop-filter: blur(12px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+
+  .drag-drop-overlay--active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .drag-drop-box {
+    border: 3px dashed var(--color-accent-industrial);
+    background: #000000;
+    padding: 36px 48px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 10px 10px 0px 0px #000000;
+  }
+
+  .drag-drop-icon {
+    font-size: 38px;
+  }
+
+  .drag-drop-title {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 700;
+    color: #FFFFFF;
+    letter-spacing: 0.05em;
+  }
+
+  .drag-drop-subtitle {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: #888888;
   }
 
   .deck__toolbar-sep {
@@ -1962,20 +2080,136 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     font-size: 14px;
   }
 
-  .deck__canvas-wrap--pulse {
-    border-color: var(--color-accent-industrial) !important;
-    box-shadow: inset 0 0 0 3px var(--color-accent-industrial), 0 0 16px rgba(255, 51, 51, 0.4);
+  @keyframes breath-decay-glow {
+    0% {
+      box-shadow: inset 0 0 0 rgba(245, 140, 20, 0), 0 0 0 rgba(245, 140, 20, 0);
+      border-color: var(--color-border-heavy);
+    }
+    14% {
+      /* Soft gentle breath rise */
+      box-shadow: inset 0 0 14px rgba(245, 140, 20, 0.10), 0 0 16px rgba(245, 140, 20, 0.14);
+      border-color: rgba(245, 140, 20, 0.35);
+    }
+    100% {
+      /* Natural soothing exhalation decay */
+      box-shadow: inset 0 0 0 rgba(245, 140, 20, 0), 0 0 0 rgba(245, 140, 20, 0);
+      border-color: var(--color-border-heavy);
+    }
   }
 
-  /* Meditation Row (V1.5 Meditation) */
-  .deck__meditation-row {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    background: var(--color-bg-concrete);
-    border: 2px solid var(--color-border-heavy);
-    padding: 5px 8px;
+  .deck__canvas-wrap--pulse {
+    animation: breath-decay-glow 2.8s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  }
+
+  /* Prominent Breath Synchronization Card (Right Column) */
+  .deck__meditation-card {
+    background: var(--color-bg-surface-light);
+    border: 3px solid var(--color-border-heavy);
+    box-shadow: 4px 4px 0px 0px #000000;
     flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+  }
+
+  .deck__med-header {
+    height: 30px;
+    background: var(--color-bg-surface-dark);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10px;
+    flex-shrink: 0;
+  }
+
+  .deck__med-header-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .deck__med-title {
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--color-bg-surface-light);
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+  }
+
+  .deck__med-badge {
+    font-family: var(--font-mono);
+    font-size: 8px;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.15);
+    color: var(--color-bg-surface-light);
+    padding: 2px 6px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .deck__med-badge--active {
+    background: var(--color-accent-industrial) !important;
+    color: #FFF !important;
+    border-color: var(--color-accent-industrial) !important;
+  }
+
+  .deck__med-body {
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: var(--color-bg-concrete);
+  }
+
+  .deck__med-field {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .deck__med-subrow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .deck__med-label-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 2px;
+  }
+
+  .deck__med-label-row .deck__med-label {
+    margin-bottom: 0;
+  }
+
+  .deck__med-info-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 1px solid #777;
+    background: transparent;
+    color: #888;
+    font-family: var(--font-mono);
+    font-size: 8px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: help;
+    padding: 0;
+    transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  }
+
+  .deck__med-info-icon:hover,
+  .deck__med-info-icon:focus-visible {
+    color: #FFF;
+    border-color: #FFF;
+    background: rgba(255, 255, 255, 0.15);
+    outline: none;
   }
 
   .deck__med-label {
@@ -2017,28 +2251,123 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     border-color: var(--color-accent-industrial);
   }
 
-  .deck__timebox-box {
-    flex: 1.3;
-    min-width: 0;
+  .deck__med-toggles-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .cadence-toggle-switch {
+    appearance: none;
+    -webkit-appearance: none;
+    flex: 1;
+    background: #0D0E12;
+    border: 1px solid #333842;
+    color: #999999;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    padding: 0 8px;
+    height: 28px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    white-space: nowrap;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  }
+
+  .cadence-toggle-switch:hover {
+    background: #1C1E26;
+    border-color: #555C6D;
+    color: #FFFFFF;
+  }
+
+  .cadence-toggle-switch--active {
+    border-color: var(--color-accent-industrial) !important;
+    color: #FFFFFF !important;
+    background: rgba(255, 20, 51, 0.15) !important;
+  }
+
+  .toggle-switch-indicator {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #555555;
+    flex-shrink: 0;
+    transition: background 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .cadence-toggle-switch--active .toggle-switch-indicator {
+    background: var(--color-accent-industrial);
+    box-shadow: 0 0 6px var(--color-accent-industrial);
+  }
+
+  .chime-toggle-btn {
+    appearance: none;
+    -webkit-appearance: none;
+    flex: 1;
+    background: #0D0E12;
+    border: 1px solid #333842;
+    color: #FFFFFF;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    padding: 0 8px;
+    height: 28px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  }
+
+  .chime-toggle-btn:hover {
+    background: #1C1E26;
+    border-color: #555C6D;
+  }
+
+  .chime-toggle-btn--active {
+    border-color: var(--color-accent-industrial) !important;
+    color: #FFFFFF !important;
+    background: rgba(255, 20, 51, 0.15) !important;
+  }
+
+  .deck__timebox-row {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    width: 100%;
   }
 
   .deck__timebox-toggles {
     display: flex;
-    gap: 2px;
+    gap: 4px;
+    width: 100%;
   }
 
   .timebox-btn {
     appearance: none;
     -webkit-appearance: none;
+    flex: 1;
+    height: 26px;
     background: var(--color-bg-surface-light);
     border: 1px solid var(--color-border-heavy);
     font-family: var(--font-mono);
-    font-size: 7.5px;
+    font-size: 8.5px;
     font-weight: 700;
-    padding: 2px 4px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
     color: var(--color-bg-surface-dark);
     text-transform: uppercase;
+    transition: background 0.15s ease, color 0.15s ease;
   }
 
   .timebox-btn:hover {
@@ -2235,40 +2564,42 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
   .deck__provenance {
     display: flex;
     flex-direction: column;
-    padding: 16px 12px;
+    padding: 12px 10px;
     height: 100%;
     box-sizing: border-box;
     overflow: hidden;
     background: var(--color-bg-concrete);
+    gap: 10px;
   }
 
   .deck__prov-card {
     display: flex;
     flex-direction: column;
-    height: 100%;
+    flex: 1 1 0;
+    min-height: 0;
     background: var(--color-bg-surface-light);
     border: 3px solid var(--color-border-heavy);
-    box-shadow: var(--shadow-brutalist);
+    box-shadow: 4px 4px 0px 0px #000000;
     overflow: hidden;
     box-sizing: border-box;
   }
 
   .deck__prov-header {
-    height: 38px;
-    min-height: 38px;
+    height: 28px;
+    min-height: 28px;
     display: flex;
     align-items: center;
-    padding: 0 12px;
+    padding: 0 10px;
     background: var(--color-bg-surface-dark);
     flex-shrink: 0;
   }
 
   .deck__prov-title {
     font-family: var(--font-display);
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
     color: var(--color-bg-surface-light);
-    letter-spacing: -0.02em;
+    letter-spacing: -0.01em;
     text-transform: uppercase;
   }
 
@@ -2279,10 +2610,10 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
   .deck__spec-row {
     display: flex;
     align-items: center;
-    height: 24px;
-    padding: 0 8px;
+    height: 19px;
+    padding: 0 6px;
     border: 1px solid var(--color-border-heavy);
-    margin: 0 10px;
+    margin: 0 8px;
   }
 
   .deck__spec-row--even {
@@ -2295,17 +2626,17 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
 
   .deck__spec-key {
     font-family: var(--font-mono);
-    font-size: 9px;
+    font-size: 8px;
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    width: 90px;
+    width: 75px;
     flex-shrink: 0;
   }
 
   .deck__spec-val {
     font-family: var(--font-mono);
-    font-size: 9px;
+    font-size: 8px;
     font-weight: 700;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -2319,35 +2650,35 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
   /* Research Abstract */
   .deck__prov-abstract {
     flex: 1 1 0;
-    min-height: 0;
-    margin: 10px;
-    padding: 8px 10px;
+    min-height: 38px;
+    margin: 6px 8px;
+    padding: 6px 8px;
     background: var(--color-bg-concrete);
-    border: 2px solid var(--color-border-heavy);
+    border: 1px solid var(--color-border-heavy);
     overflow-y: auto;
   }
 
   .deck__abstract-heading {
     font-family: var(--font-mono);
-    font-size: 9px;
+    font-size: 8px;
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;
     display: block;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
   }
 
   .deck__abstract-body {
     font-family: var(--font-mono);
-    font-size: 9px;
-    line-height: 1.45;
-    margin: 0 0 8px;
+    font-size: 8px;
+    line-height: 1.35;
+    margin: 0 0 4px;
   }
 
   .deck__abstract-citation {
     font-family: var(--font-mono);
-    font-size: 9px;
-    line-height: 1.4;
+    font-size: 8px;
+    line-height: 1.3;
     margin: 0;
     color: #737373;
   }
@@ -2355,14 +2686,13 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
   /* Biometric button */
   .btn-biometric {
     appearance: none;
-    height: 38px;
-    margin: 10px;
-    margin-top: 0;
+    height: 26px;
+    margin: 0 8px 4px 8px;
     background: var(--color-bg-surface-dark);
     border: 2px solid var(--color-border-heavy);
     color: var(--color-bg-surface-light);
     font-family: var(--font-mono);
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 700;
     cursor: pointer;
     text-transform: uppercase;
@@ -3120,14 +3450,14 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
   }
 
   .btn-export-profile {
-    margin-top: 8px;
-    width: 100%;
-    height: 34px;
+    margin: 0 8px 6px 8px;
+    width: calc(100% - 16px);
+    height: 26px;
     background: var(--color-bg-concrete);
     border: 2px solid var(--color-border-heavy);
     color: var(--color-text-primary);
     font-family: var(--font-mono);
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 700;
     cursor: pointer;
     text-align: center;
@@ -3135,6 +3465,7 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     align-items: center;
     justify-content: center;
     border-radius: 0 !important;
+    flex-shrink: 0;
   }
 
   .btn-export-profile:hover {
@@ -3454,7 +3785,8 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
   let sessionMinutes = 10;
   let sessionSecondsRemaining = 600;
   let sessionInterval: any = null;
-  let activeCadence: CadenceType = "box";
+  let activeCadence: CadenceType = "off";
+  let lastActiveCadence: CadenceType = "box";
 
   // Initialize WebGL Visualizer
   function initVisualizer() {
@@ -3845,9 +4177,10 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
       // Don't intercept when user is typing in an input
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
-      // Direct visualizer engine selection via hotkeys (1-9, 0)
+      // Direct visualizer engine selection via hotkeys (1-9, 0, E)
       const directKeyMap: Record<string, number> = {
         "1": 0, "2": 1, "3": 2, "4": 3, "5": 4, "6": 5, "7": 6, "8": 7, "9": 8, "0": 9,
+        "e": 10, "E": 10,
       };
       if (directKeyMap[e.key] !== undefined) {
         e.preventDefault();
@@ -3926,6 +4259,9 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
       } else if (e.key.toLowerCase() === "p" && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();
         openNewPresetModal();
+      } else if (e.key.toLowerCase() === "b" && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        document.getElementById("btn-chime-toggle")?.dispatchEvent(new Event("click"));
       }
     });
   }
@@ -4257,33 +4593,103 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     const mainDeck = document.getElementById("main-deck");
     const btnSession = document.getElementById("btn-session");
     const selectCadence = document.getElementById("select-cadence") as HTMLSelectElement;
+    const btnCadenceToggle = document.getElementById("btn-cadence-toggle");
+    const cadenceToggleLabel = document.getElementById("cadence-toggle-label");
+    const btnChimeToggle = document.getElementById("btn-chime-toggle");
+    const chimeStatusLabel = document.getElementById("chime-status-label");
+    const medCadenceBadge = document.getElementById("med-cadence-badge");
     const timeboxButtons = document.querySelectorAll<HTMLButtonElement>(".timebox-btn");
     const hudCountdown = document.getElementById("hud-countdown");
     const hudPhaseLabel = document.getElementById("hud-phase-label");
     const canvasCard = document.getElementById("canvas-card");
 
+    function syncChimeToggleUI() {
+      const enabled = audioEngine.isChimesEnabled();
+      if (btnChimeToggle) {
+        btnChimeToggle.classList.toggle("chime-toggle-btn--active", enabled);
+      }
+      if (chimeStatusLabel) {
+        chimeStatusLabel.textContent = enabled ? "🔔 CHIMES: ON" : "🔕 CHIMES: OFF";
+      }
+    }
+
+    function syncCadenceBadge() {
+      if (!medCadenceBadge) return;
+      if (activeCadence === "off") {
+        medCadenceBadge.textContent = "OFF";
+        medCadenceBadge.classList.remove("deck__med-badge--active");
+      } else {
+        const labels: Record<string, string> = {
+          box: "BOX [4-4-4-4]",
+          "478": "4-7-8 RELAX",
+          coherent: "COHERENT [5-5]",
+        };
+        medCadenceBadge.textContent = labels[activeCadence] || activeCadence.toUpperCase();
+        medCadenceBadge.classList.add("deck__med-badge--active");
+      }
+    }
+
+    function syncCadenceUI() {
+      const isOff = activeCadence === "off";
+      if (btnCadenceToggle) {
+        btnCadenceToggle.classList.toggle("cadence-toggle-switch--active", !isOff);
+      }
+      if (cadenceToggleLabel) {
+        cadenceToggleLabel.textContent = isOff ? "SYNC: OFF" : "SYNC: ON";
+      }
+      if (selectCadence) {
+        selectCadence.value = activeCadence;
+      }
+      syncCadenceBadge();
+    }
+
+    // Direct Breath Sync Toggle Switch click handler
+    btnCadenceToggle?.addEventListener("click", () => {
+      if (activeCadence === "off") {
+        activeCadence = lastActiveCadence || "box";
+      } else {
+        lastActiveCadence = activeCadence;
+        activeCadence = "off";
+      }
+      cadenceController.applyCadence(activeCadence);
+      syncCadenceUI();
+      if (hudPhaseLabel) {
+        hudPhaseLabel.textContent = activeCadence === "off" ? "PHASE: OFF" : "PHASE: IDLE";
+      }
+      const theaterPhase = document.getElementById("theater-phase");
+      if (theaterPhase) {
+        theaterPhase.textContent = activeCadence === "off" ? "CADENCE: OFF" : "CADENCE: IDLE";
+      }
+    });
+
+    btnChimeToggle?.addEventListener("click", () => {
+      const isNowOn = audioEngine.toggleChimes();
+      syncChimeToggleUI();
+      if (isNowOn) {
+        audioEngine.playCadenceChime("inhale");
+        if (activeCadence !== "off") {
+          triggerSineWaveBurst("inhale");
+        }
+      }
+    });
+
+    syncChimeToggleUI();
+    syncCadenceUI();
+
     // Init Breath Cadence Controller (Synchronizes visualizer breathing and session intervals)
     cadenceController.init();
 
-    function triggerSineWaveBurst() {
+    function triggerSineWaveBurst(phase = "inhale") {
       // Trigger mathematical expanding sine wave ripple across particles, fluid, and oscilloscope
       visualizer?.triggerSineBurst();
       theaterVisualizer?.triggerSineBurst();
 
-      // Unmissable top banner [ ⚡ INTERVAL CHIME // 528 HZ SINE BURST ]
-      const banner = document.getElementById("burst-banner");
-      if (banner) {
-        banner.classList.add("deck__burst-banner--active");
-        setTimeout(() => {
-          banner.classList.remove("deck__burst-banner--active");
-        }, 1400);
+      // Very subtle breath-decay glow only during active breath sync (never when cadence is off)
+      if (activeCadence !== "off" && canvasCard) {
+        canvasCard.classList.remove("deck__canvas-wrap--pulse");
+        void canvasCard.offsetWidth; // Force reflow to re-trigger smooth breath decay
+        canvasCard.classList.add("deck__canvas-wrap--pulse");
       }
-
-      // Subtle brutalist border pulse (replaces flat solid red background flash)
-      canvasCard?.classList.add("deck__canvas-wrap--pulse");
-      setTimeout(() => {
-        canvasCard?.classList.remove("deck__canvas-wrap--pulse");
-      }, 350);
     }
 
     // Connect Breath Phase callback to Visualizer & Interval Chimes
@@ -4292,29 +4698,42 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
       theaterVisualizer?.setBreathPhase(phase, durationSec);
 
       if (hudPhaseLabel) {
-        hudPhaseLabel.textContent = `PHASE: ${phase.toUpperCase()} [ ${durationSec}S ]`;
+        hudPhaseLabel.textContent = activeCadence === "off" ? "PHASE: OFF" : `PHASE: ${phase.toUpperCase()} [ ${durationSec}S ]`;
       }
       const theaterPhase = document.getElementById("theater-phase");
       if (theaterPhase) {
-        theaterPhase.textContent = `CADENCE: ${phase.toUpperCase()} [ ${durationSec}S ]`;
+        theaterPhase.textContent = activeCadence === "off" ? "CADENCE: OFF" : `CADENCE: ${phase.toUpperCase()} [ ${durationSec}S ]`;
       }
 
       // Interval Chime & Sine Wave Burst on breath phase shift
-      if (isSessionActive) {
-        audioEngine.playIntervalChime(phase === "inhale" ? 528 : 432);
-        triggerSineWaveBurst();
+      if (activeCadence !== "off") {
+        audioEngine.playCadenceChime(phase);
+        triggerSineWaveBurst(phase);
       }
     });
 
     // Audio Engine chime listener
     audioEngine.onChime(() => {
-      triggerSineWaveBurst();
+      if (activeCadence !== "off") {
+        triggerSineWaveBurst();
+      }
     });
 
     // Cadence Select dropdown
     selectCadence?.addEventListener("change", () => {
       activeCadence = selectCadence.value as CadenceType;
+      if (activeCadence !== "off") {
+        lastActiveCadence = activeCadence;
+      }
       cadenceController.applyCadence(activeCadence);
+      syncCadenceUI();
+      if (hudPhaseLabel) {
+        hudPhaseLabel.textContent = activeCadence === "off" ? "PHASE: OFF" : "PHASE: IDLE";
+      }
+      const theaterPhase = document.getElementById("theater-phase");
+      if (theaterPhase) {
+        theaterPhase.textContent = activeCadence === "off" ? "CADENCE: OFF" : "CADENCE: IDLE";
+      }
     });
 
     // Timebox Toggles
@@ -4793,15 +5212,11 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     const btnSave = document.getElementById("btn-save-preset");
     const btnExportModal = document.getElementById("btn-export-from-modal");
     const btnExportProv = document.getElementById("btn-export-profile");
+    const dragOverlay = document.getElementById("drag-drop-overlay");
 
     btnNew?.addEventListener("click", () => openNewPresetModal());
 
-    btnImport?.addEventListener("click", () => inputImport?.click());
-
-    inputImport?.addEventListener("change", async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (!file) return;
-
+    async function handleImportFile(file: File): Promise<void> {
       try {
         const text = await file.text();
         const data = JSON.parse(text);
@@ -4827,11 +5242,56 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
         if (newlyAdded) {
           selectPreset(preset, newlyAdded);
         }
+
+        const banner = document.getElementById("burst-banner");
+        if (banner) {
+          banner.textContent = `[ 📥 PROFILE IMPORTED: ${preset.displayName || preset.name} // ${Number(preset.target_hz).toFixed(1)} HZ ]`;
+          banner.classList.add("deck__burst-banner--active");
+          setTimeout(() => banner.classList.remove("deck__burst-banner--active"), 2200);
+        }
       } catch (err) {
         console.error("Failed to parse .anahat file:", err);
         alert("Could not load file. Make sure it is a valid .anahat JSON file.");
       } finally {
-        inputImport.value = "";
+        if (inputImport) inputImport.value = "";
+      }
+    }
+
+    btnImport?.addEventListener("click", () => inputImport?.click());
+
+    inputImport?.addEventListener("change", (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) handleImportFile(file);
+    });
+
+    // Window Drag-and-Drop for .anahat / .json profiles
+    let dragCounter = 0;
+    window.addEventListener("dragenter", (e) => {
+      e.preventDefault();
+      dragCounter++;
+      if (dragOverlay) dragOverlay.classList.add("drag-drop-overlay--active");
+    });
+
+    window.addEventListener("dragleave", (e) => {
+      e.preventDefault();
+      dragCounter--;
+      if (dragCounter <= 0) {
+        dragCounter = 0;
+        if (dragOverlay) dragOverlay.classList.remove("drag-drop-overlay--active");
+      }
+    });
+
+    window.addEventListener("dragover", (e) => {
+      e.preventDefault();
+    });
+
+    window.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dragCounter = 0;
+      if (dragOverlay) dragOverlay.classList.remove("drag-drop-overlay--active");
+      const file = e.dataTransfer?.files?.[0];
+      if (file) {
+        handleImportFile(file);
       }
     });
 
@@ -4985,7 +5445,19 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
       }
     }, { passive: true });
 
-    document.addEventListener("pointerdown", hideTooltip, { passive: true });
+    document.addEventListener("click", (e: MouseEvent) => {
+      const infoTarget = (e.target as HTMLElement | null)?.closest(".deck__med-info-icon") as HTMLElement | null;
+      if (infoTarget) {
+        e.stopPropagation();
+        activeTarget = infoTarget;
+        showTooltip(infoTarget);
+      }
+    });
+
+    document.addEventListener("pointerdown", (e: PointerEvent) => {
+      if ((e.target as HTMLElement | null)?.closest(".deck__med-info-icon")) return;
+      hideTooltip();
+    }, { passive: true });
     document.addEventListener("keydown", hideTooltip, { passive: true });
     window.addEventListener("scroll", hideTooltip, { passive: true });
   }

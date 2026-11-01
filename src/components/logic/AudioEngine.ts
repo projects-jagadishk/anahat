@@ -62,6 +62,7 @@ export class AudioEngine {
 
   // Interval chime event hook
   private onChimeCallbacks: Array<() => void> = [];
+  private chimesEnabled = false;
 
   constructor() {
     // Lazy init on first user interaction to comply with browser autoplay policies
@@ -415,12 +416,34 @@ export class AudioEngine {
     };
   }
 
+  setChimesEnabled(enabled: boolean): void {
+    this.chimesEnabled = enabled;
+  }
+
+  isChimesEnabled(): boolean {
+    return this.chimesEnabled;
+  }
+
+  toggleChimes(): boolean {
+    this.chimesEnabled = !this.chimesEnabled;
+    return this.chimesEnabled;
+  }
+
   /**
-   * Interval Chime (V1.5 Meditation)
-   * Crisp, unadulterated high sine burst at temporal milestones.
-   * Dual-harmonic pure sine bell (Fundamental + 2nd Harmonic overtone).
+   * Meditation Cadence Chime & Audio Transition Synthesizer
+   * Authentic Tibetan Singing Bowl & Crystal Bell Physical Model:
+   * - Harmonic tuning matched to breath phase:
+   *     Inhale: 528 Hz (Transformation / Heart Solfeggio)
+   *     Hold-In: 594 Hz (Sacred 9th Harmonic Integration)
+   *     Exhale: 432 Hz (Verdi / Sacred Earth Parasympathetic Grounding)
+   *     Hold-Out: 396 Hz (Root / Stillness Grounding)
+   * - Soft organic mallet strike impulse transient (40ms shaped noise buffer)
+   * - 5 Modal resonant partials with detuned acoustic beating
+   * - Stereo overtone spatial dispersion
+   * - Smooth background carrier ducking for crystalline audio transition
    */
-  playIntervalChime(freq = 528): void {
+  playCadenceChime(phase: "inhale" | "hold-in" | "exhale" | "hold-out" = "inhale"): void {
+    if (!this.chimesEnabled) return;
     this.ensureAudioContext();
     if (!this.ctx) return;
 
@@ -428,48 +451,108 @@ export class AudioEngine {
       this.ctx.resume();
     }
 
+    const phaseFreqs: Record<string, number> = {
+      inhale: 528,     // Transformation / Heart
+      "hold-in": 594,  // Higher Integration
+      exhale: 432,     // Earth / Deep Parasympathetic Release
+      "hold-out": 396, // Root / Still Grounding
+    };
+
+    const baseFreq = phaseFreqs[phase] ?? 528;
+    const now = this.ctx.currentTime;
+
     try {
-      const now = this.ctx.currentTime;
+      // 1. Subtle carrier ducking audio transition (ducks background drone by 22% then smoothly restores)
+      if (this.masterGain) {
+        const curAmp = this.currentAmplitude;
+        this.masterGain.gain.cancelScheduledValues(now);
+        this.masterGain.gain.setValueAtTime(curAmp, now);
+        this.masterGain.gain.linearRampToValueAtTime(curAmp * 0.78, now + 0.12);
+        this.masterGain.gain.exponentialRampToValueAtTime(Math.max(0.001, curAmp), now + 1.8);
+      }
 
-      // 1. Fundamental Pure Sine
-      const osc1 = this.ctx.createOscillator();
-      const gain1 = this.ctx.createGain();
-      osc1.type = "sine";
-      osc1.frequency.setValueAtTime(freq, now);
+      // Master Chime Node connected to destination
+      const chimeMaster = this.ctx.createGain();
+      chimeMaster.gain.setValueAtTime(0.75, now);
+      chimeMaster.connect(this.ctx.destination);
 
-      gain1.gain.setValueAtTime(0.0001, now);
-      gain1.gain.exponentialRampToValueAtTime(0.75, now + 0.006);
-      gain1.gain.exponentialRampToValueAtTime(0.0001, now + 1.4);
+      // Connect chime into FFT Analyser so visualizers react dynamically
+      if (this.analyser) {
+        chimeMaster.connect(this.analyser);
+      }
 
-      osc1.connect(gain1);
-      gain1.connect(this.ctx.destination);
+      // 2. Soft Mallet Strike Transient (Lowpass-filtered short impulse)
+      const bufferSize = Math.floor(this.ctx.sampleRate * 0.04); // 40ms buffer
+      const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+      const data = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (this.ctx.sampleRate * 0.006));
+      }
+      const noiseNode = this.ctx.createBufferSource();
+      noiseNode.buffer = noiseBuffer;
+      const noiseFilter = this.ctx.createBiquadFilter();
+      noiseFilter.type = "bandpass";
+      noiseFilter.frequency.setValueAtTime(baseFreq * 1.5, now);
+      noiseFilter.Q.setValueAtTime(2.0, now);
+      const noiseGain = this.ctx.createGain();
+      noiseGain.gain.setValueAtTime(0.24, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.045);
+      noiseNode.connect(noiseFilter);
+      noiseFilter.connect(noiseGain);
+      noiseGain.connect(chimeMaster);
+      noiseNode.start(now);
 
-      osc1.start(now);
-      osc1.stop(now + 1.45);
+      // 3. Five Modal Partials of a Tibetan Singing Bowl
+      // Partials: Fundamental (1.0), Beating Pair (1.002), Octave overtone (2.01), Metallic 3rd/5th (2.76), Shimmer (3.82)
+      const partials = [
+        { mult: 1.0,   gain: 0.65, decay: 3.5, pan: 0.0 },   // Fundamental warm bowl body
+        { mult: 1.002, gain: 0.42, decay: 3.2, pan: -0.15 }, // Beating tone creates ~1 Hz wave pulsation
+        { mult: 2.01,  gain: 0.34, decay: 2.5, pan: 0.28 },  // Crystal overtone
+        { mult: 2.76,  gain: 0.20, decay: 1.9, pan: -0.30 }, // Bronze metallic shimmer
+        { mult: 3.82,  gain: 0.12, decay: 1.3, pan: 0.15 },  // High crystal sparkle
+      ];
 
-      // 2. Crystal Overtone (2x harmonic)
-      const osc2 = this.ctx.createOscillator();
-      const gain2 = this.ctx.createGain();
-      osc2.type = "sine";
-      osc2.frequency.setValueAtTime(freq * 2, now);
+      partials.forEach((p) => {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(baseFreq * p.mult, now);
 
-      gain2.gain.setValueAtTime(0.0001, now);
-      gain2.gain.exponentialRampToValueAtTime(0.28, now + 0.004);
-      gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.9);
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.linearRampToValueAtTime(p.gain, now + 0.015);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + p.decay);
 
-      osc2.connect(gain2);
-      gain2.connect(this.ctx.destination);
+        if (this.ctx.createStereoPanner) {
+          const panner = this.ctx.createStereoPanner();
+          panner.pan.setValueAtTime(p.pan, now);
+          osc.connect(gain);
+          gain.connect(panner);
+          panner.connect(chimeMaster);
+        } else {
+          osc.connect(gain);
+          gain.connect(chimeMaster);
+        }
 
-      osc2.start(now);
-      osc2.stop(now + 0.95);
+        osc.start(now);
+        osc.stop(now + p.decay + 0.05);
+      });
 
       // Trigger visual sine burst callbacks
       for (const cb of this.onChimeCallbacks) {
         try { cb(); } catch (_) {}
       }
     } catch (e) {
-      console.warn("[AudioEngine] Interval chime failed:", e);
+      console.warn("[AudioEngine] Cadence chime failed:", e);
     }
+  }
+
+  /**
+   * Interval Chime (Legacy compatibility bridge)
+   */
+  playIntervalChime(freq = 528): void {
+    const phase = freq === 432 ? "exhale" : "inhale";
+    this.playCadenceChime(phase);
   }
 
   setAmplitude(amp: number): void {

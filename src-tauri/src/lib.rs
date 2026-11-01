@@ -116,6 +116,23 @@ fn audio_set_device(
     audio.set_output_device(&device_name)
 }
 
+#[tauri::command]
+fn app_minimize_to_tray(window: tauri::WebviewWindow) {
+    let _ = window.hide();
+}
+
+#[tauri::command]
+fn app_restore_from_tray(window: tauri::WebviewWindow) {
+    let _ = window.show();
+    let _ = window.unminimize();
+    let _ = window.set_focus();
+}
+
+#[tauri::command]
+fn app_close(app: tauri::AppHandle) {
+    app.exit(0);
+}
+
 // ═══════════════════════════════════════════════════════════
 // TRAY ICON SETUP
 // ═══════════════════════════════════════════════════════════
@@ -123,7 +140,7 @@ fn audio_set_device(
 fn setup_tray(app: &tauri::App, audio: Arc<AudioController>) -> Result<(), Box<dyn std::error::Error>> {
     let show_item = MenuItemBuilder::with_id("show", "Show Anahat").build(app)?;
     let play_pause_item = MenuItemBuilder::with_id("play_pause", "Play / Pause").build(app)?;
-    let quit_item = MenuItemBuilder::with_id("quit", "Quit").build(app)?;
+    let quit_item = MenuItemBuilder::with_id("quit", "Quit Anahat").build(app)?;
 
     let menu = MenuBuilder::new(app)
         .item(&show_item)
@@ -141,6 +158,7 @@ fn setup_tray(app: &tauri::App, audio: Arc<AudioController>) -> Result<(), Box<d
             "show" => {
                 if let Some(window) = app.get_webview_window("main") {
                     let _ = window.show();
+                    let _ = window.unminimize();
                     let _ = window.set_focus();
                 }
             }
@@ -154,12 +172,25 @@ fn setup_tray(app: &tauri::App, audio: Arc<AudioController>) -> Result<(), Box<d
             _ => {}
         })
         .on_tray_icon_event(|tray, event| {
-            if let tauri::tray::TrayIconEvent::Click { .. } = event {
-                let app = tray.app_handle();
-                if let Some(window) = app.get_webview_window("main") {
-                    let _ = window.show();
-                    let _ = window.set_focus();
+            let app = tray.app_handle();
+            match event {
+                tauri::tray::TrayIconEvent::Click { button, .. } => {
+                    if button == tauri::tray::MouseButton::Left {
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.unminimize();
+                            let _ = window.set_focus();
+                        }
+                    }
                 }
+                tauri::tray::TrayIconEvent::DoubleClick { .. } => {
+                    if let Some(window) = app.get_webview_window("main") {
+                        let _ = window.show();
+                        let _ = window.unminimize();
+                        let _ = window.set_focus();
+                    }
+                }
+                _ => {}
             }
         })
         .build(app)?;
@@ -190,6 +221,9 @@ pub fn run() {
             audio_get_status,
             audio_list_devices,
             audio_set_device,
+            app_minimize_to_tray,
+            app_restore_from_tray,
+            app_close,
         ])
         .setup(move |app| {
             // Set up system tray icon
