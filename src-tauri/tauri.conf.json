@@ -9,6 +9,14 @@
     "beforeBuildCommand": "npm run build",
     "frontendDist": "../dist"
   },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEE4QUFFQ0JGQjhFNEYzQUEKUldTcTgrUzR2K3lxcU9qM2FmSFNmeHVRNEtHQzRKdElOM0JseXFmSmNLUVUvR0ZnVUV4VVFUVGsK",
+      "endpoints": [
+        "https://github.com/projects-jagadishk/anahat/releases/latest/download/latest.json"
+      ]
+    }
+  },
   "app": {
     "withGlobalTauri": true,
     "windows": [
@@ -39,6 +47,7 @@
   },
   "bundle": {
     "active": true,
+    "createUpdaterArtifacts": true,
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
