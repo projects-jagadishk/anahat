@@ -139,7 +139,18 @@
   - Restyled `.deck__canvas-wrap--pulse` from heavy red to a subtle, warm amber/orange aura (`border-color: rgba(255, 140, 0, 0.65)`, inset 1px spread, and soft 14px outer glow `rgba(255, 130, 0, 0.22)`).
   - Added smooth CSS transitions on `.deck__canvas-wrap` (`transition: border-color 0.2s ease, box-shadow 0.25s ease;`) for a gentle decay.
 
-### 13. Subtle Breath-Decay Aura, Prominent Breath Deck & Ethereal Mist Visualizer
+### 14. Breath Sync De-Distraction & Short Spiraling Smoke Wisps
+- **Removal of Circular Pulsating Animation**:
+  - Completely removed the concentric circular shockwave ring mesh (`THREE.RingGeometry`, `shockwaveRing`) from firing on breath phase transitions and chime strikes.
+  - Eliminated `.deck__canvas-wrap--pulse` border glow on breath sync transitions so cadence breathing is calm, pure, and distraction-free.
+  - Retained gentle, organic respiration geometry expansion (`targetBreathScale` lerping smoothly between 1.22 and 0.92) without abrupt shocks.
+- **Short Spiraling Smoke Wisps (No Long Worms)**:
+  - Replaced long continuous streamers with 36 independent, short smoke wisps (10 points each).
+  - Compact 3D logarithmic Archimedean spiral curl geometry with 1.1 to 1.8 tight coils, random 3D tilt, and compact radius (0.05 to 0.10).
+- **Canvas-Wide Random Spawning & Short Lifecycle Fade**:
+  - Eliminated bottom-cluster origin point: wisps, micro-particles, and ambient smoke clouds now spawn at independent randomized $(x, y, z)$ positions throughout the entire canvas volume.
+  - Staggered lifecycle (2.0 to 3.8 seconds per wisp): each wisp blooms in place, curls, softly disperses, and slowly fades away into the surrounding air before respawning at a new random canvas position.
+  - Minimal local drift ($v < 0.002$ units/sec): wisps gently waft and curl locally without sweeping across the canvas.
 - **Subtle Breath-Decay Animation**:
   - Replaced snappy border pulse with a natural respiratory keyframe decay curve (`@keyframes breath-decay-glow 2.8s cubic-bezier(0.16, 1, 0.3, 1)`).
   - Extremely subtle peak intensity (0.10 inset, 0.14 outer glow `rgba(245, 140, 20, ...)`) that gently blooms over 400ms and softly exhales/decays back to zero over 2.4s.

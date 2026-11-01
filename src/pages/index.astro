@@ -2098,7 +2098,8 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
   }
 
   .deck__canvas-wrap--pulse {
-    animation: breath-decay-glow 2.8s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+    /* Pulsating animation removed per user request to eliminate distractions */
+    animation: none !important;
   }
 
   /* Prominent Breath Synchronization Card (Right Column) */
@@ -4667,9 +4668,6 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
       syncChimeToggleUI();
       if (isNowOn) {
         audioEngine.playCadenceChime("inhale");
-        if (activeCadence !== "off") {
-          triggerSineWaveBurst("inhale");
-        }
       }
     });
 
@@ -4679,20 +4677,7 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     // Init Breath Cadence Controller (Synchronizes visualizer breathing and session intervals)
     cadenceController.init();
 
-    function triggerSineWaveBurst(phase = "inhale") {
-      // Trigger mathematical expanding sine wave ripple across particles, fluid, and oscilloscope
-      visualizer?.triggerSineBurst();
-      theaterVisualizer?.triggerSineBurst();
-
-      // Very subtle breath-decay glow only during active breath sync (never when cadence is off)
-      if (activeCadence !== "off" && canvasCard) {
-        canvasCard.classList.remove("deck__canvas-wrap--pulse");
-        void canvasCard.offsetWidth; // Force reflow to re-trigger smooth breath decay
-        canvasCard.classList.add("deck__canvas-wrap--pulse");
-      }
-    }
-
-    // Connect Breath Phase callback to Visualizer & Interval Chimes
+    // Connect Breath Phase callback to Visualizer & Interval Chimes (no pulsating circular animation)
     cadenceController.setPhaseCallback((phase, durationSec) => {
       visualizer?.setBreathPhase(phase, durationSec);
       theaterVisualizer?.setBreathPhase(phase, durationSec);
@@ -4705,18 +4690,15 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
         theaterPhase.textContent = activeCadence === "off" ? "CADENCE: OFF" : `CADENCE: ${phase.toUpperCase()} [ ${durationSec}S ]`;
       }
 
-      // Interval Chime & Sine Wave Burst on breath phase shift
+      // Interval Chime on breath phase shift
       if (activeCadence !== "off") {
         audioEngine.playCadenceChime(phase);
-        triggerSineWaveBurst(phase);
       }
     });
 
-    // Audio Engine chime listener
+    // Audio Engine chime listener (pure audio, zero circular pulsation)
     audioEngine.onChime(() => {
-      if (activeCadence !== "off") {
-        triggerSineWaveBurst();
-      }
+      // Audio chime plays cleanly without visual pulsation
     });
 
     // Cadence Select dropdown
@@ -4800,9 +4782,8 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
           hudCountdown.textContent = formatCountdown(sessionSecondsRemaining);
         }
 
-        // Trigger rich sine chime & wave burst on start
+        // Trigger rich sine chime on start
         audioEngine.playIntervalChime(528);
-        triggerSineWaveBurst();
 
         // Start countdown timer
         sessionInterval = setInterval(() => {
@@ -4816,7 +4797,6 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
               clearInterval(sessionInterval);
               sessionInterval = null;
               audioEngine.playIntervalChime(528);
-              triggerSineWaveBurst();
               endSession();
             }
           }

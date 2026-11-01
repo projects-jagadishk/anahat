@@ -198,13 +198,30 @@ export class ChladniCanvas {
 
   // 12 // Ethereal Mist (Curled blurry smoke tendrils, volumetric puffs, beat-reactive aura)
   private etherealGroup: THREE.Group | null = null;
-  private etherealTendrilCount = 16;
-  private etherealTendrilSegments = 32;
+  private etherealTendrilCount = 36;
+  private etherealTendrilSegments = 10;
   private etherealTendrilPoints: THREE.Points | null = null;
   private etherealTendrilPositions: Float32Array = new Float32Array(0);
   private etherealTendrilColors: Float32Array = new Float32Array(0);
   private etherealTendrilSizes: Float32Array = new Float32Array(0);
-  private etherealTendrilHeads: Array<{ x: number; y: number; z: number; vx: number; vy: number; vz: number; seed: number }> = [];
+  private etherealTendrilHeads: Array<{
+    x: number;
+    y: number;
+    z: number;
+    vx: number;
+    vy: number;
+    vz: number;
+    age: number;
+    maxLife: number;
+    spiralTurns: number;
+    direction: number;
+    tiltX: number;
+    tiltZ: number;
+    radiusMax: number;
+    height: number;
+    paletteOffset: number;
+    seed: number;
+  }> = [];
   private etherealParticles: THREE.Points | null = null;
   private etherealParticleCount = 2000;
   private etherealParticlePos: Float32Array = new Float32Array(0);
@@ -637,38 +654,37 @@ export class ChladniCanvas {
 
     switch (phase) {
       case "inhale":
-        this.targetBreathScale = 1.65;
-        this.breathLerpSpeed = 1.2 / safeDuration;
+        this.targetBreathScale = 1.22; // gentle, non-distracting breath expansion
+        this.breathLerpSpeed = 1.0 / safeDuration;
         break;
       case "hold-in":
-        this.targetBreathScale = 1.65;
-        this.breathLerpSpeed = 2.0;
+        this.targetBreathScale = 1.22;
+        this.breathLerpSpeed = 1.5;
         break;
       case "exhale":
-        // Violent collapse on exhale as required by PRD §3.3
-        this.targetBreathScale = 0.82;
-        this.breathLerpSpeed = 2.8 / safeDuration;
+        this.targetBreathScale = 0.92; // smooth soothing contraction
+        this.breathLerpSpeed = 1.0 / safeDuration;
         break;
       case "hold-out":
-        this.targetBreathScale = 1.0;
-        this.breathLerpSpeed = 2.0;
+        this.targetBreathScale = 0.92;
+        this.breathLerpSpeed = 1.5;
         break;
       case "idle":
       default:
         this.targetBreathScale = 1.0;
-        this.breathLerpSpeed = 1.5;
+        this.breathLerpSpeed = 1.2;
         break;
     }
   }
 
   /**
-   * Sine Wave Burst — Concentric physical shockwave propagation
+   * Sine Wave Burst — Non-distracting internal audio burst sync
    */
   triggerSineBurst(): void {
     this.burstActive = 1.0;
     this.burstTime = 0.0;
     if (this.shockwaveRing) {
-      this.shockwaveRing.visible = true;
+      this.shockwaveRing.visible = false; // Circular shockwave removed per user request
     }
   }
 
@@ -699,7 +715,6 @@ export class ChladniCanvas {
         uniform float u_opacity;
         varying vec2 vUv;
         void main() {
-          // Luminous expanding shockwave ring with pastel lavender & accent red glow
           vec3 col = mix(vec3(1.0, 0.2, 0.2), vec3(0.78, 0.62, 0.98), vUv.x);
           gl_FragColor = vec4(col, u_opacity * 0.92);
         }
@@ -709,7 +724,6 @@ export class ChladniCanvas {
     this.shockwaveRing = new THREE.Mesh(geometry, this.shockwaveMaterial);
     this.shockwaveRing.position.z = 0.03;
     this.shockwaveRing.visible = false;
-    this.scene?.add(this.shockwaveRing);
   }
 
   private initOscilloscope(): void {
@@ -2368,9 +2382,9 @@ export class ChladniCanvas {
     }
     this.etherealPuffTexture = new THREE.CanvasTexture(puffCanvas);
 
-    // 2. Volumetric Curled Smoke Tendrils (16 streamers × 32 overlapping blurry puffs = 512 sprites)
-    this.etherealTendrilCount = 16;
-    this.etherealTendrilSegments = 32;
+    // 2. Short, Spirally Smoke Wisps spawning at random canvas locations (36 wisps × 10 points = 360 sprites)
+    this.etherealTendrilCount = 36;
+    this.etherealTendrilSegments = 10;
     const totalTendrilPoints = this.etherealTendrilCount * this.etherealTendrilSegments;
 
     this.etherealTendrilPositions = new Float32Array(totalTendrilPoints * 3);
@@ -2379,33 +2393,44 @@ export class ChladniCanvas {
     this.etherealTendrilHeads = [];
 
     for (let t = 0; t < this.etherealTendrilCount; t++) {
-      const angle = (t / this.etherealTendrilCount) * Math.PI * 2;
-      const r = 0.12 + Math.random() * 0.28;
-      const startX = Math.cos(angle) * r;
-      const startY = -0.75 - Math.random() * 0.25;
-      const startZ = Math.sin(angle) * r;
+      const maxLife = 2.0 + Math.random() * 1.8;
+      // Staggered initial age so wisps fade in and out continuously at different intervals
+      const initialAge = Math.random() * maxLife;
+      // Spawn at random points throughout the canvas volume
+      const rx = (Math.random() - 0.5) * 1.7;
+      const ry = (Math.random() - 0.5) * 1.4;
+      const rz = (Math.random() - 0.5) * 0.7;
 
       this.etherealTendrilHeads.push({
-        x: startX,
-        y: startY,
-        z: startZ,
-        vx: (Math.random() - 0.5) * 0.005,
-        vy: 0.006 + Math.random() * 0.006,
-        vz: (Math.random() - 0.5) * 0.005,
+        x: rx,
+        y: ry,
+        z: rz,
+        vx: (Math.random() - 0.5) * 0.0008,
+        vy: 0.0012 + Math.random() * 0.0018, // gentle slight upward waft
+        vz: (Math.random() - 0.5) * 0.0008,
+        age: initialAge,
+        maxLife,
+        spiralTurns: Math.PI * (2.2 + Math.random() * 1.4), // 1.1 to 1.8 tight spiral turns
+        direction: Math.random() > 0.5 ? 1 : -1,
+        tiltX: (Math.random() - 0.5) * 0.7,
+        tiltZ: (Math.random() - 0.5) * 0.7,
+        radiusMax: 0.05 + Math.random() * 0.05, // compact, short spiral
+        height: 0.07 + Math.random() * 0.07,    // short vertical span
+        paletteOffset: Math.random(),
         seed: Math.random() * 100,
       });
 
       for (let s = 0; s < this.etherealTendrilSegments; s++) {
         const pIdx = t * this.etherealTendrilSegments + s;
-        this.etherealTendrilPositions[pIdx * 3] = startX;
-        this.etherealTendrilPositions[pIdx * 3 + 1] = startY + s * 0.02;
-        this.etherealTendrilPositions[pIdx * 3 + 2] = startZ;
+        this.etherealTendrilPositions[pIdx * 3] = rx;
+        this.etherealTendrilPositions[pIdx * 3 + 1] = ry;
+        this.etherealTendrilPositions[pIdx * 3 + 2] = rz;
 
         this.etherealTendrilColors[pIdx * 3] = 0.5;
         this.etherealTendrilColors[pIdx * 3 + 1] = 0.5;
         this.etherealTendrilColors[pIdx * 3 + 2] = 0.5;
 
-        this.etherealTendrilSizes[pIdx] = 0.12 + (s / this.etherealTendrilSegments) * 0.25;
+        this.etherealTendrilSizes[pIdx] = 0.22;
       }
     }
 
@@ -2414,10 +2439,10 @@ export class ChladniCanvas {
     tendrilGeo.setAttribute("color", new THREE.BufferAttribute(this.etherealTendrilColors, 3));
 
     const tendrilMat = new THREE.PointsMaterial({
-      size: 0.24,
+      size: 0.22,
       map: this.etherealPuffTexture,
       transparent: true,
-      opacity: 0.70,
+      opacity: 0.75,
       vertexColors: true,
       blending: THREE.NormalBlending,
       depthWrite: false,
@@ -2425,7 +2450,7 @@ export class ChladniCanvas {
     this.etherealTendrilPoints = new THREE.Points(tendrilGeo, tendrilMat);
     this.etherealGroup.add(this.etherealTendrilPoints);
 
-    // 3. Ethereal Micro-Particle Mist (2,000 sparkling whispering particles)
+    // 3. Ethereal Micro-Particle Mist (2,000 sparkling whispering particles throughout canvas)
     this.etherealParticleCount = 2000;
     this.etherealParticlePos = new Float32Array(this.etherealParticleCount * 3);
     this.etherealParticleVel = new Float32Array(this.etherealParticleCount * 3);
@@ -2434,15 +2459,13 @@ export class ChladniCanvas {
 
     for (let i = 0; i < this.etherealParticleCount; i++) {
       const idx = i * 3;
-      const theta = Math.random() * Math.PI * 2;
-      const rad = Math.sqrt(Math.random()) * 0.9;
-      this.etherealParticlePos[idx] = Math.cos(theta) * rad;
+      this.etherealParticlePos[idx] = (Math.random() - 0.5) * 1.8;
       this.etherealParticlePos[idx + 1] = (Math.random() - 0.5) * 1.8;
-      this.etherealParticlePos[idx + 2] = Math.sin(theta) * rad;
+      this.etherealParticlePos[idx + 2] = (Math.random() - 0.5) * 0.8;
 
-      this.etherealParticleVel[idx] = (Math.random() - 0.5) * 0.004;
-      this.etherealParticleVel[idx + 1] = 0.002 + Math.random() * 0.005;
-      this.etherealParticleVel[idx + 2] = (Math.random() - 0.5) * 0.004;
+      this.etherealParticleVel[idx] = (Math.random() - 0.5) * 0.002;
+      this.etherealParticleVel[idx + 1] = 0.001 + Math.random() * 0.002;
+      this.etherealParticleVel[idx + 2] = (Math.random() - 0.5) * 0.002;
 
       this.etherealParticleCol[idx] = 0.5;
       this.etherealParticleCol[idx + 1] = 0.5;
@@ -2465,7 +2488,7 @@ export class ChladniCanvas {
     this.etherealParticles = new THREE.Points(pGeo, pMat);
     this.etherealGroup.add(this.etherealParticles);
 
-    // 4. Soft Volumetric Ambient Smoke Cloud Puffs (250 gentle billowing puffs)
+    // 4. Soft Volumetric Ambient Smoke Cloud Puffs (250 gentle billowing puffs throughout canvas)
     this.etherealSmokeCount = 250;
     this.etherealSmokePos = new Float32Array(this.etherealSmokeCount * 3);
     this.etherealSmokeCol = new Float32Array(this.etherealSmokeCount * 3);
@@ -2474,11 +2497,9 @@ export class ChladniCanvas {
 
     for (let i = 0; i < this.etherealSmokeCount; i++) {
       const idx = i * 3;
-      const theta = Math.random() * Math.PI * 2;
-      const rad = 0.08 + Math.random() * 0.75;
-      this.etherealSmokePos[idx] = Math.cos(theta) * rad;
-      this.etherealSmokePos[idx + 1] = -0.85 + Math.random() * 1.7;
-      this.etherealSmokePos[idx + 2] = Math.sin(theta) * rad;
+      this.etherealSmokePos[idx] = (Math.random() - 0.5) * 1.7;
+      this.etherealSmokePos[idx + 1] = (Math.random() - 0.5) * 1.6;
+      this.etherealSmokePos[idx + 2] = (Math.random() - 0.5) * 0.7;
 
       this.etherealSmokeCol[idx] = 0.5;
       this.etherealSmokeCol[idx + 1] = 0.5;
@@ -2495,7 +2516,7 @@ export class ChladniCanvas {
       size: 0.45,
       map: this.etherealPuffTexture,
       transparent: true,
-      opacity: 0.30,
+      opacity: 0.28,
       vertexColors: true,
       blending: THREE.NormalBlending,
       depthWrite: false,
@@ -2532,105 +2553,108 @@ export class ChladniCanvas {
     // Pulse points material size with live beat
     if (this.etherealTendrilPoints) {
       const mat = this.etherealTendrilPoints.material as THREE.PointsMaterial;
-      if (mat) mat.size = 0.22 * beatPulse;
+      if (mat) mat.size = 0.20 * beatPulse;
     }
     if (this.etherealSmokePoints) {
       const mat = this.etherealSmokePoints.material as THREE.PointsMaterial;
-      if (mat) mat.size = 0.42 * (1.0 + bass * 0.6);
+      if (mat) mat.size = 0.40 * (1.0 + bass * 0.6);
     }
 
-    // 1. Update Sinuous Volumetric Smoke Tendrils
+    // 1. Update Short Spiraling Smoke Wisps (spawn at random points, fade in/out in short intervals with slight movements)
     if (this.etherealTendrilPoints) {
       const pos = this.etherealTendrilPositions;
       const col = this.etherealTendrilColors;
       const segCount = this.etherealTendrilSegments;
 
       for (let t = 0; t < this.etherealTendrilCount; t++) {
-        const head = this.etherealTendrilHeads[t];
-        const s = head.seed;
+        const wisp = this.etherealTendrilHeads[t];
+        wisp.age += delta;
 
-        // Slow multi-frequency 3D curl eddies
-        const swirl1 = time * 0.32 + s * 6.28;
-        const swirl2 = time * 0.50 + s * 3.14;
-
-        // 3D curl vectors (producing tight curving loops and curls of smoke)
-        const curlX = Math.sin(head.y * 3.2 + swirl1) * Math.cos(head.z * 2.6 + s) * 0.038
-                    + Math.sin(head.z * 5.2 - swirl2) * 0.022;
-
-        const curlY = (0.005 + bass * 0.013) // slow gentle upward draft
-                    + Math.cos(head.x * 2.8 + swirl1) * Math.sin(head.z * 2.8) * 0.014;
-
-        const curlZ = Math.cos(head.y * 3.0 + swirl1) * Math.sin(head.x * 2.6 + s) * 0.038
-                    + Math.cos(head.x * 5.0 + swirl2) * 0.022;
-
-        // Tangential spiral coiling around streamer's plume
-        const theta = time * 0.45 + s * 2.5;
-        const coilX = Math.cos(theta) * (0.010 + bass * 0.012);
-        const coilZ = Math.sin(theta) * (0.010 + bass * 0.012);
-
-        head.vx += (curlX + coilX - head.vx) * 0.08;
-        head.vy += (curlY - head.vy) * 0.06;
-        head.vz += (curlZ + coilZ - head.vz) * 0.08;
-
-        head.x += head.vx * breath;
-        head.y += head.vy * breath;
-        head.z += head.vz * breath;
-
-        // Respawn streamer if too high or drifted away
-        const distXZ = Math.sqrt(head.x * head.x + head.z * head.z);
-        if (head.y > 1.1 || distXZ > 1.35) {
-          const ang = Math.random() * Math.PI * 2;
-          const rad = 0.06 + Math.random() * 0.22;
-          head.x = Math.cos(ang) * rad;
-          head.y = -0.75 - Math.random() * 0.2;
-          head.z = Math.sin(ang) * rad;
-          head.vx = 0;
-          head.vy = 0.006 + Math.random() * 0.008;
-          head.vz = 0;
-          head.seed = Math.random() * 100;
+        // Respawn at a random location across the canvas when short interval completes
+        if (wisp.age >= wisp.maxLife) {
+          wisp.age = 0;
+          wisp.maxLife = 2.0 + Math.random() * 1.8;
+          wisp.x = (Math.random() - 0.5) * 1.7;
+          wisp.y = (Math.random() - 0.5) * 1.4;
+          wisp.z = (Math.random() - 0.5) * 0.7;
+          wisp.vx = (Math.random() - 0.5) * 0.0008;
+          wisp.vy = 0.0012 + Math.random() * 0.0018;
+          wisp.vz = (Math.random() - 0.5) * 0.0008;
+          wisp.spiralTurns = Math.PI * (2.2 + Math.random() * 1.4);
+          wisp.direction = Math.random() > 0.5 ? 1 : -1;
+          wisp.tiltX = (Math.random() - 0.5) * 0.7;
+          wisp.tiltZ = (Math.random() - 0.5) * 0.7;
+          wisp.radiusMax = 0.05 + Math.random() * 0.05;
+          wisp.height = 0.07 + Math.random() * 0.07;
+          wisp.paletteOffset = Math.random();
+          wisp.seed = Math.random() * 100;
         }
 
-        // Propagate curvy serpentine coordinates along the streamer
-        for (let i = segCount - 1; i > 0; i--) {
-          const pIdx = (t * segCount + i) * 3;
-          const prevIdx = (t * segCount + (i - 1)) * 3;
+        // Slight drift: smoke wafts gently in place with minimal movement
+        wisp.x += wisp.vx * breath;
+        wisp.y += wisp.vy * breath;
+        wisp.z += wisp.vz * breath;
 
-          // Sinuous lateral wave curl through the spine
-          const wavePhase = i * 0.42 - time * 0.75 + s * 2.0;
-          const curlAmp = (i / segCount) * (0.005 + bass * 0.009);
+        // Lifecycle progress 0..1
+        const u = wisp.age / wisp.maxLife;
 
-          pos[pIdx] = pos[prevIdx] + Math.sin(wavePhase) * curlAmp;
-          pos[pIdx + 1] = pos[prevIdx + 1] + 0.0018 * breath;
-          pos[pIdx + 2] = pos[prevIdx + 2] + Math.cos(wavePhase) * curlAmp;
+        // Fade curve: smooth rapid fade in, then slowly fade away over the short interval
+        let fade = 0;
+        if (u < 0.25) {
+          fade = Math.sin((u / 0.25) * Math.PI * 0.5);
+        } else {
+          fade = Math.pow(Math.max(0, 1.0 - (u - 0.25) / 0.75), 1.25);
         }
 
-        pos[t * segCount * 3] = head.x;
-        pos[t * segCount * 3 + 1] = head.y;
-        pos[t * segCount * 3 + 2] = head.z;
+        // Slight dispersion as smoke dissipates: puff expands slightly
+        const dispersion = 1.0 + u * 0.50 + bass * 0.40;
 
-        // Colors & Alpha: adapted for dark background and light background!
-        const palColor = this.samplePalette((t / this.etherealTendrilCount + time * 0.04) % 1.0);
-        const palAccent = this.samplePalette(((t + 3) / this.etherealTendrilCount) % 1.0);
+        // Sample palette color for this wisp
+        const palColor = this.samplePalette((wisp.paletteOffset + time * 0.03) % 1.0);
+        const palAccent = this.samplePalette((wisp.paletteOffset + 0.35) % 1.0);
 
-        for (let i = 0; i < segCount; i++) {
-          const pIdx = (t * segCount + i) * 3;
-          const factor = i / segCount;
-          const alphaCurve = Math.sin(Math.pow(1.0 - factor, 0.75) * Math.PI * 0.95);
-          const alpha = alphaCurve * (0.42 + highs * 0.35 + bass * 0.25);
+        // Form the short spiral curve
+        for (let s = 0; s < segCount; s++) {
+          const pIdx = (t * segCount + s) * 3;
+          const progressAlongCurl = s / (segCount - 1); // 0.0 at center -> 1.0 at outer tip
 
-          const c = palColor.clone().lerp(palAccent, factor);
+          // Spiral turn angle + dynamic eddy swirl
+          const theta = wisp.seed + wisp.direction * (progressAlongCurl * wisp.spiralTurns) + time * 0.30;
+          // Radius expands outward along spiral
+          const r = (0.012 + wisp.radiusMax * Math.pow(progressAlongCurl, 0.8)) * dispersion;
+
+          // Local coordinates of the spiral curl
+          const lx = Math.cos(theta) * r;
+          const ly = progressAlongCurl * wisp.height * dispersion;
+          const lz = Math.sin(theta) * r;
+
+          // 3D tilt orientation
+          const dx = lx;
+          const dy = ly * Math.cos(wisp.tiltX) - lz * Math.sin(wisp.tiltX);
+          const dz = ly * Math.sin(wisp.tiltZ) + lz * Math.cos(wisp.tiltZ);
+
+          pos[pIdx] = wisp.x + dx;
+          pos[pIdx + 1] = wisp.y + dy;
+          pos[pIdx + 2] = wisp.z + dz;
+
+          // Alpha falloff from base to tip, multiplied by wisp's overall lifecycle fade
+          const tipFalloff = Math.sin((1.0 - progressAlongCurl * 0.35) * Math.PI * 0.85);
+          const finalAlpha = fade * tipFalloff * (0.65 + highs * 0.30 + bass * 0.20);
+
+          const c = palColor.clone().lerp(palAccent, progressAlongCurl * 0.5);
+
           if (!isDark) {
-            // Main deck (white background): deepen smoke color into rich velvety tones so it's clearly visible
+            // Main deck (white background): rich deep pigment so smoke is clearly visible
             const darkSmoke = new THREE.Color(0.20, 0.16, 0.26);
             c.lerp(darkSmoke, 0.45);
-            col[pIdx] = c.r * (0.65 + 0.35 * (1.0 - alpha));
-            col[pIdx + 1] = c.g * (0.65 + 0.35 * (1.0 - alpha));
-            col[pIdx + 2] = c.b * (0.65 + 0.35 * (1.0 - alpha));
+            col[pIdx] = c.r * (0.55 + 0.45 * (1.0 - finalAlpha));
+            col[pIdx + 1] = c.g * (0.55 + 0.45 * (1.0 - finalAlpha));
+            col[pIdx + 2] = c.b * (0.55 + 0.45 * (1.0 - finalAlpha));
           } else {
             // Theater mode (dark background): luminous glowing smoke
-            col[pIdx] = c.r * (0.8 + 0.4 * beatPulse);
-            col[pIdx + 1] = c.g * (0.8 + 0.4 * beatPulse);
-            col[pIdx + 2] = c.b * (0.8 + 0.4 * beatPulse);
+            col[pIdx] = c.r * finalAlpha * beatPulse;
+            col[pIdx + 1] = c.g * finalAlpha * beatPulse;
+            col[pIdx + 2] = c.b * finalAlpha * beatPulse;
           }
         }
       }
@@ -2639,7 +2663,7 @@ export class ChladniCanvas {
       this.etherealTendrilPoints.geometry.attributes.color.needsUpdate = true;
     }
 
-    // 2. Update Micro-Particles
+    // 2. Update Micro-Particles (distributed throughout canvas)
     if (this.etherealParticles) {
       const pos = this.etherealParticlePos;
       const vel = this.etherealParticleVel;
@@ -2651,20 +2675,17 @@ export class ChladniCanvas {
         life[i] += delta * (0.15 + bass * 0.25);
         if (life[i] > 1.0) {
           life[i] = 0;
-          const th = Math.random() * Math.PI * 2;
-          const r = Math.sqrt(Math.random()) * 0.65;
-          pos[idx] = Math.cos(th) * r;
-          pos[idx + 1] = -0.85;
-          pos[idx + 2] = Math.sin(th) * r;
+          pos[idx] = (Math.random() - 0.5) * 1.8;
+          pos[idx + 1] = (Math.random() - 0.5) * 1.8;
+          pos[idx + 2] = (Math.random() - 0.5) * 0.8;
         }
 
         const x = pos[idx];
         const y = pos[idx + 1];
-        const z = pos[idx + 2];
 
-        vel[idx] += (Math.sin(y * 2.8 + time * 0.5) * 0.003 - vel[idx]) * 0.05;
-        vel[idx + 1] += (0.003 + bass * 0.009 - vel[idx + 1]) * 0.05;
-        vel[idx + 2] += (Math.cos(x * 2.8 + time * 0.5) * 0.003 - vel[idx + 2]) * 0.05;
+        vel[idx] += (Math.sin(y * 2.8 + time * 0.5) * 0.002 - vel[idx]) * 0.05;
+        vel[idx + 1] += (0.0015 + bass * 0.004 - vel[idx + 1]) * 0.05;
+        vel[idx + 2] += (Math.cos(x * 2.8 + time * 0.5) * 0.002 - vel[idx + 2]) * 0.05;
 
         pos[idx] += vel[idx] * breath;
         pos[idx + 1] += vel[idx + 1] * breath;
@@ -2692,7 +2713,7 @@ export class ChladniCanvas {
       this.etherealParticles.geometry.attributes.color.needsUpdate = true;
     }
 
-    // 3. Update Ambient Volumetric Smoke Puffs
+    // 3. Update Ambient Volumetric Smoke Puffs (distributed throughout canvas)
     if (this.etherealSmokePoints) {
       const pos = this.etherealSmokePos;
       const col = this.etherealSmokeCol;
@@ -2703,16 +2724,14 @@ export class ChladniCanvas {
         life[i] += delta * 0.10;
         if (life[i] > 1.0) {
           life[i] = 0;
-          const th = Math.random() * Math.PI * 2;
-          const r = 0.08 + Math.random() * 0.55;
-          pos[idx] = Math.cos(th) * r;
-          pos[idx + 1] = -0.78 - Math.random() * 0.2;
-          pos[idx + 2] = Math.sin(th) * r;
+          pos[idx] = (Math.random() - 0.5) * 1.7;
+          pos[idx + 1] = (Math.random() - 0.5) * 1.6;
+          pos[idx + 2] = (Math.random() - 0.5) * 0.7;
         }
 
-        pos[idx] += Math.sin(pos[idx + 1] * 1.4 + time * 0.4) * 0.0016 * breath;
-        pos[idx + 1] += (0.004 + bass * 0.008) * breath;
-        pos[idx + 2] += Math.cos(pos[idx] * 1.4 + time * 0.4) * 0.0016 * breath;
+        pos[idx] += Math.sin(pos[idx + 1] * 1.4 + time * 0.3) * 0.0008 * breath;
+        pos[idx + 1] += (0.0015 + bass * 0.003) * breath;
+        pos[idx + 2] += Math.cos(pos[idx] * 1.4 + time * 0.3) * 0.0008 * breath;
 
         const puffCol = this.samplePalette((i / this.etherealSmokeCount) % 1.0);
         const puffAlpha = Math.sin(life[i] * Math.PI) * (0.18 + mids * 0.22);
@@ -2734,7 +2753,7 @@ export class ChladniCanvas {
     }
 
     // Slow spiritual aura rotation
-    this.etherealGroup.rotation.y = time * 0.04;
+    this.etherealGroup.rotation.y = time * 0.02;
   }
 
   private chladni(x: number, y: number, n: number, m: number): number {
@@ -2857,20 +2876,14 @@ export class ChladniCanvas {
     const delta = Math.min(this.clock.getDelta(), 0.1);
     const elapsedTime = this.clock.getElapsedTime();
 
-    // Advance Sine Burst shockwave
+    // Advance Sine Burst shockwave (circular expanding mesh disabled per user request)
     if (this.burstActive > 0.0) {
       this.burstTime += delta;
-      const progress = this.burstTime / 1.5;
-      if (this.shockwaveRing && this.shockwaveMaterial) {
-        this.shockwaveRing.visible = true;
-        this.shockwaveMaterial.uniforms.u_progress.value = progress;
-        this.shockwaveMaterial.uniforms.u_opacity.value = Math.max(0.0, 1.0 - progress);
+      if (this.shockwaveRing) {
+        this.shockwaveRing.visible = false;
       }
       if (this.burstTime > 1.5) {
         this.burstActive = 0.0;
-        if (this.shockwaveRing) {
-          this.shockwaveRing.visible = false;
-        }
       }
     }
 
