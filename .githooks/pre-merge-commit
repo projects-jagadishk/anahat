@@ -1,0 +1,12 @@
+#!/bin/sh
+# Prevent merging directly into protected branches (main and develop)
+
+current_branch="$(git symbolic-ref --short HEAD 2>/dev/null || true)"
+
+if [ "$current_branch" = "main" ] || [ "$current_branch" = "develop" ]; then
+  echo "\033[1;31m❌ [GIT HOOK ERROR] Direct merges into '$current_branch' are strictly prohibited.\033[0m"
+  echo "Remote rulesets protect 'main' and 'develop'. Merges must happen via Pull Requests on GitHub."
+  exit 1
+fi
+
+exit 0
