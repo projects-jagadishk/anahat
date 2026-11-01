@@ -239,7 +239,11 @@ Installers:
 
 ## 6. Code Signing & First-Launch Guidance (Option 1)
 
-Anahat desktop releases are free, open-source community builds under the MIT License. While our formal verification with the **SignPath Foundation** is in review, binaries are distributed unsigned (or ad-hoc signed for Apple Silicon compatibility).
+Anahat desktop releases are free, open-source community builds under the MIT License:
+
+- **Windows:** Application submitted to the **SignPath Foundation** for free open-source code signing (available exclusively for Windows). While verification is in review, installers are distributed unsigned.
+- **macOS:** Apple requires a recurring $99/year Apple Developer Program membership for official Gatekeeper notarization certificates, which is not feasible for this independent, free open-source project at the moment. macOS binaries are distributed with standard ad-hoc signing (satisfying local Apple Silicon execution); Gatekeeper first-launch bypass steps are documented for users.
+- **Linux:** Standard portable AppImage and Debian packages without external runtime requirements.
 
 ### 6.1 First-Launch Instructions
 The download landing page (`website/index.html`) automatically presents an interactive confirmation modal before initiating downloads, providing clear first-launch bypass steps:

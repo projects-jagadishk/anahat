@@ -921,8 +921,8 @@
           <div style="font-size: 11px; font-weight: 700; color: #000;">
             CHECKSUM VERIFICATION: SHA-256
           </div>
-          <div class="badge-unsigned-header" title="Application submitted to SignPath Foundation for trusted open-source code signing">
-            ⚠ UNSIGNED COMMUNITY RELEASE // SIGNPATH VERIFICATION IN REVIEW
+          <div class="badge-unsigned-header" title="Free and open-source release. Windows SignPath in review. macOS ad-hoc signed.">
+            ⚠ OPEN-SOURCE RELEASES // WINDOWS: SIGNPATH IN REVIEW // MACOS: AD-HOC SIGNED
           </div>
         </div>
       </div>
@@ -933,13 +933,13 @@
           <div>
             <div class="dl-platform-title">
               <span>macOS</span>
-              <span class="dl-pill dl-pill--warn">UNSIGNED (OPEN SOURCE)</span>
+              <span class="dl-pill dl-pill--warn">AD-HOC SIGNED (FREE OPEN SOURCE)</span>
             </div>
             <p class="dl-specs" style="margin-top: 8px;">
               Apple Silicon (M1/M2/M3/M4) & Intel x86_64<br />
               macOS 10.15 Catalina or newer<br />
               Package: <code id="pkg-name-macos">Anahat_universal.dmg</code><br />
-              <span style="display: inline-block; margin-top: 4px; font-size: 10px; color: #92400E; font-weight: 700;">⚠ First-launch Gatekeeper instructions shown on click</span>
+              <span style="display: inline-block; margin-top: 4px; font-size: 10px; color: #92400E; font-weight: 700;">⚠ First-launch Gatekeeper bypass instructions shown on click</span>
             </p>
           </div>
           <a class="btn-download" id="link-download-macos" href="https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_universal.dmg">
@@ -952,13 +952,13 @@
           <div>
             <div class="dl-platform-title">
               <span>WINDOWS</span>
-              <span class="dl-pill dl-pill--warn">UNSIGNED (OPEN SOURCE)</span>
+              <span class="dl-pill dl-pill--warn">SIGNPATH IN REVIEW (OPEN SOURCE)</span>
             </div>
             <p class="dl-specs" style="margin-top: 8px;">
               Windows 10, 11 (x64)<br />
               Hardware-accelerated DirectX / WebGL<br />
               Package: <code id="pkg-name-windows">Anahat_x64-setup.exe</code><br />
-              <span style="display: inline-block; margin-top: 4px; font-size: 10px; color: #92400E; font-weight: 700;">⚠ First-launch SmartScreen instructions shown on click</span>
+              <span style="display: inline-block; margin-top: 4px; font-size: 10px; color: #92400E; font-weight: 700;">⚠ SmartScreen "Run anyway" instructions shown on click</span>
             </p>
           </div>
           <a class="btn-download" id="link-download-windows" href="https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_x64-setup.exe">
@@ -1189,8 +1189,8 @@
           <span class="modal-alert-icon">⚠️</span>
           <div>
             <div class="modal-alert-title" id="modal-alert-title">OPEN-SOURCE UNSIGNED BINARY NOTICE</div>
-            <div class="modal-alert-desc">
-              Anahat is 100% free open-source software under the MIT License. Because this is an independent, non-commercial project, we do not pay for proprietary enterprise signing certificates. We have formally applied for free trusted open-source code signing through the <strong>SignPath Foundation</strong>. Until our review is finalized, your operating system will display a first-time security notice.
+            <div class="modal-alert-desc" id="modal-alert-desc">
+              Anahat is 100% free open-source software under the MIT License. Because this is an independent, non-commercial project, commercial signing fees are not feasible at the moment.
             </div>
           </div>
         </div>
@@ -1210,6 +1210,9 @@
               </div>
             </li>
           </ol>
+          <div style="font-size: 11px; color: #555; margin-top: 8px; padding: 6px 10px; background: #F4F4F5; border-left: 2px solid #888;">
+            ℹ <em>Why this occurs:</em> Apple requires a recurring $99/year commercial membership for automated Gatekeeper notarization, which is not feasible for this free open-source project at the moment. The app is ad-hoc signed and 100% safe to inspect on GitHub.
+          </div>
         </div>
 
         <!-- Windows Instructions -->
@@ -1221,6 +1224,9 @@
             <li>Click the underlined link: <strong>"More info"</strong>.</li>
             <li>Click the button: <strong>"Run anyway"</strong> to begin setup.</li>
           </ol>
+          <div style="font-size: 11px; color: #555; margin-top: 8px; padding: 6px 10px; background: #F4F4F5; border-left: 2px solid #888;">
+            ℹ <em>Roadmap:</em> We have applied for free trusted open-source code signing through the <strong>SignPath Foundation</strong> (available for Windows). While our verification is in review, clicking "Run anyway" allows complete execution.
+          </div>
         </div>
 
         <!-- Linux Instructions -->
@@ -1241,7 +1247,7 @@
         <div class="modal-meta-row">
           <span>PACKAGE: <strong id="modal-target-pkg">Anahat_universal.dmg</strong></span>
           <span>EST. SIZE: <strong id="modal-target-size">~22 MB</strong></span>
-          <span>STATUS: <strong style="color: #92400E;">UNSIGNED (SIGNPATH PENDING)</strong></span>
+          <span>STATUS: <strong id="modal-target-status" style="color: #92400E;">AD-HOC SIGNED (FREE OPEN SOURCE)</strong></span>
         </div>
       </div>
 
@@ -1370,8 +1376,10 @@
     // ═══════════════════════════════════════════════════════════
     const downloadModal = document.getElementById("download-modal");
     const modalPlatformBadge = document.getElementById("modal-platform-badge");
+    const modalAlertDesc = document.getElementById("modal-alert-desc");
     const modalTargetPkg = document.getElementById("modal-target-pkg");
     const modalTargetSize = document.getElementById("modal-target-size");
+    const modalTargetStatus = document.getElementById("modal-target-status");
     const modalInstrMac = document.getElementById("modal-instructions-macos");
     const modalInstrWin = document.getElementById("modal-instructions-windows");
     const modalInstrLin = document.getElementById("modal-instructions-linux");
@@ -1391,6 +1399,32 @@
       }
       if (modalTargetSize) {
         modalTargetSize.textContent = size || "~20 MB";
+      }
+
+      if (platform === "MACOS") {
+        if (modalAlertDesc) {
+          modalAlertDesc.innerHTML = 'Anahat is 100% free open-source software (MIT License). As an independent personal project, paying Apple\'s recurring $99/year Developer Program fee is not feasible at the moment. The app is distributed with standard ad-hoc signing (satisfying local Apple Silicon execution). On first launch, follow the simple Gatekeeper bypass below to open.';
+        }
+        if (modalTargetStatus) {
+          modalTargetStatus.textContent = "AD-HOC SIGNED (APPLE DEV FEE NOT FEASIBLE)";
+          modalTargetStatus.style.color = "#92400E";
+        }
+      } else if (platform === "WINDOWS") {
+        if (modalAlertDesc) {
+          modalAlertDesc.innerHTML = 'Anahat is 100% free open-source software (MIT License). We have applied for free trusted open-source code signing through the <strong>SignPath Foundation</strong> (available for Windows). While our verification is currently in review, Windows Defender SmartScreen will display a first-time notice. Follow the steps below to run.';
+        }
+        if (modalTargetStatus) {
+          modalTargetStatus.textContent = "UNSIGNED (SIGNPATH APPLICATION IN REVIEW)";
+          modalTargetStatus.style.color = "#92400E";
+        }
+      } else {
+        if (modalAlertDesc) {
+          modalAlertDesc.innerHTML = 'Anahat is 100% free open-source software (MIT License). Standard standalone AppImage and DEB binaries without external runtime dependencies.';
+        }
+        if (modalTargetStatus) {
+          modalTargetStatus.textContent = "PORTABLE BINARY (OPEN SOURCE)";
+          modalTargetStatus.style.color = "#000000";
+        }
       }
 
       if (modalInstrMac) modalInstrMac.style.display = platform === "MACOS" ? "block" : "none";
