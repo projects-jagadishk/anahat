@@ -18,8 +18,8 @@ jobs:
       - name: Verify Tag is on main branch
         shell: bash
         run: |
-          git fetch origin main:main
-          if git merge-base --is-ancestor HEAD main; then
+          git fetch origin main
+          if git merge-base --is-ancestor HEAD origin/main; then
             echo "Verification passed: Tag ${{ github.ref_name }} originates from the 'main' branch."
           else
             echo "::error::Release tags (v*) must be created on the 'main' branch. Current tag commit is not reachable from 'main'."
