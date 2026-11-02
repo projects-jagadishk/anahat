@@ -232,8 +232,8 @@ Hi, I'm **Jagadish Kasi** — a Frontend Architect specializing in building enga
 
 - **Looking for a Frontend Architect?**  
   I am available for technical architecture consulting, fractional advisory, and building high-impact interactive products that stand out from generic software. Let's connect:
-  - **Product Hunt Profile:** [@jagadishkasi](https://www.producthunt.com/@jagadishk)
-  - **Live Product & Showcase:** [anahat.jagadishk.work](https://anahat.jagadishk.work)
+  - **Work Experience:** [jagadishk.work](https://jagadishk.work)
+  - **Product Hunt Profile:** [@jagadishk](https://www.producthunt.com/@jagadishk)
 - **Support the Project:**  
   If Anahat aids your deep work or you appreciate handcrafted mathematical software without tracking, bloat, or subscriptions, you can fuel future development by buying me a coffee:
   - **Buy Me A Coffee:** [coff.ee/jagadishk](https://coff.ee/jagadishk)

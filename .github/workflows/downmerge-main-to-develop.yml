@@ -19,34 +19,75 @@ jobs:
         with:
           fetch-depth: 0
 
-      # 👈 NEW STEP: Evaluates the commit message before running sync checks
-      - name: Check for skip marker
-        id: check_commit
+      - name: Evaluate downmerge necessity
+        id: eval_downmerge
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           COMMIT_MSG=$(git log -1 --pretty=%B)
-          echo "Latest commit message: $COMMIT_MSG"
-          if [[ "$COMMIT_MSG" == *"[skip downmerge]"* ]]; then
-            echo "Automation bypass detected. Exiting workflow."
-            echo "bypass=true" >> $GITHUB_OUTPUT
-          else
-            echo "bypass=false" >> $GITHUB_OUTPUT
+          COMMIT_AUTHOR=$(git log -1 --pretty=%an)
+          echo "Commit Author: $COMMIT_AUTHOR"
+          echo "Commit Message: $COMMIT_MSG"
+
+          # 1. Skip if automated commit or explicit skip marker present
+          if [[ "$COMMIT_MSG" == *"[skip downmerge]"* ]] || \
+             [[ "$COMMIT_MSG" == *"[skip ci]"* ]] || \
+             [[ "$COMMIT_MSG" =~ ^chore\(release\) ]] || \
+             [[ "$COMMIT_MSG" =~ ^chore\(sync\) ]] || \
+             [[ "$COMMIT_AUTHOR" == *"bot"* ]] || \
+             [[ "$COMMIT_AUTHOR" == "github-actions" ]]; then
+            echo "Skipping: Automation marker or bot author detected."
+            echo "should_run=false" >> $GITHUB_OUTPUT
+            exit 0
           fi
 
-      - name: Check if develop is behind main
-        if: steps.check_commit.outputs.bypass != 'true' # 👈 Condition added
-        id: check_sync
-        run: |
-          git fetch origin develop
-          BEHIND_COUNT=$(git rev-list --count origin/develop..origin/main)
-          echo "Commits in main missing from develop: $BEHIND_COUNT"
-          if [ "$BEHIND_COUNT" -gt 0 ]; then
-            echo "needs_sync=true" >> $GITHUB_OUTPUT
-          else
-            echo "needs_sync=false" >> $GITHUB_OUTPUT
+          # 2. Skip if the commit on main is a merge of develop into main
+          # (develop is the source of this merge, so develop already has all changes)
+          if [[ "$COMMIT_MSG" =~ "from "[^/]*"/develop" ]] || \
+             [[ "$COMMIT_MSG" =~ "Merge branch 'develop'" ]]; then
+            echo "Skipping: Commit on main is a merge from develop."
+            echo "should_run=false" >> $GITHUB_OUTPUT
+            exit 0
           fi
+
+          # Fetch latest origin/develop to compare
+          git fetch origin develop
+
+          # 3. Skip if the tree of main and develop is already identical
+          if git diff --quiet origin/develop origin/main; then
+            echo "Skipping: develop and main file trees are 100% identical."
+            echo "should_run=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # 4. Check for actual non-merge commits on main missing from develop
+          # (e.g. hotfixes committed or merged directly into main)
+          NON_MERGE_COUNT=$(git rev-list --no-merges --count origin/develop..origin/main)
+          echo "Non-merge commits on main missing from develop: $NON_MERGE_COUNT"
+          if [ "$NON_MERGE_COUNT" -eq 0 ]; then
+            echo "Skipping: No non-merge commits on main missing from develop."
+            echo "should_run=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # 5. Check if the only changed files are website version or documentation
+          CHANGED_FILES=$(git diff --name-only origin/develop origin/main)
+          echo "Changed files between develop and main:"
+          echo "$CHANGED_FILES"
+
+          # Filter out files that don't need code downmerging (website/, docs/, RELEASE_NOTES.md, .github/)
+          CODE_CHANGES=$(echo "$CHANGED_FILES" | grep -vE "^(website/|docs/|RELEASE_NOTES\.md|\.github/)" || true)
+          if [ -z "$CODE_CHANGES" ]; then
+            echo "Skipping: Changes on main only affect website/docs/metadata, no code downmerge needed."
+            echo "should_run=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "Downmerge is required for new code changes on main."
+          echo "should_run=true" >> $GITHUB_OUTPUT
 
       - name: Check for existing downmerge PR
-        if: steps.check_commit.outputs.bypass != 'true' && steps.check_sync.outputs.needs_sync == 'true'
+        if: steps.eval_downmerge.outputs.should_run == 'true'
         id: check_pr
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -60,7 +101,7 @@ jobs:
           fi
 
       - name: Create Downmerge PR (main -> develop)
-        if: steps.check_commit.outputs.bypass != 'true' && steps.check_sync.outputs.needs_sync == 'true' && steps.check_pr.outputs.has_open_pr == 'false'
+        if: steps.eval_downmerge.outputs.should_run == 'true' && steps.check_pr.outputs.has_open_pr == 'false'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -68,4 +109,4 @@ jobs:
             --base develop \
             --head main \
             --title "chore(sync): downmerge main into develop" \
-            --body "Automated downmerge pull request: syncs latest changes from \`main\` (hotfixes, releases) into \`develop\`."
+            --body "Automated downmerge pull request: syncs hotfix code changes from \`main\` into \`develop\`."
