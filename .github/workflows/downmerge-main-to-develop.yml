@@ -1,0 +1,57 @@
+name: Downmerge Main to Develop
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  downmerge:
+    name: Downmerge Main to Develop
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Check if develop is behind main
+        id: check_sync
+        run: |
+          git fetch origin develop
+          BEHIND_COUNT=$(git rev-list --count origin/develop..origin/main)
+          echo "Commits in main missing from develop: $BEHIND_COUNT"
+          if [ "$BEHIND_COUNT" -gt 0 ]; then
+            echo "needs_sync=true" >> $GITHUB_OUTPUT
+          else
+            echo "needs_sync=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check for existing downmerge PR
+        if: steps.check_sync.outputs.needs_sync == 'true'
+        id: check_pr
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          EXISTING_PR=$(gh pr list --base develop --head main --state open --json number --jq '.[0].number')
+          if [ -n "$EXISTING_PR" ]; then
+            echo "Existing open downmerge PR detected: #$EXISTING_PR"
+            echo "has_open_pr=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_open_pr=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Downmerge PR (main -> develop)
+        if: steps.check_sync.outputs.needs_sync == 'true' && steps.check_pr.outputs.has_open_pr == 'false'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr create \
+            --base develop \
+            --head main \
+            --title "chore(sync): downmerge main into develop" \
+            --body "Automated downmerge pull request: syncs latest changes from \`main\` (hotfixes, releases) into \`develop\`."
