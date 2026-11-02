@@ -71,6 +71,9 @@ export class ChladniCanvas {
   private camera: THREE.PerspectiveCamera | null = null;
   private animationId: number | null = null;
   private resizeObserver: ResizeObserver | null = null;
+  private resizeDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+  private lastWidth = 0;
+  private lastHeight = 0;
 
   private mode: VisualizerMode = "particles";
   private isPaused = false;
@@ -112,10 +115,55 @@ export class ChladniCanvas {
 
   // Particle System
   private particleCount = 12000;
+  private activeParticleCount = 12000;
   private particlePoints: THREE.Points | null = null;
   private particlePositions: Float32Array | null = null;
   private particleVelocities: Float32Array | null = null;
   private particleOriginalPositions: Float32Array | null = null;
+
+  // Zero-Allocation Palette Color Scratchpad
+  private scratchColor = new THREE.Color();
+  private scratchColor2 = new THREE.Color();
+  private scratchColor3 = new THREE.Color();
+  private scratchBarCol = new THREE.Color();
+  private dummyVoxel = new THREE.Object3D();
+  private tunnelSortedIndices: number[] = Array.from({ length: 24 }, (_, i) => i);
+  private wireSortedRings: number[] = Array.from({ length: 30 }, (_, i) => i);
+
+  // Static color constants for inner-loop rendering (zero heap allocations)
+  private static readonly COLOR_VOXEL_KICK = new THREE.Color(1.0, 0.4, 0.2);
+  private static readonly COLOR_VOXEL_PEAK = new THREE.Color(1.0, 0.95, 0.5);
+  private static readonly COLOR_DARK_SMOKE = new THREE.Color(0.20, 0.16, 0.26);
+  private static readonly COLOR_DARK_TONE = new THREE.Color(0.25, 0.2, 0.35);
+  private static readonly COLOR_DARK_PUFF = new THREE.Color(0.25, 0.22, 0.3);
+
+  private static readonly PAL_MONO_0 = new THREE.Color(0.88, 0.88, 0.88);
+  private static readonly PAL_MONO_1 = new THREE.Color(1.0, 0.2, 0.2);
+  private static readonly PAL_AMBER_0 = new THREE.Color(0.85, 0.40, 0.0);
+  private static readonly PAL_AMBER_1 = new THREE.Color(1.0, 0.70, 0.0);
+  private static readonly PAL_AMBER_2 = new THREE.Color(1.0, 0.92, 0.45);
+  private static readonly PAL_GREEN_0 = new THREE.Color(0.0, 0.55, 0.15);
+  private static readonly PAL_GREEN_1 = new THREE.Color(0.15, 0.95, 0.35);
+  private static readonly PAL_GREEN_2 = new THREE.Color(0.75, 1.0, 0.75);
+  private static readonly PAL_CYBER_0 = new THREE.Color(0.0, 0.30, 0.85);
+  private static readonly PAL_CYBER_1 = new THREE.Color(0.0, 0.80, 1.0);
+  private static readonly PAL_CYBER_2 = new THREE.Color(0.70, 0.98, 1.0);
+  private static readonly PAL_STARK = [
+    new THREE.Color(1.0, 0.08, 0.20),
+    new THREE.Color(1.0, 0.05, 0.78),
+    new THREE.Color(0.55, 0.05, 1.0),
+    new THREE.Color(0.0, 0.90, 1.0),
+    new THREE.Color(0.08, 1.0, 0.32),
+    new THREE.Color(1.0, 0.76, 0.0),
+  ];
+  private static readonly PAL_PASTEL = [
+    new THREE.Color(1.0, 0.52, 0.42),
+    new THREE.Color(0.96, 0.44, 0.76),
+    new THREE.Color(0.68, 0.52, 0.98),
+    new THREE.Color(0.36, 0.70, 0.98),
+    new THREE.Color(0.24, 0.85, 0.65),
+    new THREE.Color(1.0, 0.84, 0.45),
+  ];
 
   // Fluid Mesh
   private fluidMesh: THREE.Mesh | null = null;
@@ -878,63 +926,53 @@ export class ChladniCanvas {
   }
 
   // ═══════════════════════════════════════════════════════════
-  // MULTI-PALETTE SPECTRUM COLOR SAMPLER
+  // MULTI-PALETTE SPECTRUM COLOR SAMPLER (Zero Heap Allocs)
   // ═══════════════════════════════════════════════════════════
 
-  samplePalette(t: number): THREE.Color {
+  samplePalette(t: number, out = this.scratchColor): THREE.Color {
     t = ((t % 1) + 1) % 1;
     if (this.currentPalette === "monochrome") {
       const w = Math.sin(t * Math.PI * 2.0) * 0.5 + 0.5;
-      return new THREE.Color(0.88, 0.88, 0.88).lerp(new THREE.Color(1.0, 0.2, 0.2), w > 0.65 ? 0.6 : 0.0);
+      out.copy(ChladniCanvas.PAL_MONO_0).lerp(ChladniCanvas.PAL_MONO_1, w > 0.65 ? 0.6 : 0.0);
+      return out;
     }
     if (this.currentPalette === "amber_crt") {
-      const c0 = new THREE.Color(0.85, 0.40, 0.0);
-      const c1 = new THREE.Color(1.0, 0.70, 0.0);
-      const c2 = new THREE.Color(1.0, 0.92, 0.45);
-      return t < 0.5 ? c0.clone().lerp(c1, t * 2.0) : c1.clone().lerp(c2, (t - 0.5) * 2.0);
+      if (t < 0.5) {
+        out.copy(ChladniCanvas.PAL_AMBER_0).lerp(ChladniCanvas.PAL_AMBER_1, t * 2.0);
+      } else {
+        out.copy(ChladniCanvas.PAL_AMBER_1).lerp(ChladniCanvas.PAL_AMBER_2, (t - 0.5) * 2.0);
+      }
+      return out;
     }
     if (this.currentPalette === "green_crt") {
-      const c0 = new THREE.Color(0.0, 0.55, 0.15);
-      const c1 = new THREE.Color(0.15, 0.95, 0.35);
-      const c2 = new THREE.Color(0.75, 1.0, 0.75);
-      return t < 0.5 ? c0.clone().lerp(c1, t * 2.0) : c1.clone().lerp(c2, (t - 0.5) * 2.0);
+      if (t < 0.5) {
+        out.copy(ChladniCanvas.PAL_GREEN_0).lerp(ChladniCanvas.PAL_GREEN_1, t * 2.0);
+      } else {
+        out.copy(ChladniCanvas.PAL_GREEN_1).lerp(ChladniCanvas.PAL_GREEN_2, (t - 0.5) * 2.0);
+      }
+      return out;
     }
     if (this.currentPalette === "cyber_blue") {
-      const c0 = new THREE.Color(0.0, 0.30, 0.85);
-      const c1 = new THREE.Color(0.0, 0.80, 1.0);
-      const c2 = new THREE.Color(0.70, 0.98, 1.0);
-      return t < 0.5 ? c0.clone().lerp(c1, t * 2.0) : c1.clone().lerp(c2, (t - 0.5) * 2.0);
+      if (t < 0.5) {
+        out.copy(ChladniCanvas.PAL_CYBER_0).lerp(ChladniCanvas.PAL_CYBER_1, t * 2.0);
+      } else {
+        out.copy(ChladniCanvas.PAL_CYBER_1).lerp(ChladniCanvas.PAL_CYBER_2, (t - 0.5) * 2.0);
+      }
+      return out;
     }
     if (this.currentPalette === "stark") {
-      // Stark Chromatic Spectrum (high saturation, high contrast)
-      const c0 = new THREE.Color(1.0, 0.08, 0.20); // Stark Crimson Red
-      const c1 = new THREE.Color(1.0, 0.05, 0.78); // Hot Electric Magenta
-      const c2 = new THREE.Color(0.55, 0.05, 1.0);  // Deep Laser Violet
-      const c3 = new THREE.Color(0.0, 0.90, 1.0);   // Electric Stark Cyan
-      const c4 = new THREE.Color(0.08, 1.0, 0.32);  // Acid Neon Green
-      const c5 = new THREE.Color(1.0, 0.76, 0.0);   // Intense Pure Amber Gold
-
       const seg = t * 5.0;
-      if (seg < 1.0) return c0.clone().lerp(c1, seg);
-      if (seg < 2.0) return c1.clone().lerp(c2, seg - 1.0);
-      if (seg < 3.0) return c2.clone().lerp(c3, seg - 2.0);
-      if (seg < 4.0) return c3.clone().lerp(c4, seg - 3.0);
-      return c4.clone().lerp(c5, seg - 4.0);
+      const idx = Math.min(4, Math.floor(seg));
+      const frac = seg - idx;
+      out.copy(ChladniCanvas.PAL_STARK[idx]).lerp(ChladniCanvas.PAL_STARK[idx + 1], frac);
+      return out;
     }
-    // Vibrant Pastel Spectrum (Coral, Rose, Lavender, Sky, Mint, Gold)
-    const c0 = new THREE.Color(1.0, 0.52, 0.42); // Coral
-    const c1 = new THREE.Color(0.96, 0.44, 0.76); // Rose
-    const c2 = new THREE.Color(0.68, 0.52, 0.98); // Lavender
-    const c3 = new THREE.Color(0.36, 0.70, 0.98); // Sky
-    const c4 = new THREE.Color(0.24, 0.85, 0.65); // Mint
-    const c5 = new THREE.Color(1.0, 0.84, 0.45); // Amber Gold
 
     const seg = t * 5.0;
-    if (seg < 1.0) return c0.clone().lerp(c1, seg);
-    if (seg < 2.0) return c1.clone().lerp(c2, seg - 1.0);
-    if (seg < 3.0) return c2.clone().lerp(c3, seg - 2.0);
-    if (seg < 4.0) return c3.clone().lerp(c4, seg - 3.0);
-    return c4.clone().lerp(c5, seg - 4.0);
+    const idx = Math.min(4, Math.floor(seg));
+    const frac = seg - idx;
+    out.copy(ChladniCanvas.PAL_PASTEL[idx]).lerp(ChladniCanvas.PAL_PASTEL[idx + 1], frac);
+    return out;
   }
 
   private samplePastelSpectrum(t: number): THREE.Color {
@@ -1107,16 +1145,16 @@ export class ChladniCanvas {
     const innerR = 0.29 * breath;
     const maxExcursion = 0.58 * breath;
 
-    // Dynamic palette-aware harmonic colors
-    const colBase = this.samplePalette(0.05);
-    const colPeak = this.samplePalette(0.92);
-    const colMid = this.samplePalette(0.48);
+    // Dynamic palette-aware harmonic colors (using dedicated scratch buffers)
+    const colBase = this.samplePalette(0.05, this.scratchColor);
+    const colPeak = this.samplePalette(0.92, this.scratchColor2);
+    const colMid = this.samplePalette(0.48, this.scratchColor3);
 
     if (this.radarPeakLine) {
       (this.radarPeakLine.material as THREE.LineBasicMaterial).color.copy(colPeak);
     }
     if (this.radarSweepLine) {
-      (this.radarSweepLine.material as THREE.LineBasicMaterial).color.copy(this.samplePalette(0.68));
+      (this.radarSweepLine.material as THREE.LineBasicMaterial).color.copy(this.samplePalette(0.68, this.scratchBarCol));
     }
 
     for (let b = 0; b < barCount; b++) {
@@ -1156,11 +1194,11 @@ export class ChladniCanvas {
       bPos[idx + 4] = sinT * rOuter;
       bPos[idx + 5] = 0;
 
-      // Dynamic color: transition smoothly across palette spectrum with energy
+      // Dynamic color: transition smoothly across palette spectrum with energy (zero-alloc)
       const normH = Math.min(1.0, barH / (maxExcursion * 0.8));
-      const barCol = colBase.clone().lerp(normH > 0.5 ? colPeak : colMid, normH);
+      this.scratchBarCol.copy(colBase).lerp(normH > 0.5 ? colPeak : colMid, normH);
       bCols[idx] = colBase.r; bCols[idx + 1] = colBase.g; bCols[idx + 2] = colBase.b;
-      bCols[idx + 3] = barCol.r; bCols[idx + 4] = barCol.g; bCols[idx + 5] = barCol.b;
+      bCols[idx + 3] = this.scratchBarCol.r; bCols[idx + 4] = this.scratchBarCol.g; bCols[idx + 5] = this.scratchBarCol.b;
 
       // Peak tick (tangential tick at rPeak)
       const tickSpan = 0.016;
@@ -1544,7 +1582,7 @@ export class ChladniCanvas {
       this.freqProvider(this.freqDataBuffer);
     }
 
-    const dummy = new THREE.Object3D();
+    const dummy = this.dummyVoxel;
     const breath = this.currentBreathScale;
     const amp = this.uAmplitude;
 
@@ -1583,20 +1621,20 @@ export class ChladniCanvas {
         dummy.updateMatrix();
         this.voxelCapMesh.setMatrixAt(idx, dummy.matrix);
 
-        // Dynamic palette-aware color gradient from center outwards
+        // Dynamic palette-aware color gradient from center outwards (zero heap allocs)
         const colorRatio = (distCenter * 0.75 + time * 0.03 + (rawAmp * 0.25)) % 1.0;
-        const baseColor = this.samplePalette(colorRatio);
+        const baseColor = this.samplePalette(colorRatio, this.scratchColor);
         if (targetHeight > 0.8) {
-          baseColor.lerp(new THREE.Color(1.0, 0.4, 0.2), 0.35); // Accent kick
+          baseColor.lerp(ChladniCanvas.COLOR_VOXEL_KICK, 0.35); // Accent kick
         }
         this.voxelMesh.setColorAt(idx, baseColor);
 
-        // Dynamic multi-hued cap color matching active palette & audio resonance
+        // Dynamic multi-hued cap color matching active palette & audio resonance (zero heap allocs)
         const capPhase = (colorRatio + 0.28 + targetHeight * 0.3) % 1.0;
-        const capColor = this.samplePalette(capPhase);
+        const capColor = this.samplePalette(capPhase, this.scratchColor2);
         capColor.multiplyScalar(1.35); // Enhanced luminosity & vibrance for floating cap lights
         if (targetHeight > 0.6) {
-          capColor.lerp(new THREE.Color(1.0, 0.95, 0.5), 0.4); // Golden apex peak flash
+          capColor.lerp(ChladniCanvas.COLOR_VOXEL_PEAK, 0.4); // Golden apex peak flash
         }
         this.voxelCapMesh.setColorAt(idx, capColor);
       }
@@ -1829,9 +1867,6 @@ export class ChladniCanvas {
     // Forward speed along Z axis
     const speed = (5.5 + amp * 4.0) * (this.breathPhase === "exhale" ? 1.4 : 1.0);
 
-    // Track vertex positions for connecting ribs
-    const ringCoords: [number, number, number][][] = [];
-
     for (let k = 0; k < ringCount; k++) {
       // Advance ring along Z toward camera
       this.tunnelRingZ[k] += speed * delta;
@@ -1850,8 +1885,6 @@ export class ChladniCanvas {
       // Depth attenuation: rings far away fade gracefully
       const depthFactor = Math.max(0.15, Math.min(1.0, (z + 14.0) / 16.5));
       (line.material as THREE.LineBasicMaterial).opacity = depthFactor * 0.95;
-
-      const ringV: [number, number, number][] = [];
 
       for (let i = 0; i < segsPerRing; i++) {
         const theta = (i / segsPerRing) * Math.PI * 2.0;
@@ -1877,11 +1910,8 @@ export class ChladniCanvas {
           col[idx + 1] = c.g * depthFactor;
           col[idx + 2] = c.b * depthFactor;
         }
-
-        ringV.push([x, y, z]);
       }
 
-      ringCoords.push(ringV);
       const posAttr = line.geometry.getAttribute("position") as THREE.BufferAttribute;
       posAttr.needsUpdate = true;
       const colAttr = line.geometry.getAttribute("color") as THREE.BufferAttribute;
@@ -1890,36 +1920,34 @@ export class ChladniCanvas {
 
     // Update Longitudinal Radiating Ribs
     let ribIdx = 0;
-    // Sort rings by Z so ribs connect in topological order
-    const sortedIndices = Array.from({ length: ringCount }, (_, i) => i)
-      .sort((a, b) => this.tunnelRingZ[a] - this.tunnelRingZ[b]);
+    // Sort rings by Z so ribs connect in topological order (using pre-allocated index buffer)
+    this.tunnelSortedIndices.sort((a, b) => this.tunnelRingZ[a] - this.tunnelRingZ[b]);
 
     for (let s = 0; s < ringCount - 1; s++) {
-      const k1 = sortedIndices[s];
-      const k2 = sortedIndices[s + 1];
+      const k1 = this.tunnelSortedIndices[s];
+      const k2 = this.tunnelSortedIndices[s + 1];
       const z1 = this.tunnelRingZ[k1];
       const z2 = this.tunnelRingZ[k2];
 
       // Avoid connecting rings across the wrap boundary
       if (Math.abs(z2 - z1) > 2.5) continue;
 
-      const v1 = ringCoords[k1];
-      const v2 = ringCoords[k2];
+      const pos1 = this.tunnelRingPos[k1];
+      const pos2 = this.tunnelRingPos[k2];
       const depth1 = Math.max(0.15, Math.min(1.0, (z1 + 14.0) / 16.5));
       const depth2 = Math.max(0.15, Math.min(1.0, (z2 + 14.0) / 16.5));
 
       for (let i = 0; i < segsPerRing; i++) {
-        const p1 = v1[i];
-        const p2 = v2[i];
+        const vIdx = i * 3;
         const c = this.tunnelRibColors[i];
 
-        this.tunnelRibsPos[ribIdx]     = p1[0];
-        this.tunnelRibsPos[ribIdx + 1] = p1[1];
-        this.tunnelRibsPos[ribIdx + 2] = p1[2];
+        this.tunnelRibsPos[ribIdx]     = pos1[vIdx];
+        this.tunnelRibsPos[ribIdx + 1] = pos1[vIdx + 1];
+        this.tunnelRibsPos[ribIdx + 2] = pos1[vIdx + 2];
 
-        this.tunnelRibsPos[ribIdx + 3] = p2[0];
-        this.tunnelRibsPos[ribIdx + 4] = p2[1];
-        this.tunnelRibsPos[ribIdx + 5] = p2[2];
+        this.tunnelRibsPos[ribIdx + 3] = pos2[vIdx];
+        this.tunnelRibsPos[ribIdx + 4] = pos2[vIdx + 1];
+        this.tunnelRibsPos[ribIdx + 5] = pos2[vIdx + 2];
 
         if (c) {
           this.tunnelRibsCol[ribIdx]     = c.r * depth1;
@@ -2238,9 +2266,6 @@ export class ChladniCanvas {
       }
     }
 
-    // Ring vertex coordinates store for wire conduits
-    const ringCoords: [number, number, number][][] = [];
-
     // Update Rings
     for (let r = 0; r < ringCount; r++) {
       const z = this.wireRingZ[r];
@@ -2254,8 +2279,7 @@ export class ChladniCanvas {
       const posAttr = ringLine.geometry.getAttribute("position") as THREE.BufferAttribute;
       const pos = posAttr.array as Float32Array;
 
-      const ringV: [number, number, number][] = [];
-      const palColor = this.samplePalette((zNorm + time * 0.05) % 1.0);
+      const palColor = this.samplePalette((zNorm + time * 0.05) % 1.0, this.scratchColor);
       (ringLine.material as THREE.LineBasicMaterial).color.copy(palColor);
 
       for (let s = 0; s < sides; s++) {
@@ -2271,8 +2295,6 @@ export class ChladniCanvas {
         pos[s * 3] = x;
         pos[s * 3 + 1] = y;
         pos[s * 3 + 2] = z;
-
-        ringV.push([x, y, z]);
       }
       // Close loop
       pos[sides * 3] = pos[0];
@@ -2280,43 +2302,40 @@ export class ChladniCanvas {
       pos[sides * 3 + 2] = pos[2];
 
       posAttr.needsUpdate = true;
-      ringCoords.push(ringV);
     }
 
-    // Connect Longitudinal Conduits and Lattice Braces in Z-sorted order
-    const sortedRings = Array.from({ length: ringCount }, (_, i) => i)
-      .sort((a, b) => this.wireRingZ[a] - this.wireRingZ[b]);
+    // Connect Longitudinal Conduits and Lattice Braces in Z-sorted order (using pre-allocated buffer & zero-alloc array indexing)
+    this.wireSortedRings.sort((a, b) => this.wireRingZ[a] - this.wireRingZ[b]);
 
     let cIdx = 0;
     let lIdx = 0;
 
     for (let i = 0; i < ringCount - 1; i++) {
-      const r1 = sortedRings[i];
-      const r2 = sortedRings[i + 1];
+      const r1 = this.wireSortedRings[i];
+      const r2 = this.wireSortedRings[i + 1];
       const z1 = this.wireRingZ[r1];
       const z2 = this.wireRingZ[r2];
 
       // Avoid connecting rings across boundary wrap jump
       if (Math.abs(z2 - z1) > 2.5) continue;
 
-      const v1 = ringCoords[r1];
-      const v2 = ringCoords[r2];
+      const pos1 = (this.wireRings[r1].geometry.getAttribute("position") as THREE.BufferAttribute).array as Float32Array;
+      const pos2 = (this.wireRings[r2].geometry.getAttribute("position") as THREE.BufferAttribute).array as Float32Array;
 
       for (let s = 0; s < sides; s++) {
-        const p1 = v1[s];
-        const p2 = v2[s];
-        const p2Next = v2[(s + 1) % sides];
+        const sIdx = s * 3;
+        const nextSIdx = ((s + 1) % sides) * 3;
 
         // Conduit line (parallel wire)
-        this.wireConduitsPos[cIdx] = p1[0];
-        this.wireConduitsPos[cIdx + 1] = p1[1];
-        this.wireConduitsPos[cIdx + 2] = p1[2];
-        this.wireConduitsPos[cIdx + 3] = p2[0];
-        this.wireConduitsPos[cIdx + 4] = p2[1];
-        this.wireConduitsPos[cIdx + 5] = p2[2];
+        this.wireConduitsPos[cIdx]     = pos1[sIdx];
+        this.wireConduitsPos[cIdx + 1] = pos1[sIdx + 1];
+        this.wireConduitsPos[cIdx + 2] = pos1[sIdx + 2];
+        this.wireConduitsPos[cIdx + 3] = pos2[sIdx];
+        this.wireConduitsPos[cIdx + 4] = pos2[sIdx + 1];
+        this.wireConduitsPos[cIdx + 5] = pos2[sIdx + 2];
 
         // Multi-chromatic neon wire conduits matching active palette
-        const wireCol = this.samplePalette((s / sides + time * 0.03) % 1.0);
+        const wireCol = this.samplePalette((s / sides + time * 0.03) % 1.0, this.scratchBarCol);
         const depth1 = Math.max(0.12, Math.min(1.0, (z1 + 15.0) / 16.0));
         const depth2 = Math.max(0.12, Math.min(1.0, (z2 + 15.0) / 16.0));
 
@@ -2331,12 +2350,12 @@ export class ChladniCanvas {
         cIdx += 6;
 
         // Diagonal cyber lattice brace
-        this.wireLatticePos[lIdx] = p1[0];
-        this.wireLatticePos[lIdx + 1] = p1[1];
-        this.wireLatticePos[lIdx + 2] = p1[2];
-        this.wireLatticePos[lIdx + 3] = p2Next[0];
-        this.wireLatticePos[lIdx + 4] = p2Next[1];
-        this.wireLatticePos[lIdx + 5] = p2Next[2];
+        this.wireLatticePos[lIdx]     = pos1[sIdx];
+        this.wireLatticePos[lIdx + 1] = pos1[sIdx + 1];
+        this.wireLatticePos[lIdx + 2] = pos1[sIdx + 2];
+        this.wireLatticePos[lIdx + 3] = pos2[nextSIdx];
+        this.wireLatticePos[lIdx + 4] = pos2[nextSIdx + 1];
+        this.wireLatticePos[lIdx + 5] = pos2[nextSIdx + 2];
         lIdx += 6;
       }
     }
@@ -2609,9 +2628,9 @@ export class ChladniCanvas {
         // Slight dispersion as smoke dissipates: puff expands slightly
         const dispersion = 1.0 + u * 0.50 + bass * 0.40;
 
-        // Sample palette color for this wisp
-        const palColor = this.samplePalette((wisp.paletteOffset + time * 0.03) % 1.0);
-        const palAccent = this.samplePalette((wisp.paletteOffset + 0.35) % 1.0);
+        // Sample palette color for this wisp (zero-alloc)
+        const palColor = this.samplePalette((wisp.paletteOffset + time * 0.03) % 1.0, this.scratchColor);
+        const palAccent = this.samplePalette((wisp.paletteOffset + 0.35) % 1.0, this.scratchColor2);
 
         // Form the short spiral curve
         for (let s = 0; s < segCount; s++) {
@@ -2641,20 +2660,19 @@ export class ChladniCanvas {
           const tipFalloff = Math.sin((1.0 - progressAlongCurl * 0.35) * Math.PI * 0.85);
           const finalAlpha = fade * tipFalloff * (0.65 + highs * 0.30 + bass * 0.20);
 
-          const c = palColor.clone().lerp(palAccent, progressAlongCurl * 0.5);
+          this.scratchBarCol.copy(palColor).lerp(palAccent, progressAlongCurl * 0.5);
 
           if (!isDark) {
-            // Main deck (white background): rich deep pigment so smoke is clearly visible
-            const darkSmoke = new THREE.Color(0.20, 0.16, 0.26);
-            c.lerp(darkSmoke, 0.45);
-            col[pIdx] = c.r * (0.55 + 0.45 * (1.0 - finalAlpha));
-            col[pIdx + 1] = c.g * (0.55 + 0.45 * (1.0 - finalAlpha));
-            col[pIdx + 2] = c.b * (0.55 + 0.45 * (1.0 - finalAlpha));
+            // Main deck (white background): rich deep pigment so smoke is clearly visible (zero-alloc)
+            this.scratchBarCol.lerp(ChladniCanvas.COLOR_DARK_SMOKE, 0.45);
+            col[pIdx] = this.scratchBarCol.r * (0.55 + 0.45 * (1.0 - finalAlpha));
+            col[pIdx + 1] = this.scratchBarCol.g * (0.55 + 0.45 * (1.0 - finalAlpha));
+            col[pIdx + 2] = this.scratchBarCol.b * (0.55 + 0.45 * (1.0 - finalAlpha));
           } else {
             // Theater mode (dark background): luminous glowing smoke
-            col[pIdx] = c.r * finalAlpha * beatPulse;
-            col[pIdx + 1] = c.g * finalAlpha * beatPulse;
-            col[pIdx + 2] = c.b * finalAlpha * beatPulse;
+            col[pIdx] = this.scratchBarCol.r * finalAlpha * beatPulse;
+            col[pIdx + 1] = this.scratchBarCol.g * finalAlpha * beatPulse;
+            col[pIdx + 2] = this.scratchBarCol.b * finalAlpha * beatPulse;
           }
         }
       }
@@ -2691,13 +2709,12 @@ export class ChladniCanvas {
         pos[idx + 1] += vel[idx + 1] * breath;
         pos[idx + 2] += vel[idx + 2] * breath;
 
-        const pCol = this.samplePalette((i / this.etherealParticleCount + time * 0.06) % 1.0);
+        const pCol = this.samplePalette((i / this.etherealParticleCount + time * 0.06) % 1.0, this.scratchColor);
         const shimmer = Math.sin(life[i] * Math.PI) * (0.55 + highs * 0.55);
 
         if (!isDark) {
-          // On white background: deep visible particles
-          const darkTone = new THREE.Color(0.25, 0.2, 0.35);
-          pCol.lerp(darkTone, 0.45);
+          // On white background: deep visible particles (zero-alloc)
+          pCol.lerp(ChladniCanvas.COLOR_DARK_TONE, 0.45);
           col[idx] = pCol.r * 0.75;
           col[idx + 1] = pCol.g * 0.75;
           col[idx + 2] = pCol.b * 0.75;
@@ -2733,11 +2750,11 @@ export class ChladniCanvas {
         pos[idx + 1] += (0.0015 + bass * 0.003) * breath;
         pos[idx + 2] += Math.cos(pos[idx] * 1.4 + time * 0.3) * 0.0008 * breath;
 
-        const puffCol = this.samplePalette((i / this.etherealSmokeCount) % 1.0);
+        const puffCol = this.samplePalette((i / this.etherealSmokeCount) % 1.0, this.scratchColor);
         const puffAlpha = Math.sin(life[i] * Math.PI) * (0.18 + mids * 0.22);
 
         if (!isDark) {
-          puffCol.lerp(new THREE.Color(0.25, 0.22, 0.3), 0.4);
+          puffCol.lerp(ChladniCanvas.COLOR_DARK_PUFF, 0.4);
           col[idx] = puffCol.r * 0.75;
           col[idx + 1] = puffCol.g * 0.75;
           col[idx + 2] = puffCol.b * 0.75;
@@ -2773,11 +2790,10 @@ export class ChladniCanvas {
   private updateParticles(delta: number): void {
     if (!this.particlePositions || !this.particleVelocities || !this.particlePoints) return;
 
-    const count = this.particleCount;
+    const count = this.activeParticleCount;
     const n = this.uN;
     const m = this.uM;
     const amp = this.uAmplitude;
-    const eps = 0.012;
 
     // Smooth, gradual target speed (scaled down so particles glide like silk)
     const baseSpeed = (this.breathPhase === "exhale" ? 0.32 : 0.12) * Math.max(0.4, amp);
@@ -2816,10 +2832,24 @@ export class ChladniCanvas {
         vy -= (y / rad) * 0.055 * delta;
       }
 
-      // 3. Numerical gradient of Chladni function
-      const val = this.chladni(x, y, n, m);
-      const gradX = (this.chladni(x + eps, y, n, m) - val) / eps;
-      const gradY = (this.chladni(x, y + eps, n, m) - val) / eps;
+      // 3. Exact analytic gradient of Chladni function (eliminates 12 trig calls & finite difference error)
+      const nx = n * Math.PI * x;
+      const my = m * Math.PI * y;
+      const mx = m * Math.PI * x;
+      const ny = n * Math.PI * y;
+
+      const snx = Math.sin(nx);
+      const cnx = Math.cos(nx);
+      const smy = Math.sin(my);
+      const cmy = Math.cos(my);
+      const smx = Math.sin(mx);
+      const cmx = Math.cos(mx);
+      const sny = Math.sin(ny);
+      const cny = Math.cos(ny);
+
+      const val = snx * smy - smx * sny;
+      const gradX = Math.PI * (n * cnx * smy - m * cmx * sny);
+      const gradY = Math.PI * (m * snx * cmy - n * smx * cny);
       const gLen = Math.sqrt(gradX * gradX + gradY * gradY) + 0.001;
 
       // Normalized gradient steering: migrate down gradient toward nodal zero lines (val = 0)
@@ -2863,10 +2893,25 @@ export class ChladniCanvas {
     const width = this.container.clientWidth;
     const height = this.container.clientHeight;
     if (width === 0 || height === 0) return;
+    if (width === this.lastWidth && height === this.lastHeight) return;
 
-    this.camera.aspect = width / height;
-    this.camera.updateProjectionMatrix();
-    this.renderer.setSize(width, height);
+    if (this.resizeDebounceTimer) {
+      clearTimeout(this.resizeDebounceTimer);
+    }
+
+    this.resizeDebounceTimer = setTimeout(() => {
+      this.resizeDebounceTimer = null;
+      if (!this.container || !this.renderer || !this.camera) return;
+      const w = this.container.clientWidth;
+      const h = this.container.clientHeight;
+      if (w === 0 || h === 0 || (w === this.lastWidth && h === this.lastHeight)) return;
+
+      this.lastWidth = w;
+      this.lastHeight = h;
+      this.camera.aspect = w / h;
+      this.camera.updateProjectionMatrix();
+      this.renderer.setSize(w, h);
+    }, 80);
   }
 
   private animate = (): void => {
@@ -3192,8 +3237,9 @@ export class ChladniCanvas {
       high: Math.round(maxCount * 0.85),
       ultra: maxCount,
     };
+    this.activeParticleCount = countMap[detail] || maxCount;
     if (this.particlePoints) {
-      this.particlePoints.geometry.setDrawRange(0, countMap[detail] || maxCount);
+      this.particlePoints.geometry.setDrawRange(0, this.activeParticleCount);
     }
     // Dynamic stream line density for Torus Vortex
     this.torusStreamlines.forEach((loop, idx) => {
@@ -3333,20 +3379,45 @@ export class ChladniCanvas {
 
   dispose(): void {
     this.pause();
+    if (this.resizeDebounceTimer) {
+      clearTimeout(this.resizeDebounceTimer);
+      this.resizeDebounceTimer = null;
+    }
     this.resizeObserver?.disconnect();
     this.resizeObserver = null;
 
-    if (this.particlePoints) {
-      this.particlePoints.geometry.dispose();
-      (this.particlePoints.material as THREE.Material).dispose();
-      this.particlePoints = null;
+    // Traverse and deeply dispose all 11 visualizer engine geometries & materials
+    if (this.scene) {
+      this.scene.traverse((obj: any) => {
+        if (obj.geometry) {
+          obj.geometry.dispose();
+        }
+        if (obj.material) {
+          if (Array.isArray(obj.material)) {
+            obj.material.forEach((mat: any) => mat.dispose());
+          } else {
+            obj.material.dispose();
+          }
+        }
+      });
     }
 
-    if (this.fluidMesh) {
-      this.fluidMesh.geometry.dispose();
-      this.fluidMaterial?.dispose();
-      this.fluidMesh = null;
+    if (this.etherealPuffTexture) {
+      this.etherealPuffTexture.dispose();
+      this.etherealPuffTexture = null;
     }
+
+    this.particlePoints = null;
+    this.fluidMesh = null;
+    this.oscilloGroup = null;
+    this.radarGroup = null;
+    this.waterfallMesh = null;
+    this.torusGroup = null;
+    this.voxelGroup = null;
+    this.tunnelGroup = null;
+    this.digitalScopeGroup = null;
+    this.wireTunnelGroup = null;
+    this.etherealGroup = null;
 
     this.renderer?.dispose();
     if (this.renderer?.domElement.parentElement) {

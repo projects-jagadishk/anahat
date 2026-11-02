@@ -19,7 +19,6 @@
     "core:window:allow-is-fullscreen",
     "core:window:allow-set-size",
     "core:window:allow-set-resizable",
-    "shell:default",
     "dialog:default",
     "dialog:allow-save"
   ]

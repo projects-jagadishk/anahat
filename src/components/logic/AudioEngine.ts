@@ -41,6 +41,7 @@ export class AudioEngine {
   private leftOsc: OscillatorNode | null = null;
   private rightOsc: OscillatorNode | null = null;
   private masterGain: GainNode | null = null;
+  private activeMergerNode: ChannelMergerNode | null = null;
   private isMutedWebAudio = false; // Kept active for AnalyserNode
 
   // Microphone Ingest Subsystem
@@ -83,9 +84,13 @@ export class AudioEngine {
       this.masterGain = this.ctx.createGain();
       this.masterGain.gain.setValueAtTime(this.currentAmplitude, this.ctx.currentTime);
 
-      // Connect internal master gain to analyser AND destination (speakers)
+      // Connect internal master gain to analyser ONLY (for FFT visualization).
+      // Web Audio does NOT connect to destination in Tauri because Rust Rodio
+      // handles hardware audio output. If in browser without Tauri, connect as fallback.
       this.masterGain.connect(this.analyser);
-      this.masterGain.connect(this.ctx.destination);
+      if (typeof window !== "undefined" && !(window as any).__TAURI_INTERNALS__) {
+        this.masterGain.connect(this.ctx.destination);
+      }
       // NOTE: Analyser does NOT connect to destination, preventing any mic audio leakage/feedback
     }
 
@@ -385,6 +390,12 @@ export class AudioEngine {
       this.rightOsc = null;
     }
 
+    // Clean up previous merger node before creating a new one
+    if (this.activeMergerNode) {
+      try { this.activeMergerNode.disconnect(); } catch (_) {}
+      this.activeMergerNode = null;
+    }
+
     if (!this.isPlaying) return;
 
     const leftFreq = waveform === "binaural" ? carrierHz - (offsetHz * 0.5) : carrierHz;
@@ -392,6 +403,7 @@ export class AudioEngine {
 
     // Merger for stereo separation in Web Audio
     const merger = this.ctx.createChannelMerger(2);
+    this.activeMergerNode = merger;
 
     this.leftOsc = this.ctx.createOscillator();
     this.leftOsc.type = "sine";
@@ -481,6 +493,8 @@ export class AudioEngine {
         chimeMaster.connect(this.analyser);
       }
 
+      const nodesToCleanup: AudioNode[] = [chimeMaster];
+
       // 2. Soft Mallet Strike Transient (Lowpass-filtered short impulse)
       const bufferSize = Math.floor(this.ctx.sampleRate * 0.04); // 40ms buffer
       const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
@@ -501,6 +515,7 @@ export class AudioEngine {
       noiseFilter.connect(noiseGain);
       noiseGain.connect(chimeMaster);
       noiseNode.start(now);
+      nodesToCleanup.push(noiseNode, noiseFilter, noiseGain);
 
       // 3. Five Modal Partials of a Tibetan Singing Bowl
       // Partials: Fundamental (1.0), Beating Pair (1.002), Octave overtone (2.01), Metallic 3rd/5th (2.76), Shimmer (3.82)
@@ -523,8 +538,11 @@ export class AudioEngine {
         gain.gain.linearRampToValueAtTime(p.gain, now + 0.015);
         gain.gain.exponentialRampToValueAtTime(0.0001, now + p.decay);
 
+        nodesToCleanup.push(osc, gain);
+
         if (this.ctx.createStereoPanner) {
           const panner = this.ctx.createStereoPanner();
+          nodesToCleanup.push(panner);
           panner.pan.setValueAtTime(p.pan, now);
           osc.connect(gain);
           gain.connect(panner);
@@ -537,6 +555,17 @@ export class AudioEngine {
         osc.start(now);
         osc.stop(now + p.decay + 0.05);
       });
+
+      // Scheduled detachment of transient chime audio graph nodes
+      const maxDecay = Math.max(...partials.map((p) => p.decay));
+      setTimeout(() => {
+        nodesToCleanup.forEach((node) => {
+          try {
+            node.disconnect();
+          } catch (_) {}
+        });
+        nodesToCleanup.length = 0;
+      }, (maxDecay + 0.3) * 1000);
 
       // Trigger visual sine burst callbacks
       for (const cb of this.onChimeCallbacks) {
@@ -597,6 +626,9 @@ export class AudioEngine {
   async play(): Promise<void> {
     this.isPlaying = true;
     this.ensureAudioContext();
+    if (this.ctx && this.ctx.state === "suspended") {
+      try { await this.ctx.resume(); } catch (_) {}
+    }
     if (this.currentParams) {
       this.setPreset(this.currentParams);
     }
@@ -615,9 +647,24 @@ export class AudioEngine {
       try { this.rightOsc.stop(); } catch (_) {}
       this.rightOsc = null;
     }
+    if (this.ctx && this.ctx.state === "running") {
+      try { await this.ctx.suspend(); } catch (_) {}
+    }
     try {
       await invoke("audio_pause");
     } catch (_) {}
+  }
+
+  async suspendAudioContext(): Promise<void> {
+    if (this.ctx && this.ctx.state === "running") {
+      try { await this.ctx.suspend(); } catch (_) {}
+    }
+  }
+
+  async resumeAudioContext(): Promise<void> {
+    if (this.ctx && this.ctx.state === "suspended") {
+      try { await this.ctx.resume(); } catch (_) {}
+    }
   }
 
   async toggle(): Promise<boolean> {

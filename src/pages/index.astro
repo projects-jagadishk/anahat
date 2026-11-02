@@ -3899,6 +3899,58 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
   let currentNoiseType = "brown";
   let currentNoiseRatio = 0.25;
 
+  // Lifecycle & Performance State
+  let isAppVisible = true;
+  let meterRafId: number | null = null;
+  const unlistenFns: Array<() => void> = [];
+
+  function pauseAllVisualizers() {
+    visualizer?.pause();
+    theaterVisualizer?.pause();
+    if (meterRafId !== null) {
+      cancelAnimationFrame(meterRafId);
+      meterRafId = null;
+    }
+    if (!audioEngine.getIsPlaying()) {
+      audioEngine.suspendAudioContext();
+    }
+  }
+
+  function resumeActiveVisualizer() {
+    if (!isAppVisible) return;
+    if (audioEngine.getIsPlaying()) {
+      audioEngine.resumeAudioContext();
+    }
+    const theaterOverlay = document.getElementById("theater-overlay");
+    const isTheaterActive = theaterOverlay?.classList.contains("theater-overlay--active");
+    if (isTheaterActive) {
+      theaterVisualizer?.resume();
+    } else {
+      visualizer?.resume();
+    }
+    scheduleMeterUpdate();
+  }
+
+  function scheduleMeterUpdate() {
+    if (meterRafId !== null || !isAppVisible) return;
+    const telemetryMeterBar = document.getElementById("telemetry-meter-bar");
+    const updateMeter = () => {
+      if (!isAppVisible) {
+        meterRafId = null;
+        return;
+      }
+      if (telemetryMeterBar) {
+        const isMic = audioEngine.getSourceMode() === "mic_ingest";
+        const rms = isMic ? audioEngine.getRMSLevel() : (audioEngine.isPlaying() ? 0.35 : 0.0);
+        const segments = 10;
+        const filled = Math.min(segments, Math.max(0, Math.round(rms * 16)));
+        telemetryMeterBar.textContent = `LEVEL: [${"█".repeat(filled)}${"░".repeat(segments - filled)}]`;
+      }
+      meterRafId = requestAnimationFrame(updateMeter);
+    };
+    meterRafId = requestAnimationFrame(updateMeter);
+  }
+
   // V1.5 Meditation Session State
   let isSessionActive = false;
   let sessionMinutes = 10;
@@ -4487,16 +4539,55 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
   // ═══════════════════════════════════════════════════════════
 
   function wireTrayEvents() {
-    try {
-      listen<boolean>("tray-playback-changed", (event) => {
-        const isPlaying = event.payload;
-        if (isPlaying) {
-          audioEngine.play();
-        } else {
-          audioEngine.pause();
-        }
+    (async () => {
+      try {
+        const unlistenTray = await listen<boolean>("tray-playback-changed", (event) => {
+          const isPlaying = event.payload;
+          if (isPlaying) {
+            audioEngine.play();
+          } else {
+            audioEngine.pause();
+          }
+        });
+        unlistenFns.push(unlistenTray);
+
+        const unlistenHide = await listen("window-hidden", () => {
+          isAppVisible = false;
+          pauseAllVisualizers();
+        });
+        unlistenFns.push(unlistenHide);
+
+        const unlistenShow = await listen("window-shown", () => {
+          isAppVisible = true;
+          resumeActiveVisualizer();
+        });
+        unlistenFns.push(unlistenShow);
+      } catch (_) {}
+    })();
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) {
+        isAppVisible = false;
+        pauseAllVisualizers();
+      } else {
+        isAppVisible = true;
+        resumeActiveVisualizer();
+      }
+    });
+
+    window.addEventListener("beforeunload", () => {
+      unlistenFns.forEach((unlisten) => {
+        try { unlisten(); } catch (_) {}
       });
-    } catch (_) {}
+      unlistenFns.length = 0;
+      audioEngine.disableMicIngest();
+      if (recInterval) clearInterval(recInterval);
+      if (sessionInterval) clearInterval(sessionInterval);
+      if (randomCycleTimer) clearInterval(randomCycleTimer);
+      cadenceController.destroy();
+      visualizer?.dispose();
+      theaterVisualizer?.dispose();
+    });
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -4508,6 +4599,9 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     const theaterCanvasContainer = document.getElementById("theater-canvas");
 
     theaterOverlay?.classList.add("theater-overlay--active");
+
+    // Suspend main deck visualizer to prevent double rendering & GPU waste
+    visualizer?.pause();
 
     // Mount theater visualizer if not created yet
     if (!theaterVisualizer && theaterCanvasContainer) {
@@ -4570,6 +4664,11 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     const theaterOverlay = document.getElementById("theater-overlay");
     theaterOverlay?.classList.remove("theater-overlay--active");
     theaterVisualizer?.pause();
+
+    // Resume main deck visualizer if app is visible
+    if (isAppVisible) {
+      visualizer?.resume();
+    }
 
     // Restore normal native window bounds
     try {
@@ -4732,6 +4831,7 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     const theaterToastText = document.getElementById("theater-toast-text");
 
     function updateCadenceToast(phase: string, durationSec: number) {
+      if (!isAppVisible) return; // Prevent layout thrashing & forced reflows when backgrounded
       if (activeCadence === "off" || phase === "idle") {
         cadenceToast?.classList.remove("deck__cadence-toast--active");
         theaterCadenceToast?.classList.remove("theater__cadence-toast--active");
@@ -5171,18 +5271,8 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     // Initial state sync
     syncSourceUI(audioEngine.getSourceMode());
 
-    // 60FPS Input Level Meter RAF Loop
-    const updateMeter = () => {
-      if (telemetryMeterBar) {
-        const isMic = audioEngine.getSourceMode() === "mic_ingest";
-        const rms = isMic ? audioEngine.getRMSLevel() : (audioEngine.isPlaying() ? 0.35 : 0.0);
-        const segments = 10;
-        const filled = Math.min(segments, Math.max(0, Math.round(rms * 16)));
-        telemetryMeterBar.textContent = `LEVEL: [${"█".repeat(filled)}${"░".repeat(segments - filled)}]`;
-      }
-      requestAnimationFrame(updateMeter);
-    };
-    requestAnimationFrame(updateMeter);
+    // Managed Input Level Meter RAF Loop (throttles when backgrounded)
+    scheduleMeterUpdate();
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -5276,7 +5366,10 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
   function loadUserPresets(): any[] {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) return JSON.parse(raw);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed.slice(0, 50);
+      }
     } catch (e) {
       console.warn("[UserPresets] Failed to load presets:", e);
     }
@@ -5285,7 +5378,7 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
 
   function saveUserPresets(presets: any[]): void {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(presets));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(presets.slice(0, 50)));
     } catch (e) {
       console.error("[UserPresets] Failed to save presets:", e);
     }
@@ -5334,31 +5427,50 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
       btn.dataset.presetId = preset.id;
       btn.dataset.presetJson = JSON.stringify(preset);
 
-      btn.innerHTML = `
-        <div class="preset-item__meta">
-          <span class="preset-item__code">[${preset.code || `USR-${index + 1}`}]</span>
-          <span class="preset-item__name">${preset.displayName || preset.name}</span>
-          <span class="preset-item__cursor terminal-blink">█</span>
-        </div>
-        <span class="preset-item__hz">${Number(preset.target_hz).toFixed(1)} Hz</span>
-        <div class="user-preset-actions" onclick="event.stopPropagation();">
-          <button class="user-preset-btn" title="Export .anahat profile" type="button" data-idx="${index}">EXP</button>
-          <button class="user-preset-btn" title="Delete preset" type="button" data-del-idx="${index}">✕</button>
-        </div>
-      `;
+      // DOM-constructed elements with textContent to eliminate Stored XSS
+      const metaDiv = document.createElement("div");
+      metaDiv.className = "preset-item__meta";
 
-      btn.addEventListener("click", () => {
-        selectPreset(preset, btn);
-      });
+      const codeSpan = document.createElement("span");
+      codeSpan.className = "preset-item__code";
+      codeSpan.textContent = `[${preset.code || `USR-${index + 1}`}]`;
 
-      const expBtn = btn.querySelector("[data-idx]");
-      expBtn?.addEventListener("click", (e) => {
+      const nameSpan = document.createElement("span");
+      nameSpan.className = "preset-item__name";
+      nameSpan.textContent = preset.displayName || preset.name || "Custom Preset";
+
+      const cursorSpan = document.createElement("span");
+      cursorSpan.className = "preset-item__cursor terminal-blink";
+      cursorSpan.textContent = "█";
+
+      metaDiv.appendChild(codeSpan);
+      metaDiv.appendChild(nameSpan);
+      metaDiv.appendChild(cursorSpan);
+
+      const hzSpan = document.createElement("span");
+      hzSpan.className = "preset-item__hz";
+      hzSpan.textContent = `${Number(preset.target_hz || 0).toFixed(1)} Hz`;
+
+      const actionsDiv = document.createElement("div");
+      actionsDiv.className = "user-preset-actions";
+      actionsDiv.addEventListener("click", (e) => e.stopPropagation());
+
+      const expBtn = document.createElement("button");
+      expBtn.className = "user-preset-btn";
+      expBtn.title = "Export .anahat profile";
+      expBtn.type = "button";
+      expBtn.textContent = "EXP";
+      expBtn.addEventListener("click", (e) => {
         e.stopPropagation();
         exportPresetAsAnahat(preset);
       });
 
-      const delBtn = btn.querySelector("[data-del-idx]");
-      delBtn?.addEventListener("click", (e) => {
+      const delBtn = document.createElement("button");
+      delBtn.className = "user-preset-btn";
+      delBtn.title = "Delete preset";
+      delBtn.type = "button";
+      delBtn.textContent = "✕";
+      delBtn.addEventListener("click", (e) => {
         e.stopPropagation();
         if (confirm(`Delete custom preset "${preset.displayName || preset.name}"?`)) {
           userPresets.splice(index, 1);
@@ -5367,11 +5479,26 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
         }
       });
 
+      actionsDiv.appendChild(expBtn);
+      actionsDiv.appendChild(delBtn);
+
+      btn.appendChild(metaDiv);
+      btn.appendChild(hzSpan);
+      btn.appendChild(actionsDiv);
+
+      btn.addEventListener("click", () => {
+        selectPreset(preset, btn);
+      });
+
       container.appendChild(btn);
     });
   }
 
   function openNewPresetModal(prefill?: any): void {
+    if (userPresets.length >= 50) {
+      alert("Maximum custom preset limit (50) reached. Delete some custom presets before creating new ones.");
+      return;
+    }
     const modal = document.getElementById("modal-new-preset");
     if (!modal) return;
 
@@ -5459,21 +5586,55 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
 
     async function handleImportFile(file: File): Promise<void> {
       try {
-        const text = await file.text();
-        const data = JSON.parse(text);
-        const preset = data.preset || data;
-        if (!preset.target_hz || !preset.name) {
-          alert("Invalid .anahat profile file: missing target_hz or name.");
+        if (userPresets.length >= 50) {
+          alert("Maximum custom preset limit (50) reached. Delete some presets before importing more.");
           return;
         }
 
-        // Assign unique code if collision
-        if (!preset.code || userPresets.some((p) => p.code === preset.code)) {
-          preset.code = `USR-${String(userPresets.length + 1).padStart(3, "0")}`;
+        const text = await file.text();
+        // File size guard (max 100KB for a preset profile)
+        if (text.length > 102400) {
+          alert("File size exceeds 100KB limit for an .anahat profile.");
+          return;
         }
-        preset.era = "User Custom";
 
-        userPresets.push(preset);
+        const data = JSON.parse(text);
+        const rawPreset = data.preset || data;
+        if (!rawPreset || typeof rawPreset !== "object") {
+          alert("Invalid .anahat profile file: expected a JSON object.");
+          return;
+        }
+
+        const targetHz = Number(rawPreset.target_hz);
+        if (!targetHz || isNaN(targetHz) || targetHz <= 0 || !rawPreset.name) {
+          alert("Invalid .anahat profile file: missing valid target_hz or name.");
+          return;
+        }
+
+        // Strictly typed and sanitized preset reconstruction (guards against prototype pollution & XSS)
+        const codeSuffix = String(userPresets.length + 1).padStart(3, "0");
+        const safeCode = rawPreset.code && typeof rawPreset.code === "string" && !userPresets.some((p) => p.code === rawPreset.code)
+          ? rawPreset.code.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 16)
+          : `USR-${codeSuffix}`;
+
+        const safePreset: any = {
+          id: typeof rawPreset.id === "string" ? rawPreset.id.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 64) : `custom-${Date.now()}`,
+          name: String(rawPreset.name || "Custom").slice(0, 64),
+          displayName: String(rawPreset.displayName || rawPreset.name || "Custom").slice(0, 64),
+          code: safeCode,
+          target_hz: Math.max(0.1, Math.min(22000, targetHz)),
+          carrier_hz: Math.max(20, Math.min(20000, Number(rawPreset.carrier_hz) || 200)),
+          offset_hz: Math.max(0, Math.min(100, Number(rawPreset.offset_hz) || 10)),
+          amplitude: Math.max(0, Math.min(1.0, Number(rawPreset.amplitude) || 0.7)),
+          harmonic_n: Math.max(1, Math.min(16, Math.round(Number(rawPreset.harmonic_n) || 3))),
+          harmonic_m: Math.max(1, Math.min(16, Math.round(Number(rawPreset.harmonic_m) || 4))),
+          waveform: ["Binaural", "Isochronic", "Monaural", "Sine"].includes(rawPreset.waveform) ? rawPreset.waveform : "Binaural",
+          noise_type: ["Pink", "Brown", "White", "None"].includes(rawPreset.noise_type) ? rawPreset.noise_type : "Pink",
+          noise_blend_ratio: Math.max(0, Math.min(1.0, Number(rawPreset.noise_blend_ratio) || 0.15)),
+          era: "User Custom",
+        };
+
+        userPresets.push(safePreset);
         saveUserPresets(userPresets);
         renderUserPresets();
 
@@ -5481,12 +5642,12 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
         const container = document.getElementById("user-presets-container");
         const newlyAdded = container?.lastElementChild as HTMLElement;
         if (newlyAdded) {
-          selectPreset(preset, newlyAdded);
+          selectPreset(safePreset, newlyAdded);
         }
 
         const banner = document.getElementById("burst-banner");
         if (banner) {
-          banner.textContent = `[ 📥 PROFILE IMPORTED: ${preset.displayName || preset.name} // ${Number(preset.target_hz).toFixed(1)} HZ ]`;
+          banner.textContent = `[ 📥 PROFILE IMPORTED: ${safePreset.displayName || safePreset.name} // ${Number(safePreset.target_hz).toFixed(1)} HZ ]`;
           banner.classList.add("deck__burst-banner--active");
           setTimeout(() => banner.classList.remove("deck__burst-banner--active"), 2200);
         }
@@ -5537,6 +5698,10 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
     });
 
     btnSave?.addEventListener("click", () => {
+      if (userPresets.length >= 50) {
+        alert("Maximum custom preset limit (50) reached. Delete some custom presets before creating new ones.");
+        return;
+      }
       const newPreset = buildPresetFromInputs();
       userPresets.push(newPreset);
       saveUserPresets(userPresets);
