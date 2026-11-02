@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://www.producthunt.com/@jagadishk"><img src="https://img.shields.io/badge/Product_Hunt-@jagadishkasi-DA552F?style=for-the-badge&logo=product-hunt&logoColor=white" alt="Product Hunt" /></a>
+  <a href="https://www.producthunt.com/products/anahat?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-anahat"><img src="https://img.shields.io/badge/Product_Hunt-@jagadishk-DA552F?style=for-the-badge&logo=product-hunt&logoColor=white" alt="Product Hunt" /></a>
   <a href="https://coff.ee/jagadishk"><img src="https://img.shields.io/badge/Buy_Me_A_Coffee-Support-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black" alt="Buy Me A Coffee" /></a>
   <img src="https://img.shields.io/badge/Release-v1.0.0-FF1433?style=for-the-badge&logoColor=white" alt="Release v1.0.0" />
   <img src="https://img.shields.io/badge/Architecture-Tauri_v2-000000?style=for-the-badge&logo=tauri" alt="Tauri v2" />
@@ -244,4 +244,4 @@ Hi, I'm **Jagadish Kasi** — a Frontend Architect specializing in building enga
 
 Made with 🫨 ☕ ❤️ 🤖 by **Jagadish Kasi**.
 
-_Soli Deo Gloria // Pure Sound, Mathematical Resonance._
+_Solae scientiae gloria. // Pure Sound, Mathematical Resonance._
