@@ -1,7 +1,7 @@
 # Anahat v1.1.0 — Performance, Memory & Security Overhaul
 
-> **Release Tag:** `v1.1.0`  
-> **Previous Release:** `v1.0.0`  
+> **Release Tag:** `v1.2.0`  
+> **Previous Release:** `v1.1.0`  
 > **Scope:** Full-stack systems audit, real-time DSP lock optimization, zero-allocation WebGL rendering, WebKit power management, and Tauri v2 security hardening.
 
 ---
@@ -9,6 +9,7 @@
 ## ⚡ Highlights
 
 Anahat v1.1.0 delivers a comprehensive performance, security, and tactile interactivity upgrade:
+
 - **Zero-Allocation Rendering & DSP:** Eliminates all identified memory leaks and over **200,000 heap allocations per second** in the active visualizer and audio synthesis loops.
 - **Background Resource Suspension:** Suspends WebGL rendering loops, audio synthesis context, and telemetry timers when minimized to the system tray, dropping idle CPU/GPU consumption to baseline zero.
 - **Tactile Canvas Interactivity:** Introduced real-time 3D raycasted click disturbances on the Chladni plate and visualizers—displacing particles with localized kinetic shockwaves that smoothly re-coalesce onto mathematical nodal curves.
