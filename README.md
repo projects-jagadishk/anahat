@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://www.producthunt.com/@jagadishk"><img src="https://img.shields.io/badge/Product_Hunt-@jagadishkasi-DA552F?style=for-the-badge&logo=product-hunt&logoColor=white" alt="Product Hunt" /></a>
+  <a href="https://www.producthunt.com/products/anahat?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-anahat"><img src="https://img.shields.io/badge/Product_Hunt-@jagadishk-DA552F?style=for-the-badge&logo=product-hunt&logoColor=white" alt="Product Hunt" /></a>
   <a href="https://coff.ee/jagadishk"><img src="https://img.shields.io/badge/Buy_Me_A_Coffee-Support-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black" alt="Buy Me A Coffee" /></a>
   <img src="https://img.shields.io/badge/Release-v1.0.0-FF1433?style=for-the-badge&logoColor=white" alt="Release v1.0.0" />
   <img src="https://img.shields.io/badge/Architecture-Tauri_v2-000000?style=for-the-badge&logo=tauri" alt="Tauri v2" />
@@ -232,8 +232,8 @@ Hi, I'm **Jagadish Kasi** — a Frontend Architect specializing in building enga
 
 - **Looking for a Frontend Architect?**  
   I am available for technical architecture consulting, fractional advisory, and building high-impact interactive products that stand out from generic software. Let's connect:
-  - **Product Hunt Profile:** [@jagadishkasi](https://www.producthunt.com/@jagadishk)
-  - **Live Product & Showcase:** [anahat.jagadishk.work](https://anahat.jagadishk.work)
+  - **Work Experience:** [jagadishk.work](https://jagadishk.work)
+  - **Product Hunt Profile:** [@jagadishk](https://www.producthunt.com/@jagadishk)
 - **Support the Project:**  
   If Anahat aids your deep work or you appreciate handcrafted mathematical software without tracking, bloat, or subscriptions, you can fuel future development by buying me a coffee:
   - **Buy Me A Coffee:** [coff.ee/jagadishk](https://coff.ee/jagadishk)
@@ -244,4 +244,4 @@ Hi, I'm **Jagadish Kasi** — a Frontend Architect specializing in building enga
 
 Made with 🫨 ☕ ❤️ 🤖 by **Jagadish Kasi**.
 
-_Soli Deo Gloria // Pure Sound, Mathematical Resonance._
+_Solae scientiae gloria. // Pure Sound, Mathematical Resonance._

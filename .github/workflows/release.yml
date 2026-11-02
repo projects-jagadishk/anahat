@@ -170,23 +170,23 @@ jobs:
         run: |
           VERSION="${{ github.ref_name }}"
           echo "Updating website references for release: $VERSION"
-          
+
           git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@://github.com"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
           # Function to update file and push to a target branch
           update_branch() {
             local branch=$1
             git checkout "$branch"
             git pull origin "$branch"
-            
-            # Apply your changes
-            sed -i -E "s/RELEASE BINARIES \/\/ v[0-9\.]+/RELEASE BINARIES \/\/ $VERSION/g" website/index.html
-            sed -i -E "s/DOWNLOAD ANAHAT v[0-9\.]+/DOWNLOAD ANAHAT $VERSION/g" website/index.html
-            
+
+            # Apply version tag replacements in website/index.html
+            sed -i -E "s/(id=\"release-version-tag\">)[^<]+/\1$VERSION/g" website/index.html
+            sed -i -E "s/(id=\"quick-version-label\">)[^<]+/\1$VERSION/g" website/index.html
+
             git add website/index.html
             if ! git diff --staged --quiet; then
-              # Crucial: We include '[skip downmerge]' in the commit message
+              # Crucial: Include '[skip downmerge] [skip ci]' to prevent triggering downmerge loop
               git commit -m "chore(release): update website version to $VERSION [skip downmerge] [skip ci]"
               git push origin "$branch" || echo "Direct push to $branch blocked by ruleset."
             fi
@@ -196,6 +196,6 @@ jobs:
           echo "Updating main branch..."
           update_branch "main"
 
-          # Update DEVELOP branch instantly
+          # Update DEVELOP branch
           echo "Updating develop branch..."
           update_branch "develop"
