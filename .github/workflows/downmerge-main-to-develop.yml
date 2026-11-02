@@ -19,7 +19,21 @@ jobs:
         with:
           fetch-depth: 0
 
+      # 👈 NEW STEP: Evaluates the commit message before running sync checks
+      - name: Check for skip marker
+        id: check_commit
+        run: |
+          COMMIT_MSG=$(git log -1 --pretty=%B)
+          echo "Latest commit message: $COMMIT_MSG"
+          if [[ "$COMMIT_MSG" == *"[skip downmerge]"* ]]; then
+            echo "Automation bypass detected. Exiting workflow."
+            echo "bypass=true" >> $GITHUB_OUTPUT
+          else
+            echo "bypass=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Check if develop is behind main
+        if: steps.check_commit.outputs.bypass != 'true' # 👈 Condition added
         id: check_sync
         run: |
           git fetch origin develop
@@ -32,7 +46,7 @@ jobs:
           fi
 
       - name: Check for existing downmerge PR
-        if: steps.check_sync.outputs.needs_sync == 'true'
+        if: steps.check_commit.outputs.bypass != 'true' && steps.check_sync.outputs.needs_sync == 'true'
         id: check_pr
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -46,7 +60,7 @@ jobs:
           fi
 
       - name: Create Downmerge PR (main -> develop)
-        if: steps.check_sync.outputs.needs_sync == 'true' && steps.check_pr.outputs.has_open_pr == 'false'
+        if: steps.check_commit.outputs.bypass != 'true' && steps.check_sync.outputs.needs_sync == 'true' && steps.check_pr.outputs.has_open_pr == 'false'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
