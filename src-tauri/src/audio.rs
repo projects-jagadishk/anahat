@@ -13,16 +13,71 @@ pub struct AudioDeviceInfo {
     pub is_default: bool,
 }
 
-/// Thread-safe shared parameters for real-time DSP synthesis
-#[derive(Clone)]
+#[derive(Copy, Clone, PartialEq, Eq, Default, Serialize)]
+#[repr(u8)]
+pub enum WaveformType {
+    #[default]
+    Sine = 0,
+    Binaural = 1,
+    Isochronic = 2,
+}
+
+impl WaveformType {
+    pub fn from_str_lossy(s: &str) -> Self {
+        match s {
+            "binaural" => Self::Binaural,
+            "isochronic" => Self::Isochronic,
+            _ => Self::Sine,
+        }
+    }
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Sine => "sine",
+            Self::Binaural => "binaural",
+            Self::Isochronic => "isochronic",
+        }
+    }
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, Default, Serialize)]
+#[repr(u8)]
+pub enum NoiseType {
+    None = 0,
+    White = 1,
+    Pink = 2,
+    #[default]
+    Brown = 3,
+}
+
+impl NoiseType {
+    pub fn from_str_lossy(s: &str) -> Self {
+        match s {
+            "none" => Self::None,
+            "white" => Self::White,
+            "pink" => Self::Pink,
+            _ => Self::Brown,
+        }
+    }
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::None => "none",
+            Self::White => "white",
+            Self::Pink => "pink",
+            Self::Brown => "brown",
+        }
+    }
+}
+
+/// Thread-safe stack-allocated shared parameters for real-time DSP synthesis (Zero Heap Allocs)
+#[derive(Copy, Clone)]
 pub struct DspParams {
     pub carrier_hz: f32,
     pub offset_hz: f32,
     pub amplitude: f32,
     pub harmonic_n: u32,
     pub harmonic_m: u32,
-    pub waveform: String, // "sine", "binaural", "isochronic"
-    pub noise_type: String, // "none", "white", "pink", "brown"
+    pub waveform: WaveformType,
+    pub noise_type: NoiseType,
     pub noise_blend_ratio: f32, // 0.0 to 1.0
 }
 
@@ -34,8 +89,8 @@ impl Default for DspParams {
             amplitude: 0.7,
             harmonic_n: 3,
             harmonic_m: 4,
-            waveform: "sine".to_string(),
-            noise_type: "brown".to_string(),
+            waveform: WaveformType::Sine,
+            noise_type: NoiseType::Brown,
             noise_blend_ratio: 0.25,
         }
     }
@@ -45,6 +100,8 @@ impl Default for DspParams {
 pub struct NeuroacousticSource {
     sample_rate: u32,
     params: Arc<Mutex<DspParams>>,
+    params_dirty: Arc<AtomicBool>,
+    cached_params: DspParams,
     is_playing: Arc<AtomicBool>,
     is_recording: Arc<AtomicBool>,
     recorded_buffer: Arc<Mutex<Vec<f32>>>,
@@ -78,13 +135,17 @@ impl NeuroacousticSource {
     pub fn new(
         sample_rate: u32,
         params: Arc<Mutex<DspParams>>,
+        params_dirty: Arc<AtomicBool>,
         is_playing: Arc<AtomicBool>,
         is_recording: Arc<AtomicBool>,
         recorded_buffer: Arc<Mutex<Vec<f32>>>,
     ) -> Self {
+        let initial_params = params.lock().map(|g| *g).unwrap_or_default();
         Self {
             sample_rate,
             params,
+            params_dirty,
+            cached_params: initial_params,
             is_playing,
             is_recording,
             recorded_buffer,
@@ -173,11 +234,15 @@ impl Iterator for NeuroacousticSource {
             return Some(0.0);
         }
 
-        let p = match self.params.try_lock() {
-            Ok(guard) => guard.clone(),
-            Err(_) => DspParams::default(),
-        };
+        // Only lock when parameters were modified via IPC (lock-free on steady state)
+        if self.params_dirty.load(Ordering::Relaxed) {
+            if let Ok(guard) = self.params.try_lock() {
+                self.cached_params = *guard; // Bitwise Copy, ZERO heap allocations
+                self.params_dirty.store(false, Ordering::Release);
+            }
+        }
 
+        let p = self.cached_params;
         let sample_rate = self.sample_rate as f64;
         let pi2 = std::f64::consts::TAU;
 
@@ -187,8 +252,8 @@ impl Iterator for NeuroacousticSource {
             let carrier = p.carrier_hz as f64;
             let offset = p.offset_hz as f64;
 
-            let left_hz = match p.waveform.as_str() {
-                "binaural" => carrier - (offset * 0.5),
+            let left_hz = match p.waveform {
+                WaveformType::Binaural => carrier - (offset * 0.5),
                 _ => carrier,
             };
 
@@ -199,7 +264,7 @@ impl Iterator for NeuroacousticSource {
             }
 
             // Isochronic pulse modulation if active
-            let iso_mod = if p.waveform == "isochronic" && offset > 0.0 {
+            let iso_mod = if p.waveform == WaveformType::Isochronic && offset > 0.0 {
                 let mod_wave = (self.sample_clock_iso * pi2).sin() as f32;
                 self.sample_clock_iso += offset / sample_rate;
                 if self.sample_clock_iso >= 1.0 {
@@ -211,11 +276,11 @@ impl Iterator for NeuroacousticSource {
             };
 
             // Noise sample
-            let noise_sample = match p.noise_type.as_str() {
-                "white" => self.next_white_noise(),
-                "pink" => self.next_pink_noise(),
-                "brown" => self.next_brown_noise(),
-                _ => 0.0,
+            let noise_sample = match p.noise_type {
+                NoiseType::White => self.next_white_noise(),
+                NoiseType::Pink => self.next_pink_noise(),
+                NoiseType::Brown => self.next_brown_noise(),
+                NoiseType::None => 0.0,
             };
 
             let tone_gain = p.amplitude * (1.0 - p.noise_blend_ratio) * iso_mod;
@@ -225,20 +290,14 @@ impl Iterator for NeuroacousticSource {
             self.current_left_sample = left;
             self.channel_toggle = 1;
 
-            if self.is_recording.load(Ordering::Relaxed) {
-                if let Ok(mut buf) = self.recorded_buffer.try_lock() {
-                    buf.push(left);
-                }
-            }
-
             Some(left)
         } else {
             // ── Calculate RIGHT channel ──
             let carrier = p.carrier_hz as f64;
             let offset = p.offset_hz as f64;
 
-            let right_hz = match p.waveform.as_str() {
-                "binaural" => carrier + (offset * 0.5),
+            let right_hz = match p.waveform {
+                WaveformType::Binaural => carrier + (offset * 0.5),
                 _ => carrier,
             };
 
@@ -249,17 +308,17 @@ impl Iterator for NeuroacousticSource {
             }
 
             // Isochronic modulation
-            let iso_mod = if p.waveform == "isochronic" && offset > 0.0 {
+            let iso_mod = if p.waveform == WaveformType::Isochronic && offset > 0.0 {
                 (self.sample_clock_iso * pi2).sin().max(0.0) as f32
             } else {
                 1.0
             };
 
-            let noise_sample = match p.noise_type.as_str() {
-                "white" => self.next_white_noise(),
-                "pink" => self.next_pink_noise(),
-                "brown" => self.next_brown_noise(),
-                _ => 0.0,
+            let noise_sample = match p.noise_type {
+                NoiseType::White => self.next_white_noise(),
+                NoiseType::Pink => self.next_pink_noise(),
+                NoiseType::Brown => self.next_brown_noise(),
+                NoiseType::None => 0.0,
             };
 
             let tone_gain = p.amplitude * (1.0 - p.noise_blend_ratio) * iso_mod;
@@ -268,9 +327,14 @@ impl Iterator for NeuroacousticSource {
             let right = ((tone_raw * tone_gain) + (noise_sample * noise_gain)).clamp(-1.0, 1.0);
             self.channel_toggle = 0;
 
+            // Record both interleaved left and right in a single lock (halves lock operations & prevents channel desync)
             if self.is_recording.load(Ordering::Relaxed) {
                 if let Ok(mut buf) = self.recorded_buffer.try_lock() {
-                    buf.push(right);
+                    const MAX_RECORDING_SAMPLES: usize = 48000 * 2 * 3600; // 1-hour safe memory ceiling (~1.38 GB)
+                    if buf.len() + 2 <= MAX_RECORDING_SAMPLES {
+                        buf.push(self.current_left_sample);
+                        buf.push(right);
+                    }
                 }
             }
 
@@ -304,6 +368,7 @@ impl Source for NeuroacousticSource {
 /// The Native Audio Engine managing playback and session recording
 pub struct AudioController {
     pub params: Arc<Mutex<DspParams>>,
+    pub params_dirty: Arc<AtomicBool>,
     pub is_playing: Arc<AtomicBool>,
     pub is_recording: Arc<AtomicBool>,
     pub recorded_buffer: Arc<Mutex<Vec<f32>>>,
@@ -314,9 +379,11 @@ pub struct AudioController {
 impl AudioController {
     pub fn init() -> Result<Self, String> {
         let params = Arc::new(Mutex::new(DspParams::default()));
+        let params_dirty = Arc::new(AtomicBool::new(false));
         let is_playing = Arc::new(AtomicBool::new(false)); // Muted during boot; plays after splash screen loads
         let is_recording = Arc::new(AtomicBool::new(false));
-        let recorded_buffer = Arc::new(Mutex::new(Vec::with_capacity(48000 * 2 * 60))); // 1 min initial cap
+        // Allocate lazily on record start to keep idle memory minimal
+        let recorded_buffer = Arc::new(Mutex::new(Vec::new()));
 
         let default_name = rodio::cpal::default_host()
             .default_output_device()
@@ -329,6 +396,7 @@ impl AudioController {
                 let source = NeuroacousticSource::new(
                     48000,
                     params.clone(),
+                    params_dirty.clone(),
                     is_playing.clone(),
                     is_recording.clone(),
                     recorded_buffer.clone(),
@@ -338,6 +406,7 @@ impl AudioController {
 
                 Ok(Self {
                     params,
+                    params_dirty,
                     is_playing,
                     is_recording,
                     recorded_buffer,
@@ -349,6 +418,7 @@ impl AudioController {
                 eprintln!("[AudioController] Audio device unavailable (headless or restricted): {}", e);
                 Ok(Self {
                     params,
+                    params_dirty,
                     is_playing,
                     is_recording,
                     recorded_buffer,
@@ -407,6 +477,7 @@ impl AudioController {
         let source = NeuroacousticSource::new(
             48000,
             self.params.clone(),
+            self.params_dirty.clone(),
             self.is_playing.clone(),
             self.is_recording.clone(),
             self.recorded_buffer.clone(),
@@ -459,15 +530,17 @@ impl AudioController {
             if let Some(a) = amplitude { p.amplitude = a; }
             if let Some(n) = harmonic_n { p.harmonic_n = n; }
             if let Some(m) = harmonic_m { p.harmonic_m = m; }
-            if let Some(w) = waveform { p.waveform = w; }
-            if let Some(n) = noise_type { p.noise_type = n; }
+            if let Some(w) = waveform { p.waveform = WaveformType::from_str_lossy(&w); }
+            if let Some(n) = noise_type { p.noise_type = NoiseType::from_str_lossy(&n); }
             if let Some(nb) = noise_blend_ratio { p.noise_blend_ratio = nb; }
+            self.params_dirty.store(true, Ordering::Release);
         }
     }
 
     pub fn start_recording(&self) {
         if let Ok(mut buf) = self.recorded_buffer.lock() {
             buf.clear();
+            buf.reserve(48000 * 2 * 30); // 30 sec initial capacity
         }
         self.is_recording.store(true, Ordering::SeqCst);
     }
@@ -475,14 +548,28 @@ impl AudioController {
     pub fn stop_and_save_wav(&self, destination_path: &str) -> Result<usize, String> {
         self.is_recording.store(false, Ordering::SeqCst);
 
+        // ZERO-COPY: Drain buffer out of mutex and free capacity immediately
         let samples = {
-            let buf = self.recorded_buffer.lock().map_err(|e| e.to_string())?;
-            buf.clone()
+            let mut buf = self.recorded_buffer.lock().map_err(|e| e.to_string())?;
+            let drained = std::mem::take(&mut *buf);
+            buf.shrink_to_fit();
+            drained
         };
 
         if samples.is_empty() {
             return Err("Recording buffer is empty.".to_string());
         }
+
+        // Validate destination path and enforce .wav extension
+        let path = std::path::Path::new(destination_path);
+        if destination_path.trim().is_empty() || path.file_name().is_none() {
+            return Err("Invalid destination path for WAV export.".to_string());
+        }
+        let final_path = if path.extension().and_then(|ext| ext.to_str()).map(|ext| ext.eq_ignore_ascii_case("wav")).unwrap_or(false) {
+            path.to_path_buf()
+        } else {
+            path.with_extension("wav")
+        };
 
         let spec = hound::WavSpec {
             channels: 2,
@@ -491,7 +578,7 @@ impl AudioController {
             sample_format: hound::SampleFormat::Int,
         };
 
-        let mut writer = hound::WavWriter::create(destination_path, spec)
+        let mut writer = hound::WavWriter::create(&final_path, spec)
             .map_err(|e| format!("Failed to create WAV file: {}", e))?;
 
         for &sample in &samples {

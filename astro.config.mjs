@@ -9,6 +9,18 @@ export default defineConfig({
     // Ensure proper asset handling for Tauri
     build: {
       target: "esnext",
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes("node_modules/three")) {
+              return "three-vendor";
+            }
+            if (id.includes("node_modules/gsap")) {
+              return "gsap-vendor";
+            }
+          },
+        },
+      },
     },
     // Clear screen disabled for Tauri dev
     clearScreen: false,
