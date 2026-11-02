@@ -190,12 +190,12 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
 
             <span class="deck__toolbar-sep">|</span>
 
-            <!-- 2. Intuitive Audio Ingest Mode: Carrier Tones vs Live Microphone -->
-            <div class="deck__source-wrap" data-tooltip="Audio Source: Generate neuroacoustic carrier tones or capture live room microphone audio (Hotkey: I)">
-              <span class="deck__toolbar-tag">AUDIO:</span>
+            <!-- 2. Intuitive Audio Ingest Mode: Tone Synthesizer vs Live Microphone -->
+            <div class="deck__source-wrap" data-tooltip="Audio Ingest Source: Toggle internal dual-channel tone synthesizer vs external live microphone (Hotkey: I)">
+              <span class="deck__toolbar-tag">SOURCE:</span>
               <div class="deck__source-segmented" id="deck-source-segmented">
-                <button class="source-seg-btn source-seg-btn--active" id="btn-src-dsp" type="button" data-tooltip="Synthesize internal neuroacoustic carrier tones">∿ TONES</button>
-                <button class="source-seg-btn" id="btn-src-mic" type="button" data-tooltip="Capture external live microphone / room acoustics">🎙 MIC</button>
+                <button class="source-seg-btn source-seg-btn--active" id="btn-src-dsp" type="button" data-tooltip="Internal Tone Synthesizer: Synthesizes carrier frequencies, binaural beats, and harmonic ratios">∿ INTERNAL SYNTH</button>
+                <button class="source-seg-btn" id="btn-src-mic" type="button" data-tooltip="Live Microphone Ingest: Visualizes external voice, instruments, or ambient room acoustics with zero audio feedback">🎙 LIVE MIC</button>
               </div>
             </div>
 
@@ -631,8 +631,8 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
 
           <span class="modal-subheading" style="margin-top: 16px;">ACOUSTIC INGEST SOURCE:</span>
           <div class="brutalist-select-box" id="routing-source-select">
-            <div class="brutalist-select-item brutalist-select-item--active" id="routing-src-dsp" data-src="internal_dsp">[X] INTERNAL ALGORITHMIC DSP</div>
-            <div class="brutalist-select-item" id="routing-src-mic" data-src="mic_ingest">[ ] LIVE MICROPHONE / SYSTEM INGEST</div>
+            <div class="brutalist-select-item brutalist-select-item--active" id="routing-src-dsp" data-src="internal_dsp">[X] INTERNAL TONE SYNTH (CARRIER & HARMONICS)</div>
+            <div class="brutalist-select-item" id="routing-src-mic" data-src="mic_ingest">[ ] LIVE MICROPHONE INGEST (ACOUSTIC VISUALIZATION)</div>
           </div>
 
           <span class="modal-subheading" style="margin-top: 20px;">SYNTHESIS BUFFER:</span>
@@ -858,7 +858,7 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
             <div class="info-card">
               <div class="info-card__title">[ AUDIO & APPLICATION ]</div>
               <div class="info-card__desc">
-                <strong>[ I ]</strong> Toggle Audio Source (Internal DSP ↔ Live Mic)<br/>
+                <strong>[ I ]</strong> Toggle Audio Source (Internal Synth ↔ Live Mic)<br/>
                 <strong>[ O ]</strong> Open Hardware Audio Routing Matrix<br/>
                 <strong>[ P ]</strong> Author New Custom Preset (.anahat)<br/>
                 <strong>[ B ]</strong> Toggle Tibetan Singing Bowl Cadence Chimes<br/>
@@ -1001,7 +1001,7 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
             <div class="hotkeys-cat-title">[ AUDIO & SESSIONS ]</div>
             <div class="hotkey-row">
               <span class="hotkey-badge">I</span>
-              <span class="hotkey-desc">Toggle Audio Source (Internal DSP ↔ Live Mic)</span>
+              <span class="hotkey-desc">Toggle Audio Source (Internal Synth ↔ Live Mic)</span>
             </div>
             <div class="hotkey-row">
               <span class="hotkey-badge">O</span>
@@ -5213,21 +5213,21 @@ const initialPreset = presetsData.find((p) => p.code === "PRE-001") || presetsDa
 
       // Theater HUD indicator
       if (theaterSource) {
-        theaterSource.textContent = isMic ? "SRC: MIC INGEST [LIVE]" : "SRC: INTERNAL DSP";
+        theaterSource.textContent = isMic ? "SRC: LIVE MIC [ACOUSTIC INGEST]" : "SRC: INTERNAL SYNTH [TONE GENERATOR]";
         theaterSource.style.color = isMic ? "var(--color-accent-industrial)" : "#AAA";
       }
 
       // Routing Modal
       if (routingSrcDsp && routingSrcMic) {
         if (isMic) {
-          routingSrcDsp.textContent = "[ ] INTERNAL ALGORITHMIC DSP";
+          routingSrcDsp.textContent = "[ ] INTERNAL TONE SYNTH (CARRIER & HARMONICS)";
           routingSrcDsp.classList.remove("brutalist-select-item--active");
-          routingSrcMic.textContent = "[X] LIVE MICROPHONE / SYSTEM INGEST";
+          routingSrcMic.textContent = "[X] LIVE MICROPHONE INGEST (ACOUSTIC VISUALIZATION)";
           routingSrcMic.classList.add("brutalist-select-item--active");
         } else {
-          routingSrcDsp.textContent = "[X] INTERNAL ALGORITHMIC DSP";
+          routingSrcDsp.textContent = "[X] INTERNAL TONE SYNTH (CARRIER & HARMONICS)";
           routingSrcDsp.classList.add("brutalist-select-item--active");
-          routingSrcMic.textContent = "[ ] LIVE MICROPHONE / SYSTEM INGEST";
+          routingSrcMic.textContent = "[ ] LIVE MICROPHONE INGEST (ACOUSTIC VISUALIZATION)";
           routingSrcMic.classList.remove("brutalist-select-item--active");
         }
       }
