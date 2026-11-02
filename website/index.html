@@ -1267,7 +1267,6 @@
         <!-- Metadata Row -->
         <div class="modal-meta-row">
           <span>PACKAGE: <strong id="modal-target-pkg">Anahat_universal.dmg</strong></span>
-          <span>EST. SIZE: <strong id="modal-target-size">~22 MB</strong></span>
           <span>STATUS: <strong id="modal-target-status" style="color: #92400E;">AD-HOC SIGNED (FREE OPEN SOURCE)</strong></span>
         </div>
       </div>
@@ -1365,23 +1364,23 @@
         const quickVerElem = document.getElementById("quick-version-label");
         if (quickVerElem) quickVerElem.textContent = tag;
 
-        // Parse release assets for exact bundle names and file sizes
+        // Parse release assets for exact bundle names 
         if (Array.isArray(release.assets)) {
           release.assets.forEach((asset) => {
-            const sizeMB = (asset.size / (1024 * 1024)).toFixed(0);
+            
             if (asset.name.endsWith(".dmg")) {
               const btn = document.getElementById("link-download-macos");
-              if (btn) btn.textContent = `[ ⬇ DOWNLOAD DMG (${sizeMB} MB) ]`;
+              if (btn) btn.textContent = `[ ⬇ DOWNLOAD DMG  ]`;
               const pkg = document.getElementById("pkg-name-macos");
               if (pkg) pkg.textContent = asset.name;
             } else if (asset.name.endsWith(".exe") || asset.name.endsWith("-setup.exe")) {
               const btn = document.getElementById("link-download-windows");
-              if (btn) btn.textContent = `[ ⬇ DOWNLOAD INSTALLER (${sizeMB} MB) ]`;
+              if (btn) btn.textContent = `[ ⬇ DOWNLOAD INSTALLER  ]`;
               const pkg = document.getElementById("pkg-name-windows");
               if (pkg) pkg.textContent = asset.name;
             } else if (asset.name.endsWith(".AppImage")) {
               const btn = document.getElementById("link-download-linux");
-              if (btn) btn.textContent = `[ ⬇ DOWNLOAD APPIMAGE (${sizeMB} MB) ]`;
+              if (btn) btn.textContent = `[ ⬇ DOWNLOAD APPIMAGE  ]`;
               const pkg = document.getElementById("pkg-name-linux");
               if (pkg) pkg.textContent = asset.name;
             }
@@ -1399,7 +1398,7 @@
     const modalPlatformBadge = document.getElementById("modal-platform-badge");
     const modalAlertDesc = document.getElementById("modal-alert-desc");
     const modalTargetPkg = document.getElementById("modal-target-pkg");
-    const modalTargetSize = document.getElementById("modal-target-size");
+    
     const modalTargetStatus = document.getElementById("modal-target-status");
     const modalInstrMac = document.getElementById("modal-instructions-macos");
     const modalInstrWin = document.getElementById("modal-instructions-windows");
@@ -1410,7 +1409,7 @@
 
     let activeDownloadUrl = "";
 
-    function openDownloadModal(platform, url, pkgName, size) {
+    function openDownloadModal(platform, url, pkgName) {
       activeDownloadUrl = url;
       if (modalPlatformBadge) {
         modalPlatformBadge.textContent = `${platform} // DOWNLOAD & FIRST-LAUNCH VERIFICATION`;
@@ -1418,9 +1417,7 @@
       if (modalTargetPkg) {
         modalTargetPkg.textContent = pkgName || "Anahat Desktop Bundle";
       }
-      if (modalTargetSize) {
-        modalTargetSize.textContent = size || "~20 MB";
-      }
+      
 
       if (platform === "MACOS") {
         if (modalAlertDesc) {
@@ -1516,21 +1513,21 @@
     macBtn?.addEventListener("click", (e) => {
       e.preventDefault();
       const pkg = document.getElementById("pkg-name-macos")?.textContent || "Anahat_universal.dmg";
-      openDownloadModal("MACOS", "https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_universal.dmg", pkg, "22 MB");
+      openDownloadModal("MACOS", "https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_universal.dmg", pkg);
     });
 
     const winBtn = document.getElementById("link-download-windows");
     winBtn?.addEventListener("click", (e) => {
       e.preventDefault();
       const pkg = document.getElementById("pkg-name-windows")?.textContent || "Anahat_x64-setup.exe";
-      openDownloadModal("WINDOWS", "https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_x64-setup.exe", pkg, "18 MB");
+      openDownloadModal("WINDOWS", "https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_x64-setup.exe", pkg);
     });
 
     const linBtn = document.getElementById("link-download-linux");
     linBtn?.addEventListener("click", (e) => {
       e.preventDefault();
       const pkg = document.getElementById("pkg-name-linux")?.textContent || "Anahat_amd64.AppImage";
-      openDownloadModal("LINUX", "https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_amd64.AppImage", pkg, "24 MB");
+      openDownloadModal("LINUX", "https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_amd64.AppImage", pkg);
     });
 
     // Quick download button in hero section
@@ -1540,13 +1537,13 @@
       const osLabel = document.getElementById("detected-os-label")?.textContent || "DESKTOP";
       if (osLabel.includes("WIN")) {
         const pkg = document.getElementById("pkg-name-windows")?.textContent || "Anahat_x64-setup.exe";
-        openDownloadModal("WINDOWS", "https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_x64-setup.exe", pkg, "18 MB");
+        openDownloadModal("WINDOWS", "https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_x64-setup.exe", pkg);
       } else if (osLabel.includes("LIN")) {
         const pkg = document.getElementById("pkg-name-linux")?.textContent || "Anahat_amd64.AppImage";
-        openDownloadModal("LINUX", "https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_amd64.AppImage", pkg, "24 MB");
+        openDownloadModal("LINUX", "https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_amd64.AppImage", pkg);
       } else {
         const pkg = document.getElementById("pkg-name-macos")?.textContent || "Anahat_universal.dmg";
-        openDownloadModal("MACOS", "https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_universal.dmg", pkg, "22 MB");
+        openDownloadModal("MACOS", "https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_universal.dmg", pkg);
       }
     });
 
