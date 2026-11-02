@@ -1,1676 +1,1967 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ANAHAT // Neuroacoustic Sound Deck & Mathematical Cymatics Visualizer</title>
-  <meta name="description" content="Real-time acoustic resonance, mathematical cymatics waveforms, and neuroacoustic sound synthesis desktop application built with Tauri v2, Rust, Web Audio API, and Three.js." />
-  <link rel="canonical" href="https://anahat.jagadishk.work/" />
+	<head>
+		<meta charset="UTF-8" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0" />
+		<title>ANAHAT // Neuroacoustic Sound Deck & Mathematical Cymatics Visualizer</title>
+		<meta
+			name="description"
+			content="Real-time acoustic resonance, mathematical cymatics waveforms, and neuroacoustic sound synthesis desktop application built with Tauri v2, Rust, Web Audio API, and Three.js." />
+		<link
+			rel="canonical"
+			href="https://anahat.jagadishk.work/" />
 
-  <!-- Search Indexing & AI Scraping Directives -->
-  <meta name="robots" content="index, follow, noai, noimageai" />
+		<!-- Search Indexing & AI Scraping Directives -->
+		<meta
+			name="robots"
+			content="index, follow, noai, noimageai" />
 
-  <!-- Open Graph / Social Meta -->
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://anahat.jagadishk.work/" />
-  <meta property="og:title" content="ANAHAT // Acoustic Resonance & Cymatic Lab" />
-  <meta property="og:description" content="A high-performance desktop neuroacoustic sound synthesizer and mathematical cymatics visualizer built with Tauri v2, Rust, Web Audio API, and Three.js." />
-  <meta property="og:image" content="https://anahat.jagadishk.work/logo.svg" />
+		<!-- Open Graph / Social Meta -->
+		<meta
+			property="og:type"
+			content="website" />
+		<meta
+			property="og:url"
+			content="https://anahat.jagadishk.work/" />
+		<meta
+			property="og:title"
+			content="ANAHAT // Acoustic Resonance & Cymatic Lab" />
+		<meta
+			property="og:description"
+			content="A high-performance desktop neuroacoustic sound synthesizer and mathematical cymatics visualizer built with Tauri v2, Rust, Web Audio API, and Three.js." />
+		<meta
+			property="og:image"
+			content="https://anahat.jagadishk.work/logo.svg" />
 
-  <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="ANAHAT // Acoustic Resonance & Cymatic Lab" />
-  <meta name="twitter:description" content="Real-time acoustic resonance, mathematical cymatics waveforms, and neuroacoustic sound synthesis desktop application." />
-  <meta name="twitter:image" content="https://anahat.jagadishk.work/logo.svg" />
+		<!-- Twitter Card -->
+		<meta
+			name="twitter:card"
+			content="summary" />
+		<meta
+			name="twitter:title"
+			content="ANAHAT // Acoustic Resonance & Cymatic Lab" />
+		<meta
+			name="twitter:description"
+			content="Real-time acoustic resonance, mathematical cymatics waveforms, and neuroacoustic sound synthesis desktop application." />
+		<meta
+			name="twitter:image"
+			content="https://anahat.jagadishk.work/logo.svg" />
 
-  <!-- JSON-LD Structured Data -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    "name": "Anahat",
-    "operatingSystem": "macOS, Windows, Linux",
-    "applicationCategory": "MultimediaApplication",
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "USD"
-    },
-    "url": "https://anahat.jagadishk.work/",
-    "description": "High-performance desktop neuroacoustic sound synthesizer and mathematical cymatics visualizer."
-  }
-  </script>
-  
-  <!-- Favicon -->
-  <link rel="icon" type="image/svg+xml" href="logo.svg" />
+		<!-- JSON-LD Structured Data -->
+		<script type="application/ld+json">
+			{
+				"@context": "https://schema.org",
+				"@type": "SoftwareApplication",
+				"name": "Anahat",
+				"operatingSystem": "macOS, Windows, Linux",
+				"applicationCategory": "MultimediaApplication",
+				"offers": {
+					"@type": "Offer",
+					"price": "0",
+					"priceCurrency": "USD"
+				},
+				"url": "https://anahat.jagadishk.work/",
+				"description": "High-performance desktop neuroacoustic sound synthesizer and mathematical cymatics visualizer."
+			}
+		</script>
 
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Space+Grotesk:wght@600;700;900&display=swap" rel="stylesheet" />
+		<!-- Favicon -->
+		<link
+			rel="icon"
+			type="image/svg+xml"
+			href="logo.svg" />
 
-  <style>
-    /* ═══════════════════════════════════════════════════════════
+		<!-- Fonts -->
+		<link
+			rel="preconnect"
+			href="https://fonts.googleapis.com" />
+		<link
+			rel="preconnect"
+			href="https://fonts.gstatic.com"
+			crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Space+Grotesk:wght@600;700;900&display=swap"
+			rel="stylesheet" />
+
+		<style>
+			/* ═══════════════════════════════════════════════════════════
        ANAHAT BRUTALIST DESIGN TOKENS
        ═══════════════════════════════════════════════════════════ */
-    :root {
-      --bg-concrete: #E5E5E5;
-      --bg-surface-light: #FFFFFF;
-      --bg-surface-dark: #0D0E12;
-      --bg-surface-black: #000000;
-      --color-accent-industrial: #FF1433;
-      --color-accent-cyan: #00E5FF;
-      --color-accent-gold: #FFB000;
-      --border-heavy: #000000;
-      --border-light: #D0D0D0;
-      --font-display: 'Space Grotesk', -apple-system, sans-serif;
-      --font-mono: 'JetBrains Mono', 'Courier New', monospace;
-      --shadow-brutalist: 4px 4px 0px #000000;
-      --shadow-heavy: 6px 6px 0px #000000;
-      --shadow-accent: 4px 4px 0px #FF1433;
-    }
+			:root {
+				--bg-concrete: #e5e5e5;
+				--bg-surface-light: #ffffff;
+				--bg-surface-dark: #0d0e12;
+				--bg-surface-black: #000000;
+				--color-accent-industrial: #ff1433;
+				--color-accent-cyan: #00e5ff;
+				--color-accent-gold: #ffb000;
+				--border-heavy: #000000;
+				--border-light: #d0d0d0;
+				--font-display: 'Space Grotesk', -apple-system, sans-serif;
+				--font-mono: 'JetBrains Mono', 'Courier New', monospace;
+				--shadow-brutalist: 4px 4px 0px #000000;
+				--shadow-heavy: 6px 6px 0px #000000;
+				--shadow-accent: 4px 4px 0px #ff1433;
+			}
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      border-radius: 0 !important; /* Strict Brutalist 0px Radius Baseline */
-    }
+			* {
+				box-sizing: border-box;
+				margin: 0;
+				padding: 0;
+				border-radius: 0 !important; /* Strict Brutalist 0px Radius Baseline */
+			}
 
-    html, body {
-      background-color: var(--bg-concrete);
-      color: var(--border-heavy);
-      font-family: var(--font-mono);
-      font-size: 13px;
-      line-height: 1.5;
-      -webkit-font-smoothing: antialiased;
-      overflow-x: hidden;
-    }
+			html,
+			body {
+				background-color: var(--bg-concrete);
+				color: var(--border-heavy);
+				font-family: var(--font-mono);
+				font-size: 13px;
+				line-height: 1.5;
+				-webkit-font-smoothing: antialiased;
+				overflow-x: hidden;
+			}
 
-    /* Grid background coordinate pattern */
-    body {
-      background-image: 
-        linear-gradient(to right, rgba(0, 0, 0, 0.06) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(0, 0, 0, 0.06) 1px, transparent 1px);
-      background-size: 32px 32px;
-    }
+			/* Grid background coordinate pattern */
+			body {
+				background-image:
+					linear-gradient(to right, rgba(0, 0, 0, 0.06) 1px, transparent 1px),
+					linear-gradient(to bottom, rgba(0, 0, 0, 0.06) 1px, transparent 1px);
+				background-size: 32px 32px;
+			}
 
-    a {
-      color: inherit;
-      text-decoration: none;
-    }
+			a {
+				color: inherit;
+				text-decoration: none;
+			}
 
-    /* ═══════════════════════════════════════════════════════════
+			/* ═══════════════════════════════════════════════════════════
        HEADER TICKER & SYSTEM STATUS
        ═══════════════════════════════════════════════════════════ */
-    .ticker-bar {
-      background: var(--bg-surface-black);
-      color: #FFFFFF;
-      border-bottom: 3px solid var(--border-heavy);
-      padding: 6px 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
+			.ticker-bar {
+				background: var(--bg-surface-black);
+				color: #ffffff;
+				border-bottom: 3px solid var(--border-heavy);
+				padding: 6px 16px;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				font-size: 11px;
+				font-weight: 700;
+				letter-spacing: 0.06em;
+				text-transform: uppercase;
+				position: sticky;
+				top: 0;
+				z-index: 100;
+			}
 
-    .ticker-left, .ticker-right {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
+			.ticker-left,
+			.ticker-right {
+				display: flex;
+				align-items: center;
+				gap: 16px;
+			}
 
-    .status-dot {
-      display: inline-block;
-      width: 8px;
-      height: 8px;
-      background: var(--color-accent-industrial);
-      box-shadow: 0 0 8px var(--color-accent-industrial);
-      animation: blink 2s infinite ease-in-out;
-    }
+			.status-dot {
+				display: inline-block;
+				width: 8px;
+				height: 8px;
+				background: var(--color-accent-industrial);
+				box-shadow: 0 0 8px var(--color-accent-industrial);
+				animation: blink 2s infinite ease-in-out;
+			}
 
-    @keyframes blink {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.3; }
-    }
+			@keyframes blink {
+				0%,
+				100% {
+					opacity: 1;
+				}
+				50% {
+					opacity: 0.3;
+				}
+			}
 
-    /* ═══════════════════════════════════════════════════════════
+			/* ═══════════════════════════════════════════════════════════
        CONTAINER & STRUCTURAL PANELS
        ═══════════════════════════════════════════════════════════ */
-    .container {
-      max-width: 1280px;
-      margin: 0 auto;
-      padding: 24px 20px 80px;
-      display: flex;
-      flex-direction: column;
-      gap: 32px;
-    }
+			.container {
+				max-width: 1280px;
+				margin: 0 auto;
+				padding: 24px 20px 80px;
+				display: flex;
+				flex-direction: column;
+				gap: 32px;
+			}
 
-    .panel {
-      background: var(--bg-surface-light);
-      border: 3px solid var(--border-heavy);
-      box-shadow: var(--shadow-heavy);
-      position: relative;
-    }
+			.panel {
+				background: var(--bg-surface-light);
+				border: 3px solid var(--border-heavy);
+				box-shadow: var(--shadow-heavy);
+				position: relative;
+			}
 
-    .panel--dark {
-      background: var(--bg-surface-dark);
-      color: #FFFFFF;
-    }
+			.panel--dark {
+				background: var(--bg-surface-dark);
+				color: #ffffff;
+			}
 
-    .panel-header {
-      background: var(--bg-surface-black);
-      color: #FFFFFF;
-      padding: 10px 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-weight: 800;
-      font-size: 11px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      border-bottom: 2px solid var(--border-heavy);
-    }
+			.panel-header {
+				background: var(--bg-surface-black);
+				color: #ffffff;
+				padding: 10px 16px;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				font-weight: 800;
+				font-size: 11px;
+				letter-spacing: 0.08em;
+				text-transform: uppercase;
+				border-bottom: 2px solid var(--border-heavy);
+			}
 
-    .panel-header-badge {
-      background: var(--color-accent-industrial);
-      color: #FFFFFF;
-      padding: 2px 6px;
-      font-size: 10px;
-      font-weight: 800;
-    }
+			.panel-header-badge {
+				background: var(--color-accent-industrial);
+				color: #ffffff;
+				padding: 2px 6px;
+				font-size: 10px;
+				font-weight: 800;
+			}
 
-    /* ═══════════════════════════════════════════════════════════
+			/* ═══════════════════════════════════════════════════════════
        HERO LAB SECTION
        ═══════════════════════════════════════════════════════════ */
-    .hero-grid {
-      display: grid;
-      grid-template-columns: 1.15fr 0.85fr;
-      border: 3px solid var(--border-heavy);
-      box-shadow: var(--shadow-heavy);
-      background: var(--bg-surface-light);
-    }
+			.hero-grid {
+				display: grid;
+				grid-template-columns: 1.15fr 0.85fr;
+				border: 3px solid var(--border-heavy);
+				box-shadow: var(--shadow-heavy);
+				background: var(--bg-surface-light);
+			}
 
-    @media (max-width: 960px) {
-      .hero-grid {
-        grid-template-columns: 1fr;
-      }
-    }
+			@media (max-width: 960px) {
+				.hero-grid {
+					grid-template-columns: 1fr;
+				}
+			}
 
-    .hero-main {
-      padding: 36px 32px;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-      border-right: 3px solid var(--border-heavy);
-    }
+			.hero-main {
+				padding: 36px 32px;
+				display: flex;
+				flex-direction: column;
+				gap: 20px;
+				border-right: 3px solid var(--border-heavy);
+			}
 
-    @media (max-width: 960px) {
-      .hero-main {
-        border-right: none;
-        border-bottom: 3px solid var(--border-heavy);
-      }
-    }
+			@media (max-width: 960px) {
+				.hero-main {
+					border-right: none;
+					border-bottom: 3px solid var(--border-heavy);
+				}
+			}
 
-    .hero-brand-row {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
+			.hero-brand-row {
+				display: flex;
+				align-items: center;
+				gap: 16px;
+			}
 
-    .hero-logo {
-      width: 64px;
-      height: 64px;
-      border: 2px solid var(--border-heavy);
-      box-shadow: 3px 3px 0px #000000;
-      flex-shrink: 0;
-    }
+			.hero-logo {
+				width: 64px;
+				height: 64px;
+				border: 2px solid var(--border-heavy);
+				box-shadow: 3px 3px 0px #000000;
+				flex-shrink: 0;
+			}
 
-    .hero-title-wrap h1 {
-      font-family: var(--font-display);
-      font-size: clamp(34px, 5vw, 56px);
-      font-weight: 900;
-      line-height: 0.95;
-      letter-spacing: -0.04em;
-      text-transform: uppercase;
-      color: var(--bg-surface-black);
-    }
+			.hero-title-wrap h1 {
+				font-family: var(--font-display);
+				font-size: clamp(34px, 5vw, 56px);
+				font-weight: 900;
+				line-height: 0.95;
+				letter-spacing: -0.04em;
+				text-transform: uppercase;
+				color: var(--bg-surface-black);
+			}
 
-    .hero-subhead {
-      font-size: 13px;
-      font-weight: 700;
-      color: #444;
-      line-height: 1.5;
-      max-width: 620px;
-    }
+			.hero-subhead {
+				font-size: 13px;
+				font-weight: 700;
+				color: #444;
+				line-height: 1.5;
+				max-width: 620px;
+			}
 
-    .hero-tagline-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 4px 10px;
-      background: #000000;
-      color: #FFFFFF;
-      font-size: 10px;
-      font-weight: 800;
-      letter-spacing: 0.05em;
-      width: fit-content;
-    }
+			.hero-tagline-pill {
+				display: inline-flex;
+				align-items: center;
+				gap: 8px;
+				padding: 4px 10px;
+				background: #000000;
+				color: #ffffff;
+				font-size: 10px;
+				font-weight: 800;
+				letter-spacing: 0.05em;
+				width: fit-content;
+			}
 
-    /* Interactive Live Cymatics Canvas */
-    .hero-canvas-col {
-      background: #000000;
-      display: flex;
-      flex-direction: column;
-      position: relative;
-      min-height: 380px;
-    }
+			/* Interactive Live Cymatics Canvas */
+			.hero-canvas-col {
+				background: #000000;
+				display: flex;
+				flex-direction: column;
+				position: relative;
+				min-height: 380px;
+			}
 
-    .canvas-hud {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      right: 10px;
-      display: flex;
-      justify-content: space-between;
-      color: #888;
-      font-size: 9px;
-      font-weight: 700;
-      pointer-events: none;
-      z-index: 5;
-    }
+			.canvas-hud {
+				position: absolute;
+				top: 10px;
+				left: 10px;
+				right: 10px;
+				display: flex;
+				justify-content: space-between;
+				color: #888;
+				font-size: 9px;
+				font-weight: 700;
+				pointer-events: none;
+				z-index: 5;
+			}
 
-    #cymatics-canvas {
-      width: 100%;
-      height: 100%;
-      display: block;
-      cursor: crosshair;
-    }
+			#cymatics-canvas {
+				width: 100%;
+				height: 100%;
+				display: block;
+				cursor: crosshair;
+			}
 
-    .canvas-hint {
-      position: absolute;
-      bottom: 10px;
-      left: 12px;
-      color: var(--color-accent-cyan);
-      font-size: 9px;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      pointer-events: none;
-      background: rgba(0, 0, 0, 0.7);
-      padding: 2px 6px;
-    }
+			.canvas-hint {
+				position: absolute;
+				bottom: 10px;
+				left: 12px;
+				color: var(--color-accent-cyan);
+				font-size: 9px;
+				font-weight: 700;
+				letter-spacing: 0.04em;
+				pointer-events: none;
+				background: rgba(0, 0, 0, 0.7);
+				padding: 2px 6px;
+			}
 
-    /* ═══════════════════════════════════════════════════════════
+			/* ═══════════════════════════════════════════════════════════
        DOWNLOAD MATRIX (PRIMARY CTAs)
        ═══════════════════════════════════════════════════════════ */
-    .download-section {
-      background: var(--bg-surface-light);
-      border: 3px solid var(--border-heavy);
-      box-shadow: var(--shadow-heavy);
-      padding: 28px;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
+			.download-section {
+				background: var(--bg-surface-light);
+				border: 3px solid var(--border-heavy);
+				box-shadow: var(--shadow-heavy);
+				padding: 28px;
+				display: flex;
+				flex-direction: column;
+				gap: 20px;
+			}
 
-    .download-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      flex-wrap: wrap;
-      gap: 12px;
-      border-bottom: 2px solid var(--border-heavy);
-      padding-bottom: 12px;
-    }
+			.download-header {
+				display: flex;
+				justify-content: space-between;
+				align-items: flex-end;
+				flex-wrap: wrap;
+				gap: 12px;
+				border-bottom: 2px solid var(--border-heavy);
+				padding-bottom: 12px;
+			}
 
-    .download-header h2 {
-      font-family: var(--font-display);
-      font-size: 26px;
-      font-weight: 900;
-      letter-spacing: -0.03em;
-      text-transform: uppercase;
-    }
+			.download-header h2 {
+				font-family: var(--font-display);
+				font-size: 26px;
+				font-weight: 900;
+				letter-spacing: -0.03em;
+				text-transform: uppercase;
+			}
 
-    .download-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 16px;
-    }
+			.download-grid {
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+				gap: 16px;
+			}
 
-    .dl-card {
-      background: var(--bg-concrete);
-      border: 2px solid var(--border-heavy);
-      box-shadow: var(--shadow-brutalist);
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      gap: 14px;
-      transition: transform 0.1s ease, box-shadow 0.1s ease;
-    }
+			.dl-card {
+				background: var(--bg-concrete);
+				border: 2px solid var(--border-heavy);
+				box-shadow: var(--shadow-brutalist);
+				padding: 16px;
+				display: flex;
+				flex-direction: column;
+				justify-content: space-between;
+				gap: 14px;
+				transition:
+					transform 0.1s ease,
+					box-shadow 0.1s ease;
+			}
 
-    .dl-card:hover {
-      transform: translate(-2px, -2px);
-      box-shadow: 6px 6px 0px #000000;
-    }
+			.dl-card:hover {
+				transform: translate(-2px, -2px);
+				box-shadow: 6px 6px 0px #000000;
+			}
 
-    .dl-card--highlight {
-      background: #000000;
-      color: #FFFFFF;
-      border-color: var(--color-accent-industrial);
-      box-shadow: 4px 4px 0px var(--color-accent-industrial);
-    }
+			.dl-card--highlight {
+				background: #000000;
+				color: #ffffff;
+				border-color: var(--color-accent-industrial);
+				box-shadow: 4px 4px 0px var(--color-accent-industrial);
+			}
 
-    .dl-card--highlight:hover {
-      box-shadow: 6px 6px 0px var(--color-accent-industrial);
-    }
+			.dl-card--highlight:hover {
+				box-shadow: 6px 6px 0px var(--color-accent-industrial);
+			}
 
-    .dl-platform-title {
-      font-family: var(--font-display);
-      font-size: 18px;
-      font-weight: 800;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      letter-spacing: -0.02em;
-    }
+			.dl-platform-title {
+				font-family: var(--font-display);
+				font-size: 18px;
+				font-weight: 800;
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				letter-spacing: -0.02em;
+			}
 
-    .dl-pill {
-      font-family: var(--font-mono);
-      font-size: 9px;
-      font-weight: 800;
-      padding: 2px 6px;
-      background: var(--border-heavy);
-      color: #FFFFFF;
-    }
+			.dl-pill {
+				font-family: var(--font-mono);
+				font-size: 9px;
+				font-weight: 800;
+				padding: 2px 6px;
+				background: var(--border-heavy);
+				color: #ffffff;
+			}
 
-    .dl-card--highlight .dl-pill {
-      background: var(--color-accent-industrial);
-      color: #FFFFFF;
-    }
+			.dl-card--highlight .dl-pill {
+				background: var(--color-accent-industrial);
+				color: #ffffff;
+			}
 
-    .dl-specs {
-      font-size: 11px;
-      line-height: 1.4;
-      opacity: 0.85;
-    }
+			.dl-specs {
+				font-size: 11px;
+				line-height: 1.4;
+				opacity: 0.85;
+			}
 
-    .btn-download {
-      appearance: none;
-      -webkit-appearance: none;
-      background: var(--bg-surface-black);
-      color: #FFFFFF;
-      border: 2px solid var(--border-heavy);
-      padding: 12px 14px;
-      font-family: var(--font-mono);
-      font-size: 12px;
-      font-weight: 800;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      text-align: center;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: background 0.15s ease, color 0.15s ease;
-    }
+			.btn-download {
+				appearance: none;
+				-webkit-appearance: none;
+				background: var(--bg-surface-black);
+				color: #ffffff;
+				border: 2px solid var(--border-heavy);
+				padding: 12px 14px;
+				font-family: var(--font-mono);
+				font-size: 12px;
+				font-weight: 800;
+				letter-spacing: 0.04em;
+				text-transform: uppercase;
+				text-align: center;
+				cursor: pointer;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				gap: 8px;
+				transition:
+					background 0.15s ease,
+					color 0.15s ease;
+			}
 
-    .btn-download:hover {
-      background: var(--color-accent-industrial);
-      color: #FFFFFF;
-      border-color: var(--color-accent-industrial);
-    }
+			.btn-download:hover {
+				background: var(--color-accent-industrial);
+				color: #ffffff;
+				border-color: var(--color-accent-industrial);
+			}
 
-    .dl-card--highlight .btn-download {
-      background: var(--color-accent-industrial);
-      color: #FFFFFF;
-      border-color: var(--color-accent-industrial);
-    }
+			.dl-card--highlight .btn-download {
+				background: var(--color-accent-industrial);
+				color: #ffffff;
+				border-color: var(--color-accent-industrial);
+			}
 
-    .dl-card--highlight .btn-download:hover {
-      background: #FFFFFF;
-      color: #000000;
-      border-color: #FFFFFF;
-    }
+			.dl-card--highlight .btn-download:hover {
+				background: #ffffff;
+				color: #000000;
+				border-color: #ffffff;
+			}
 
-    /* ═══════════════════════════════════════════════════════════
+			/* ═══════════════════════════════════════════════════════════
        SCIENTIFIC & ENGINEERING PILLARS (4 CORES)
        ═══════════════════════════════════════════════════════════ */
-    .pillars-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 20px;
-    }
+			.pillars-grid {
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+				gap: 20px;
+			}
 
-    .pillar-card {
-      background: var(--bg-surface-light);
-      border: 3px solid var(--border-heavy);
-      box-shadow: var(--shadow-brutalist);
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
+			.pillar-card {
+				background: var(--bg-surface-light);
+				border: 3px solid var(--border-heavy);
+				box-shadow: var(--shadow-brutalist);
+				padding: 20px;
+				display: flex;
+				flex-direction: column;
+				gap: 12px;
+			}
 
-    .pillar-num {
-      font-family: var(--font-display);
-      font-size: 28px;
-      font-weight: 900;
-      color: var(--color-accent-industrial);
-      line-height: 1;
-    }
+			.pillar-num {
+				font-family: var(--font-display);
+				font-size: 28px;
+				font-weight: 900;
+				color: var(--color-accent-industrial);
+				line-height: 1;
+			}
 
-    .pillar-title {
-      font-family: var(--font-display);
-      font-size: 16px;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-      text-transform: uppercase;
-    }
+			.pillar-title {
+				font-family: var(--font-display);
+				font-size: 16px;
+				font-weight: 800;
+				letter-spacing: -0.02em;
+				text-transform: uppercase;
+			}
 
-    .pillar-desc {
-      font-size: 12px;
-      color: #555;
-      line-height: 1.5;
-    }
+			.pillar-desc {
+				font-size: 12px;
+				color: #555;
+				line-height: 1.5;
+			}
 
-    /* ═══════════════════════════════════════════════════════════
+			/* ═══════════════════════════════════════════════════════════
        11 VISUALIZER ENGINES SHOWCASE MATRIX
        ═══════════════════════════════════════════════════════════ */
-    .engine-matrix {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 12px;
-      padding: 20px;
-    }
+			.engine-matrix {
+				display: grid;
+				grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+				gap: 12px;
+				padding: 20px;
+			}
 
-    .engine-item {
-      background: #000000;
-      color: #FFFFFF;
-      border: 1px solid #333;
-      padding: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
+			.engine-item {
+				background: #000000;
+				color: #ffffff;
+				border: 1px solid #333;
+				padding: 12px;
+				display: flex;
+				flex-direction: column;
+				gap: 6px;
+			}
 
-    .engine-item-idx {
-      color: var(--color-accent-industrial);
-      font-size: 10px;
-      font-weight: 800;
-    }
+			.engine-item-idx {
+				color: var(--color-accent-industrial);
+				font-size: 10px;
+				font-weight: 800;
+			}
 
-    .engine-item-name {
-      font-family: var(--font-display);
-      font-size: 13px;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-    }
+			.engine-item-name {
+				font-family: var(--font-display);
+				font-size: 13px;
+				font-weight: 800;
+				letter-spacing: -0.02em;
+			}
 
-    .engine-item-math {
-      font-size: 10px;
-      color: #888;
-      line-height: 1.3;
-    }
+			.engine-item-math {
+				font-size: 10px;
+				color: #888;
+				line-height: 1.3;
+			}
 
-    /* ═══════════════════════════════════════════════════════════
+			/* ═══════════════════════════════════════════════════════════
        KEYBOARD HOTKEYS REFERENCE SHEET
        ═══════════════════════════════════════════════════════════ */
-    .hotkeys-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 16px;
-      padding: 20px;
-    }
+			.hotkeys-grid {
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+				gap: 16px;
+				padding: 20px;
+			}
 
-    .hotkey-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 6px 0;
-      border-bottom: 1px dashed #CCC;
-      font-size: 11px;
-    }
+			.hotkey-row {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				padding: 6px 0;
+				border-bottom: 1px dashed #ccc;
+				font-size: 11px;
+			}
 
-    .kbd-key {
-      background: #000000;
-      color: #FFFFFF;
-      padding: 2px 6px;
-      font-weight: 800;
-      font-size: 10px;
-      border: 1px solid #333;
-    }
+			.kbd-key {
+				background: #000000;
+				color: #ffffff;
+				padding: 2px 6px;
+				font-weight: 800;
+				font-size: 10px;
+				border: 1px solid #333;
+			}
 
-    /* ═══════════════════════════════════════════════════════════
+			/* ═══════════════════════════════════════════════════════════
        FOOTER
        ═══════════════════════════════════════════════════════════ */
-    footer {
-      border-top: 3px solid var(--border-heavy);
-      background: var(--bg-surface-black);
-      color: #FFFFFF;
-      padding: 32px 20px;
-      text-align: center;
-      font-size: 11px;
-      letter-spacing: 0.05em;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      align-items: center;
-    }
+			footer {
+				border-top: 3px solid var(--border-heavy);
+				background: var(--bg-surface-black);
+				color: #ffffff;
+				padding: 32px 20px;
+				text-align: center;
+				font-size: 11px;
+				letter-spacing: 0.05em;
+				display: flex;
+				flex-direction: column;
+				gap: 12px;
+				align-items: center;
+			}
 
-    .footer-credits {
-      color: #AAA;
-    }
+			.footer-credits {
+				color: #aaa;
+			}
 
-    .footer-links {
-      display: flex;
-      gap: 20px;
-      font-weight: 700;
-    }
+			.footer-links {
+				display: flex;
+				gap: 20px;
+				font-weight: 700;
+			}
 
-    .footer-links a:hover {
-      color: var(--color-accent-industrial);
-      text-decoration: underline;
-    }
+			.footer-links a:hover {
+				color: var(--color-accent-industrial);
+				text-decoration: underline;
+			}
 
-    /* ═══════════════════════════════════════════════════════════
+			/* ═══════════════════════════════════════════════════════════
        UNSIGNED RELEASE MODAL OVERLAY & NOTICES
        ═══════════════════════════════════════════════════════════ */
-    .badge-unsigned-header {
-      font-family: var(--font-mono);
-      font-size: 10px;
-      font-weight: 800;
-      padding: 4px 8px;
-      background: #FFFBEB;
-      color: #B45309;
-      border: 1px solid #F59E0B;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .dl-pill--warn {
-      background: #FFB000 !important;
-      color: #000000 !important;
-      font-weight: 800;
-    }
-
-    .download-modal-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.85);
-      backdrop-filter: blur(5px);
-      -webkit-backdrop-filter: blur(5px);
-      z-index: 1000;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
-    }
-
-    .download-modal-overlay.active {
-      display: flex;
-    }
-
-    .download-modal-box {
-      background: var(--bg-surface-light);
-      border: 3px solid var(--border-heavy);
-      box-shadow: 10px 10px 0px #000000;
-      max-width: 660px;
-      width: 100%;
-      max-height: 90vh;
-      display: flex;
-      flex-direction: column;
-      animation: modalSlideIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-      overflow: hidden;
-    }
-
-    @keyframes modalSlideIn {
-      from { transform: translateY(12px) scale(0.98); opacity: 0; }
-      to { transform: translateY(0) scale(1.0); opacity: 1; }
-    }
-
-    .modal-header {
-      background: var(--bg-surface-black);
-      color: #FFFFFF;
-      padding: 10px 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 2px solid var(--border-heavy);
-      flex-shrink: 0;
-    }
-
-    .modal-header-tag {
-      font-family: var(--font-mono);
-      font-size: 11px;
-      font-weight: 800;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .modal-close-btn {
-      background: transparent;
-      border: 1px solid #444;
-      color: #FFF;
-      font-family: var(--font-mono);
-      font-size: 10px;
-      font-weight: 700;
-      padding: 4px 8px;
-      cursor: pointer;
-      transition: background 0.15s, border-color 0.15s;
-    }
-
-    .modal-close-btn:hover {
-      background: var(--color-accent-industrial);
-      border-color: var(--color-accent-industrial);
-    }
-
-    .modal-body {
-      padding: 20px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      background: #FFFFFF;
-    }
-
-    .modal-alert-banner {
-      background: #FFFBEB;
-      border: 2px solid var(--color-accent-gold);
-      border-left: 6px solid var(--color-accent-gold);
-      padding: 12px 14px;
-      display: flex;
-      gap: 12px;
-      align-items: flex-start;
-    }
-
-    .modal-alert-icon {
-      font-size: 18px;
-      line-height: 1;
-      flex-shrink: 0;
-      margin-top: 2px;
-    }
-
-    .modal-alert-title {
-      font-family: var(--font-display);
-      font-size: 12.5px;
-      font-weight: 800;
-      color: #92400E;
-      letter-spacing: 0.03em;
-      text-transform: uppercase;
-      margin-bottom: 4px;
-    }
-
-    .modal-alert-desc {
-      font-size: 11.5px;
-      color: #78350F;
-      line-height: 1.45;
-    }
-
-    .instruction-title {
-      font-family: var(--font-display);
-      font-size: 15px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: -0.01em;
-      margin-bottom: 8px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .instruction-steps {
-      padding-left: 20px;
-      font-size: 12px;
-      line-height: 1.6;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .instruction-steps strong {
-      color: #000000;
-      background: #FEF08A;
-      padding: 0 4px;
-    }
-
-    .instruction-quote {
-      display: block;
-      margin: 4px 0;
-      padding: 4px 8px;
-      background: #F3F4F6;
-      border-left: 3px solid #000;
-      font-family: var(--font-mono);
-      font-size: 10.5px;
-      font-style: normal;
-      color: #1F2937;
-    }
-
-    .modal-code-row {
-      margin-top: 6px;
-      background: #0D0E12;
-      color: #00E5FF;
-      padding: 8px 12px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      border: 1px solid #333;
-    }
-
-    .modal-code-row code {
-      font-family: var(--font-mono);
-      font-size: 11px;
-      word-break: break-all;
-    }
-
-    .btn-copy-code {
-      background: #222;
-      color: #FFF;
-      border: 1px solid #555;
-      font-family: var(--font-mono);
-      font-size: 9.5px;
-      font-weight: 700;
-      padding: 3px 8px;
-      cursor: pointer;
-      flex-shrink: 0;
-    }
-
-    .btn-copy-code:hover {
-      background: var(--color-accent-industrial);
-      border-color: var(--color-accent-industrial);
-    }
-
-    .modal-meta-row {
-      background: #F4F4F5;
-      border: 1px solid #D4D4D8;
-      padding: 8px 12px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 16px;
-      font-size: 11px;
-      font-family: var(--font-mono);
-    }
-
-    .modal-footer {
-      background: #F9FAFB;
-      border-top: 2px solid var(--border-heavy);
-      padding: 12px 18px;
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
-      flex-wrap: wrap;
-      flex-shrink: 0;
-    }
-
-    .btn-modal-cancel {
-      background: transparent;
-      border: 2px solid var(--border-heavy);
-      color: #000;
-      font-family: var(--font-mono);
-      font-size: 11.5px;
-      font-weight: 700;
-      padding: 10px 16px;
-      cursor: pointer;
-    }
-
-    .btn-modal-cancel:hover {
-      background: #E5E5E5;
-    }
-
-    .btn-modal-confirm {
-      background: var(--color-accent-industrial);
-      color: #FFFFFF;
-      border: 2px solid var(--border-heavy);
-      box-shadow: 3px 3px 0px #000000;
-      font-family: var(--font-mono);
-      font-size: 12px;
-      font-weight: 800;
-      letter-spacing: 0.04em;
-      padding: 10px 20px;
-      cursor: pointer;
-      text-transform: uppercase;
-      transition: background 0.15s, transform 0.1s;
-    }
-
-    .btn-modal-confirm:hover {
-      background: #000000;
-      transform: translate(-1px, -1px);
-      box-shadow: 4px 4px 0px #000000;
-    }
-  </style>
-</head>
-<body>
-
-  <!-- Top System Status Ticker -->
-  <div class="ticker-bar">
-    <div class="ticker-left">
-      <span class="status-dot"></span>
-      <span>ANAHAT // RELEASE v1.0.0 [ GOLDEN MASTER ]</span>
-    </div>
-    <div class="ticker-right">
-      <span>TAURI v2 // RUST // WEB AUDIO API // THREE.JS</span>
-      <span id="utc-clock">UTC 00:00:00</span>
-    </div>
-  </div>
-
-  <div class="container">
-
-    <!-- Hero Lab Section -->
-    <div class="hero-grid">
-      <div class="hero-main">
-        <div class="hero-brand-row">
-          <img src="logo.svg" alt="Anahat Logo" class="hero-logo" />
-          <div class="hero-title-wrap">
-            <h1>ANAHAT</h1>
-            <div class="hero-tagline-pill">ACOUSTIC RESONANCE & CYMATIC LAB</div>
-          </div>
-        </div>
-
-        <p class="hero-subhead">
-          A high-performance, background-first desktop neuroacoustic sound synthesizer and mathematical cymatics visualizer. Built with a raw industrial brutalist aesthetic, bridging harmonic physics with real-time audio therapy.
-        </p>
-
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <span style="background: #000; color: #FFF; padding: 4px 8px; font-size: 10px; font-weight: 800;">100% PURE DSP (NO MP3s)</span>
-          <span style="background: #000; color: #FFF; padding: 4px 8px; font-size: 10px; font-weight: 800;">11 GPU ENGINES</span>
-          <span style="background: #000; color: #FFF; padding: 4px 8px; font-size: 10px; font-weight: 800;">TIBETAN SINGING BOWL</span>
-          <span style="background: #000; color: #FFF; padding: 4px 8px; font-size: 10px; font-weight: 800;">AUTONOMIC BREATH SYNC</span>
-        </div>
-
-        <!-- Detected OS Quick Download -->
-        <div style="margin-top: 10px;">
-          <a id="btn-quick-download" href="#downloads" class="btn-download" style="font-size: 13px; padding: 14px 20px;">
-            [ ⬇ DOWNLOAD ANAHAT <span id="quick-version-label">v1.0.0</span> FOR <span id="detected-os-label">DESKTOP</span> ]
-          </a>
-        </div>
-      </div>
-
-      <!-- Interactive Live Cymatics Canvas (Generative in-browser demo) -->
-      <div class="hero-canvas-col">
-        <div class="canvas-hud">
-          <span>INTERACTIVE CYMATICS SIMULATOR</span>
-          <span>60 FPS // DRAG TO MODULATE</span>
-        </div>
-        <canvas id="cymatics-canvas"></canvas>
-        <div class="canvas-hint">DRAG MOUSE TO ALTER CHLADNI MODAL NODES (n, m)</div>
-      </div>
-    </div>
-
-    <!-- Download Matrix Section -->
-    <div class="download-section" id="downloads">
-      <div class="download-header">
-        <div>
-          <h2>RELEASE BINARIES // <span id="release-version-tag">v1.0.0</span></h2>
-          <p style="font-size: 12px; color: #666; margin-top: 4px;">Universal self-contained desktop builds without external runtime dependencies.</p>
-        </div>
-        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
-          <div style="font-size: 11px; font-weight: 700; color: #000;">
-            CHECKSUM VERIFICATION: SHA-256
-          </div>
-          <div class="badge-unsigned-header" title="Free and open-source release. Windows SignPath in review. macOS ad-hoc signed.">
-            ⚠ OPEN-SOURCE RELEASES // WINDOWS: SIGNPATH IN REVIEW // MACOS: AD-HOC SIGNED
-          </div>
-        </div>
-      </div>
-
-      <div class="download-grid">
-        <!-- macOS Universal (Apple Silicon & Intel) -->
-        <div class="dl-card" id="card-macos">
-          <div>
-            <div class="dl-platform-title">
-              <span>macOS</span>
-              <span class="dl-pill dl-pill--warn">AD-HOC SIGNED (FREE OPEN SOURCE)</span>
-            </div>
-            <p class="dl-specs" style="margin-top: 8px;">
-              Apple Silicon (M1/M2/M3/M4) & Intel x86_64<br />
-              macOS 10.15 Catalina or newer<br />
-              Package: <code id="pkg-name-macos">Anahat_universal.dmg</code><br />
-              <span style="display: inline-block; margin-top: 4px; font-size: 10px; color: #92400E; font-weight: 700;">⚠ First-launch Gatekeeper bypass instructions shown on click</span>
-            </p>
-          </div>
-          <a class="btn-download" id="link-download-macos" href="https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_universal.dmg">
-            [ ⬇ DOWNLOAD DMG (UNIVERSAL) ]
-          </a>
-        </div>
-
-        <!-- Windows x64 -->
-        <div class="dl-card" id="card-windows">
-          <div>
-            <div class="dl-platform-title">
-              <span>WINDOWS</span>
-              <span class="dl-pill dl-pill--warn">SIGNPATH IN REVIEW (OPEN SOURCE)</span>
-            </div>
-            <p class="dl-specs" style="margin-top: 8px;">
-              Windows 10, 11 (x64)<br />
-              Hardware-accelerated DirectX / WebGL<br />
-              Package: <code id="pkg-name-windows">Anahat_x64-setup.exe</code><br />
-              <span style="display: inline-block; margin-top: 4px; font-size: 10px; color: #92400E; font-weight: 700;">⚠ SmartScreen "Run anyway" instructions shown on click</span>
-            </p>
-          </div>
-          <a class="btn-download" id="link-download-windows" href="https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_x64-setup.exe">
-            [ ⬇ DOWNLOAD INSTALLER (SETUP) ]
-          </a>
-        </div>
-
-        <!-- Linux AppImage & Deb -->
-        <div class="dl-card" id="card-linux">
-          <div>
-            <div class="dl-platform-title">
-              <span>LINUX</span>
-              <span class="dl-pill">PORTABLE BINARY</span>
-            </div>
-            <p class="dl-specs" style="margin-top: 8px;">
-              Ubuntu 20.04+, Fedora, Arch, Debian<br />
-              Standalone portable binary<br />
-              Package: <code id="pkg-name-linux">Anahat_amd64.AppImage</code><br />
-              <span style="display: inline-block; margin-top: 4px; font-size: 10px; color: #4B5563; font-weight: 700;">✓ Ready to execute via AppImage or DEB</span>
-            </p>
-          </div>
-          <a class="btn-download" id="link-download-linux" href="https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_amd64.AppImage">
-            [ ⬇ DOWNLOAD APPIMAGE ]
-          </a>
-        </div>
-
-        <!-- Source & Developer -->
-        <div class="dl-card">
-          <div>
-            <div class="dl-platform-title">
-              <span>SOURCE</span>
-              <span class="dl-pill">GITHUB</span>
-            </div>
-            <p class="dl-specs" style="margin-top: 8px;">
-              Rust 2024 / Astro 5 / Three.js<br />
-              Full MIT open-source repository<br />
-              Compile locally with <code>npm run tauri:build</code>
-            </p>
-          </div>
-          <a class="btn-download" href="https://github.com/projects-jagadishk/anahat" target="_blank" rel="noopener noreferrer">
-            [ ⌥ VIEW ON GITHUB ]
-          </a>
-        </div>
-      </div>
-    </div>
-
-    <!-- 4 Engineering Pillars -->
-    <div class="pillars-grid">
-      <div class="pillar-card">
-        <div class="pillar-num">01</div>
-        <div class="pillar-title">Pure Algorithmic DSP</div>
-        <div class="pillar-desc">
-          Zero pre-recorded MP3 samples or static loops. 100% synthesized in real time via the Web Audio API and Rust native pipeline with sub-millisecond audio phase accuracy.
-        </div>
-      </div>
-
-      <div class="pillar-card">
-        <div class="pillar-num">02</div>
-        <div class="pillar-title">11 WebGL Cymatics Engines</div>
-        <div class="pillar-desc">
-          GPU-accelerated mathematical shaders: 10,000 Chladni particles, Faraday standing waves, Lissajous orbits, 3D vortex curl smoke wisps, and dual-channel oscilloscopes.
-        </div>
-      </div>
-
-      <div class="pillar-card">
-        <div class="pillar-num">03</div>
-        <div class="pillar-title">Tibetan Singing Bowl Model</div>
-        <div class="pillar-desc">
-          Physical model synthesizing a 40ms organic mallet strike followed by 5 modal overtones, stereo spatial dispersion, and 22% carrier ducking for pristine acoustic clarity.
-        </div>
-      </div>
-
-      <div class="pillar-card">
-        <div class="pillar-num">04</div>
-        <div class="pillar-title">Autonomic Cadence Controller</div>
-        <div class="pillar-desc">
-          Box Breathing (4-4-4-4), 4-7-8 Relax, and Coherent (5-5) paced respiration with a master toggle switch and dedicated full-width timebox session manager.
-        </div>
-      </div>
-    </div>
-
-    <!-- 11 Visualizer Engines Showcase Matrix -->
-    <div class="panel panel--dark">
-      <div class="panel-header">
-        <span>GPU-ACCELERATED VISUALIZER ENGINES // 11 MODES</span>
-        <span class="panel-header-badge">60 FPS REAL-TIME</span>
-      </div>
-      <div class="engine-matrix">
-        <div class="engine-item">
-          <span class="engine-item-idx">[ 01 // RES ]</span>
-          <span class="engine-item-name">Chladni Plate</span>
-          <span class="engine-item-math">10k GPU particles on nodal lines: Z = sin(nπx)sin(mπy) ± sin(mπx)sin(nπy)</span>
-        </div>
-        <div class="engine-item">
-          <span class="engine-item-idx">[ 02 // FAR ]</span>
-          <span class="engine-item-name">Fluid Cymatics</span>
-          <span class="engine-item-math">512×512 vertex-displaced surface gravity standing Faraday waves</span>
-        </div>
-        <div class="engine-item">
-          <span class="engine-item-idx">[ 03 // QNT ]</span>
-          <span class="engine-item-name">Quantum Nodal</span>
-          <span class="engine-item-math">Volumetric 3D density matrix mapping harmonic wavefunctions</span>
-        </div>
-        <div class="engine-item">
-          <span class="engine-item-idx">[ 04 // LIS ]</span>
-          <span class="engine-item-name">Lissajous Orbit</span>
-          <span class="engine-item-math">Orthogonal harmonic phase-portrait curve knot projection</span>
-        </div>
-        <div class="engine-item">
-          <span class="engine-item-idx">[ 05 // WTR ]</span>
-          <span class="engine-item-name">3D Waterfall</span>
-          <span class="engine-item-math">Continuous cascading FFT frequency spectrum terrain</span>
-        </div>
-        <div class="engine-item">
-          <span class="engine-item-idx">[ 06 // OSC ]</span>
-          <span class="engine-item-name">Winamp Scope</span>
-          <span class="engine-item-math">Dual-trace multi-channel time-domain oscillographic waveform</span>
-        </div>
-        <div class="engine-item">
-          <span class="engine-item-idx">[ 07 // TOR ]</span>
-          <span class="engine-item-name">Torus Vortex</span>
-          <span class="engine-item-math">Magnetic plasma confinement streamlines with live FFT expansion</span>
-        </div>
-        <div class="engine-item">
-          <span class="engine-item-idx">[ 08 // VOX ]</span>
-          <span class="engine-item-name">Voxel Matrix</span>
-          <span class="engine-item-math">3D cubic lattice grid with audio-reactive displacement</span>
-        </div>
-        <div class="engine-item">
-          <span class="engine-item-idx">[ 09 // TUN ]</span>
-          <span class="engine-item-name">Warp Tunnel</span>
-          <span class="engine-item-math">16-rib corridor with gradient-interpolated connecting rings</span>
-        </div>
-        <div class="engine-item">
-          <span class="engine-item-idx">[ 10 // WIR ]</span>
-          <span class="engine-item-name">Neon Wire Tunnel</span>
-          <span class="engine-item-math">Longitudinal cyber conduits with bass-reactive lattice opacity</span>
-        </div>
-        <div class="engine-item">
-          <span class="engine-item-idx">[ 11 // MST ]</span>
-          <span class="engine-item-name">Ethereal Mist</span>
-          <span class="engine-item-math">36 curling smoke wisps with 3D vortex curl noise and blurry puffs</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Keyboard Hotkeys Matrix -->
-    <div class="panel">
-      <div class="panel-header">
-        <span>COMMAND MATRIX // ZERO-LATENCY HOTKEYS</span>
-        <span class="panel-header-badge">GLOBAL ACCESS</span>
-      </div>
-      <div class="hotkeys-grid">
-        <div>
-          <div class="hotkey-row">
-            <span>Toggle Audio Play / Pause</span>
-            <span class="kbd-key">SPACE</span>
-          </div>
-          <div class="hotkey-row">
-            <span>Direct Engine Selection</span>
-            <span class="kbd-key">1 – 9, 0, E</span>
-          </div>
-          <div class="hotkey-row">
-            <span>Cycle Engine Prev / Next</span>
-            <span class="kbd-key">[ / ]</span>
-          </div>
-          <div class="hotkey-row">
-            <span>Open Engine Matrix Overlay</span>
-            <span class="kbd-key">M</span>
-          </div>
-        </div>
-        <div>
-          <div class="hotkey-row">
-            <span>Toggle Fullscreen Theater Mode</span>
-            <span class="kbd-key">T</span>
-          </div>
-          <div class="hotkey-row">
-            <span>Cycle Color Palette (6 Tones)</span>
-            <span class="kbd-key">C</span>
-          </div>
-          <div class="hotkey-row">
-            <span>Cycle Random Engine Timer</span>
-            <span class="kbd-key">S</span>
-          </div>
-          <div class="hotkey-row">
-            <span>Cycle Detail Density</span>
-            <span class="kbd-key">D</span>
-          </div>
-        </div>
-        <div>
-          <div class="hotkey-row">
-            <span>Reset 3D Perspective & Zoom</span>
-            <span class="kbd-key">R</span>
-          </div>
-          <div class="hotkey-row">
-            <span>Maximize / Restore Canvas</span>
-            <span class="kbd-key">Z</span>
-          </div>
-          <div class="hotkey-row">
-            <span>Toggle Singing Bowl Chimes</span>
-            <span class="kbd-key">B</span>
-          </div>
-          <div class="hotkey-row">
-            <span>Toggle Audio Input (Mic/Synth)</span>
-            <span class="kbd-key">I</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- Unsigned Release Notice & Download Confirmation Modal -->
-  <div class="download-modal-overlay" id="download-modal" role="dialog" aria-modal="true" aria-labelledby="modal-alert-title">
-    <div class="download-modal-box">
-      <!-- Modal Header -->
-      <div class="modal-header">
-        <div class="modal-header-tag">
-          <span class="status-dot"></span>
-          <span id="modal-platform-badge">MACOS UNIVERSAL // DOWNLOAD</span>
-        </div>
-        <button type="button" class="modal-close-btn" id="btn-modal-close" aria-label="Close dialog">✕ CLOSE [ESC]</button>
-      </div>
-
-      <!-- Modal Body -->
-      <div class="modal-body">
-        <div class="modal-alert-banner">
-          <span class="modal-alert-icon">⚠️</span>
-          <div>
-            <div class="modal-alert-title" id="modal-alert-title">OPEN-SOURCE UNSIGNED BINARY NOTICE</div>
-            <div class="modal-alert-desc" id="modal-alert-desc">
-              Anahat is 100% free open-source software under the MIT License. Because this is an independent, non-commercial project, commercial signing fees are not feasible at the moment.
-            </div>
-          </div>
-        </div>
-
-        <!-- macOS Instructions -->
-        <div id="modal-instructions-macos" class="modal-instructions">
-          <div class="instruction-title">macOS Gatekeeper First-Launch Instructions (macOS Sequoia / Sonoma / Ventura)</div>
-          <div style="font-size: 12px; color: #333; margin-bottom: 8px;">
-            On first launch, macOS Gatekeeper blocks unnotarized apps with the security prompt:
-            <br/><em class="instruction-quote">“Apple could not verify ‘Anahat’ is free of malware that may harm your Mac or compromise your privacy.”</em>
-          </div>
-
-          <div style="font-weight: 700; font-size: 11px; margin-top: 10px; margin-bottom: 4px; color: #000; letter-spacing: 0.04em;">
-            METHOD 1: SYSTEM SETTINGS (RECOMMENDED GUI WORKFLOW)
-          </div>
-          <ol class="instruction-steps">
-            <li>Open the downloaded <code>Anahat_universal.dmg</code> and drag <strong>Anahat.app</strong> into your <strong>Applications</strong> folder.</li>
-            <li>Double-click <code>Anahat.app</code>. When the verification warning dialog appears, click <strong>Done</strong>.</li>
-            <li>Open <strong>System Settings</strong> (from the Apple  menu) &rarr; select <strong>Privacy & Security</strong>.</li>
-            <li>Scroll down to the <strong>Security</strong> section. You will see:<br/>
-              <em>“Anahat” was blocked to use because it is not from an identified developer</em>.
-            </li>
-            <li>Click the button: <strong>"Open Anyway"</strong> (enter your Mac login password or Touch ID).</li>
-            <li>Click <strong>Open</strong> in the confirmation prompt. <em>(Required only once; subsequent launches open normally)</em>.</li>
-          </ol>
-
-          <div style="font-weight: 700; font-size: 11px; margin-top: 12px; margin-bottom: 4px; color: #000; letter-spacing: 0.04em;">
-            METHOD 2: INSTANT TERMINAL COMMAND (QUICKEST)
-          </div>
-          <p style="font-size: 12px; color: #444; margin: 0 0 6px 0;">
-            Drag <strong>Anahat.app</strong> to Applications, then paste this command in Terminal to clear the quarantine flag:
-          </p>
-          <div class="modal-code-row">
-            <code>xattr -cr /Applications/Anahat.app</code>
-            <button type="button" class="btn-copy-code" data-code="xattr -cr /Applications/Anahat.app">[ 📋 COPY ]</button>
-          </div>
-          <p style="font-size: 11px; color: #666; margin: 4px 0 0 0;">
-            Then double-click <strong>Anahat.app</strong> to launch instantly without any prompts.
-          </p>
-
-          <div style="font-size: 11px; color: #555; margin-top: 10px; padding: 6px 10px; background: #F4F4F5; border-left: 2px solid #888;">
-            ℹ <em>Why this occurs:</em> Apple requires a recurring $99/year commercial membership for automated Gatekeeper notarization, which is not feasible for this free open-source project at the moment. The app is ad-hoc signed and 100% safe to inspect on GitHub.
-          </div>
-        </div>
-
-        <!-- Windows Instructions -->
-        <div id="modal-instructions-windows" class="modal-instructions" style="display: none;">
-          <div class="instruction-title">Windows Defender SmartScreen First-Launch Instructions</div>
-          <ol class="instruction-steps">
-            <li>Run the downloaded <code>Anahat_x64-setup.exe</code> installer.</li>
-            <li>When Windows Defender SmartScreen shows: <br/><em class="instruction-quote">"Windows protected your PC — Microsoft Defender SmartScreen prevented an unrecognized app from starting"</em>.</li>
-            <li>Click the underlined link: <strong>"More info"</strong>.</li>
-            <li>Click the button: <strong>"Run anyway"</strong> to begin setup.</li>
-          </ol>
-          <div style="font-size: 11px; color: #555; margin-top: 8px; padding: 6px 10px; background: #F4F4F5; border-left: 2px solid #888;">
-            ℹ <em>Roadmap:</em> We have applied for free trusted open-source code signing through the <strong>SignPath Foundation</strong> (available for Windows). While our verification is in review, clicking "Run anyway" allows complete execution.
-          </div>
-        </div>
-
-        <!-- Linux Instructions -->
-        <div id="modal-instructions-linux" class="modal-instructions" style="display: none;">
-          <div class="instruction-title">Linux AppImage / DEB Instructions</div>
-          <ol class="instruction-steps">
-            <li>Make the downloaded <code>Anahat_amd64.AppImage</code> executable:
-              <div class="modal-code-row">
-                <code>chmod +x Anahat_amd64.AppImage && ./Anahat_amd64.AppImage</code>
-                <button type="button" class="btn-copy-code" data-code="chmod +x Anahat_amd64.AppImage && ./Anahat_amd64.AppImage">[ 📋 COPY ]</button>
-              </div>
-            </li>
-            <li>Or install via Debian package: <code>sudo dpkg -i anahat_amd64.deb</code></li>
-          </ol>
-        </div>
-
-        <!-- Metadata Row -->
-        <div class="modal-meta-row">
-          <span>PACKAGE: <strong id="modal-target-pkg">Anahat_universal.dmg</strong></span>
-          <span>STATUS: <strong id="modal-target-status" style="color: #92400E;">AD-HOC SIGNED (FREE OPEN SOURCE)</strong></span>
-        </div>
-      </div>
-
-      <!-- Modal Footer -->
-      <div class="modal-footer">
-        <button type="button" class="btn-modal-cancel" id="btn-modal-cancel">
-          [ ✕ CANCEL ]
-        </button>
-        <button type="button" class="btn-modal-confirm" id="btn-modal-confirm">
-          [ ⬇ I UNDERSTAND — PROCEED WITH DOWNLOAD ]
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Industrial Footer -->
-  <footer>
-    <div class="footer-links">
-      <a href="#downloads">DOWNLOADS</a>
-      <a href="https://coff.ee/jagadishk" target="_blank" rel="noopener noreferrer" style="color: var(--color-accent-gold);">☕ BUY ME A COFFEE</a>
-      <a href="https://www.producthunt.com/@jagadishk" target="_blank" rel="noopener noreferrer" style="color: #DA552F;">PRODUCT HUNT</a>
-      <a href="https://github.com/projects-jagadishk/anahat" target="_blank" rel="noopener noreferrer">GITHUB</a>
-      <a href="https://github.com/projects-jagadishk/anahat/blob/main/docs/PRD.md" target="_blank" rel="noopener noreferrer">PRD SPEC</a>
-      <a href="https://github.com/projects-jagadishk/anahat/blob/main/docs/DISTRIBUTION.md" target="_blank" rel="noopener noreferrer">DISTRIBUTION GUIDE</a>
-    </div>
-    <div class="footer-credits">
-      Built with 🫨 ☕ ❤️ 🤖 by <strong><a href="https://jagadishk.work/" target="_blank">Jagadish, Kasi</a></strong> // Solae scientiae gloria.
-    </div>
-    <div style="font-size: 9px; color: #666; margin-top: 4px;">
-      ANAHAT v1.0.0 // ZERO-TRACKING // 100% LOCAL SYNTHESIS // ALL RIGHTS RESERVED
-    </div>
-  </footer>
-
-  <!-- Interactive Live Cymatics Simulator Script -->
-  <script>
-    // Live UTC Clock
-    function updateClock() {
-      const now = new Date();
-      const str = now.toUTCString().split(" ")[4] || "";
-      const el = document.getElementById("utc-clock");
-      if (el) el.textContent = `UTC ${str}`;
-    }
-    setInterval(updateClock, 1000);
-    updateClock();
-
-    // OS Auto-Detection for Quick Download Button & Platform Highlight
-    (function detectOS() {
-      const userAgent = window.navigator.userAgent.toLowerCase();
-      let os = "DESKTOP";
-      let cardId = "card-macos";
-      let downloadUrl = "https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_universal.dmg";
-
-      if (userAgent.includes("win")) {
-        os = "WINDOWS";
-        cardId = "card-windows";
-        downloadUrl = "https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_x64-setup.exe";
-      } else if (userAgent.includes("linux")) {
-        os = "LINUX";
-        cardId = "card-linux";
-        downloadUrl = "https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_amd64.AppImage";
-      } else if (userAgent.includes("mac")) {
-        os = "MACOS";
-        cardId = "card-macos";
-        downloadUrl = "https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_universal.dmg";
-      }
-
-      const osLabel = document.getElementById("detected-os-label");
-      if (osLabel) osLabel.textContent = os;
-
-      const quickBtn = document.getElementById("btn-quick-download");
-      if (quickBtn) {
-        quickBtn.href = downloadUrl;
-      }
-
-      const targetCard = document.getElementById(cardId);
-      if (targetCard) {
-        targetCard.classList.add("dl-card--highlight");
-      }
-    })();
-
-    // Dynamic GitHub Release Synchronizer (Real-time metadata, file sizes, version numbers)
-    (async function syncLatestRelease() {
-      try {
-        const response = await fetch("https://api.github.com/repos/projects-jagadishk/anahat/releases/latest");
-        if (!response.ok) return;
-        const release = await response.json();
-        const tag = release.tag_name;
-        if (!tag) return;
-
-        // Update displayed release tag in header and quick download
-        const tagElem = document.getElementById("release-version-tag");
-        if (tagElem) tagElem.textContent = tag;
-
-        const quickVerElem = document.getElementById("quick-version-label");
-        if (quickVerElem) quickVerElem.textContent = tag;
-
-        // Parse release assets for exact bundle names 
-        if (Array.isArray(release.assets)) {
-          release.assets.forEach((asset) => {
-            
-            if (asset.name.endsWith(".dmg")) {
-              const btn = document.getElementById("link-download-macos");
-              if (btn) btn.textContent = `[ ⬇ DOWNLOAD DMG  ]`;
-              const pkg = document.getElementById("pkg-name-macos");
-              if (pkg) pkg.textContent = asset.name;
-            } else if (asset.name.endsWith(".exe") || asset.name.endsWith("-setup.exe")) {
-              const btn = document.getElementById("link-download-windows");
-              if (btn) btn.textContent = `[ ⬇ DOWNLOAD INSTALLER  ]`;
-              const pkg = document.getElementById("pkg-name-windows");
-              if (pkg) pkg.textContent = asset.name;
-            } else if (asset.name.endsWith(".AppImage")) {
-              const btn = document.getElementById("link-download-linux");
-              if (btn) btn.textContent = `[ ⬇ DOWNLOAD APPIMAGE  ]`;
-              const pkg = document.getElementById("pkg-name-linux");
-              if (pkg) pkg.textContent = asset.name;
-            }
-          });
-        }
-      } catch (_) {
-        // Fallback remains completely operational with static permalinks
-      }
-    })();
-
-    // ═══════════════════════════════════════════════════════════
-    // UNSIGNED RELEASE DOWNLOAD MODAL & FIRST-LAUNCH INSTRUCTIONS
-    // ═══════════════════════════════════════════════════════════
-    const downloadModal = document.getElementById("download-modal");
-    const modalPlatformBadge = document.getElementById("modal-platform-badge");
-    const modalAlertDesc = document.getElementById("modal-alert-desc");
-    const modalTargetPkg = document.getElementById("modal-target-pkg");
-    
-    const modalTargetStatus = document.getElementById("modal-target-status");
-    const modalInstrMac = document.getElementById("modal-instructions-macos");
-    const modalInstrWin = document.getElementById("modal-instructions-windows");
-    const modalInstrLin = document.getElementById("modal-instructions-linux");
-    const btnModalConfirm = document.getElementById("btn-modal-confirm");
-    const btnModalCancel = document.getElementById("btn-modal-cancel");
-    const btnModalClose = document.getElementById("btn-modal-close");
-
-    let activeDownloadUrl = "";
-
-    function openDownloadModal(platform, url, pkgName) {
-      activeDownloadUrl = url;
-      if (modalPlatformBadge) {
-        modalPlatformBadge.textContent = `${platform} // DOWNLOAD & FIRST-LAUNCH VERIFICATION`;
-      }
-      if (modalTargetPkg) {
-        modalTargetPkg.textContent = pkgName || "Anahat Desktop Bundle";
-      }
-      
-
-      if (platform === "MACOS") {
-        if (modalAlertDesc) {
-          modalAlertDesc.innerHTML = 'Anahat is 100% free open-source software (MIT License). As an independent personal project, paying Apple\'s recurring $99/year Developer Program fee is not feasible at the moment. The app is distributed with standard ad-hoc signing (satisfying local Apple Silicon execution). On first launch, follow the simple Gatekeeper bypass below to open.';
-        }
-        if (modalTargetStatus) {
-          modalTargetStatus.textContent = "AD-HOC SIGNED (APPLE DEV FEE NOT FEASIBLE)";
-          modalTargetStatus.style.color = "#92400E";
-        }
-      } else if (platform === "WINDOWS") {
-        if (modalAlertDesc) {
-          modalAlertDesc.innerHTML = 'Anahat is 100% free open-source software (MIT License). We have applied for free trusted open-source code signing through the <strong>SignPath Foundation</strong> (available for Windows). While our verification is currently in review, Windows Defender SmartScreen will display a first-time notice. Follow the steps below to run.';
-        }
-        if (modalTargetStatus) {
-          modalTargetStatus.textContent = "UNSIGNED (SIGNPATH APPLICATION IN REVIEW)";
-          modalTargetStatus.style.color = "#92400E";
-        }
-      } else {
-        if (modalAlertDesc) {
-          modalAlertDesc.innerHTML = 'Anahat is 100% free open-source software (MIT License). Standard standalone AppImage and DEB binaries without external runtime dependencies.';
-        }
-        if (modalTargetStatus) {
-          modalTargetStatus.textContent = "PORTABLE BINARY (OPEN SOURCE)";
-          modalTargetStatus.style.color = "#000000";
-        }
-      }
-
-      if (modalInstrMac) modalInstrMac.style.display = platform === "MACOS" ? "block" : "none";
-      if (modalInstrWin) modalInstrWin.style.display = platform === "WINDOWS" ? "block" : "none";
-      if (modalInstrLin) modalInstrLin.style.display = platform === "LINUX" ? "block" : "none";
-
-      if (downloadModal) {
-        downloadModal.classList.add("active");
-        document.body.style.overflow = "hidden";
-      }
-    }
-
-    function closeDownloadModal() {
-      if (downloadModal) {
-        downloadModal.classList.remove("active");
-        document.body.style.overflow = "";
-      }
-      activeDownloadUrl = "";
-    }
-
-    btnModalClose?.addEventListener("click", closeDownloadModal);
-    btnModalCancel?.addEventListener("click", closeDownloadModal);
-    downloadModal?.addEventListener("click", (e) => {
-      if (e.target === downloadModal) closeDownloadModal();
-    });
-
-    window.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && downloadModal?.classList.contains("active")) {
-        closeDownloadModal();
-      }
-    });
-
-    btnModalConfirm?.addEventListener("click", () => {
-      if (activeDownloadUrl) {
-        // Trigger browser download via invisible anchor
-        const downloadLink = document.createElement("a");
-        downloadLink.href = activeDownloadUrl;
-        downloadLink.setAttribute("download", "");
-        downloadLink.style.display = "none";
-        document.body.appendChild(downloadLink);
-        downloadLink.click();
-        document.body.removeChild(downloadLink);
-      }
-      closeDownloadModal();
-    });
-
-    // Wire up Copy Code buttons in modal
-    document.querySelectorAll(".btn-copy-code").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const code = btn.getAttribute("data-code");
-        if (!code) return;
-        navigator.clipboard.writeText(code).then(() => {
-          const original = btn.textContent;
-          btn.textContent = "[ ✓ COPIED ]";
-          btn.style.background = "#00E5FF";
-          btn.style.color = "#000000";
-          setTimeout(() => {
-            btn.textContent = original;
-            btn.style.background = "";
-            btn.style.color = "";
-          }, 2000);
-        });
-      });
-    });
-
-    // Wire up direct platform download buttons to trigger modal
-    const macBtn = document.getElementById("link-download-macos");
-    macBtn?.addEventListener("click", (e) => {
-      e.preventDefault();
-      const pkg = document.getElementById("pkg-name-macos")?.textContent || "Anahat_universal.dmg";
-      openDownloadModal("MACOS", "https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_universal.dmg", pkg);
-    });
-
-    const winBtn = document.getElementById("link-download-windows");
-    winBtn?.addEventListener("click", (e) => {
-      e.preventDefault();
-      const pkg = document.getElementById("pkg-name-windows")?.textContent || "Anahat_x64-setup.exe";
-      openDownloadModal("WINDOWS", "https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_x64-setup.exe", pkg);
-    });
-
-    const linBtn = document.getElementById("link-download-linux");
-    linBtn?.addEventListener("click", (e) => {
-      e.preventDefault();
-      const pkg = document.getElementById("pkg-name-linux")?.textContent || "Anahat_amd64.AppImage";
-      openDownloadModal("LINUX", "https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_amd64.AppImage", pkg);
-    });
-
-    // Quick download button in hero section
-    const quickBtn = document.getElementById("btn-quick-download");
-    quickBtn?.addEventListener("click", (e) => {
-      e.preventDefault();
-      const osLabel = document.getElementById("detected-os-label")?.textContent || "DESKTOP";
-      if (osLabel.includes("WIN")) {
-        const pkg = document.getElementById("pkg-name-windows")?.textContent || "Anahat_x64-setup.exe";
-        openDownloadModal("WINDOWS", "https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_x64-setup.exe", pkg);
-      } else if (osLabel.includes("LIN")) {
-        const pkg = document.getElementById("pkg-name-linux")?.textContent || "Anahat_amd64.AppImage";
-        openDownloadModal("LINUX", "https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_amd64.AppImage", pkg);
-      } else {
-        const pkg = document.getElementById("pkg-name-macos")?.textContent || "Anahat_universal.dmg";
-        openDownloadModal("MACOS", "https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_universal.dmg", pkg);
-      }
-    });
-
-    // In-Browser Real-Time Chladni Mathematical Particle Canvas
-    (function initHeroCymatics() {
-      const canvas = document.getElementById("cymatics-canvas");
-      if (!canvas) return;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-
-      let width = (canvas.width = canvas.parentElement.clientWidth);
-      let height = (canvas.height = canvas.parentElement.clientHeight || 380);
-
-      window.addEventListener("resize", () => {
-        width = canvas.width = canvas.parentElement.clientWidth;
-        height = canvas.height = canvas.parentElement.clientHeight || 380;
-      });
-
-      let n = 3;
-      let m = 4;
-      let targetN = 3;
-      let targetM = 4;
-
-      canvas.addEventListener("mousemove", (e) => {
-        const rect = canvas.getBoundingClientRect();
-        const x = (e.clientX - rect.left) / rect.width;
-        const y = (e.clientY - rect.top) / rect.height;
-        targetN = Math.max(1, Math.min(8, Math.round(x * 7 + 1)));
-        targetM = Math.max(1, Math.min(8, Math.round(y * 7 + 1)));
-      });
-
-      // 4000 Particle Simulation
-      const PARTICLE_COUNT = 3200;
-      const px = new Float32Array(PARTICLE_COUNT);
-      const py = new Float32Array(PARTICLE_COUNT);
-      const vx = new Float32Array(PARTICLE_COUNT);
-      const vy = new Float32Array(PARTICLE_COUNT);
-
-      for (let i = 0; i < PARTICLE_COUNT; i++) {
-        px[i] = (Math.random() - 0.5) * 2;
-        py[i] = (Math.random() - 0.5) * 2;
-      }
-
-      function chladni(x, y, curN, curM) {
-        const pi = Math.PI;
-        return (
-          Math.sin(curN * pi * x) * Math.sin(curM * pi * y) -
-          Math.sin(curM * pi * x) * Math.sin(curN * pi * y)
-        );
-      }
-
-      let time = 0;
-
-      function render() {
-        requestAnimationFrame(render);
-        time += 0.016;
-
-        n += (targetN - n) * 0.05;
-        m += (targetM - m) * 0.05;
-
-        // Dark fade trail
-        ctx.fillStyle = "rgba(13, 14, 18, 0.28)";
-        ctx.fillRect(0, 0, width, height);
-
-        const cx = width / 2;
-        const cy = height / 2;
-        const scale = Math.min(width, height) * 0.44;
-
-        ctx.fillStyle = "#FF1433";
-
-        const eps = 0.02;
-        for (let i = 0; i < PARTICLE_COUNT; i++) {
-          const x = px[i];
-          const y = py[i];
-
-          const z = chladni(x, y, n, m);
-          const zx = (chladni(x + eps, y, n, m) - z) / eps;
-          const zy = (chladni(x, y + eps, n, m) - z) / eps;
-
-          // Gradient migration to nodal lines
-          vx[i] -= zx * 0.0035;
-          vy[i] -= zy * 0.0035;
-
-          // Brownian wander
-          vx[i] += (Math.random() - 0.5) * 0.0018;
-          vy[i] += (Math.random() - 0.5) * 0.0018;
-
-          vx[i] *= 0.94;
-          vy[i] *= 0.94;
-
-          px[i] += vx[i];
-          py[i] += vy[i];
-
-          if (Math.abs(px[i]) > 1.05 || Math.abs(py[i]) > 1.05) {
-            px[i] = (Math.random() - 0.5) * 2;
-            py[i] = (Math.random() - 0.5) * 2;
-            vx[i] = 0;
-            vy[i] = 0;
-          }
-
-          const screenX = cx + px[i] * scale;
-          const screenY = cy + py[i] * scale;
-
-          ctx.fillRect(screenX, screenY, 1.8, 1.8);
-        }
-
-        // Draw crosshair center mark
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
-        ctx.beginPath();
-        ctx.moveTo(cx - 10, cy);
-        ctx.lineTo(cx + 10, cy);
-        ctx.moveTo(cx, cy - 10);
-        ctx.lineTo(cx, cy + 10);
-        ctx.stroke();
-      }
-
-      render();
-    })();
-  </script>
-  <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-82BP91C9LQ"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-82BP91C9LQ');
-</script>
-</body>
+			.badge-unsigned-header {
+				font-family: var(--font-mono);
+				font-size: 10px;
+				font-weight: 800;
+				padding: 4px 8px;
+				background: #fffbeb;
+				color: #b45309;
+				border: 1px solid #f59e0b;
+				letter-spacing: 0.04em;
+				text-transform: uppercase;
+				display: inline-flex;
+				align-items: center;
+				gap: 6px;
+			}
+
+			.dl-pill--warn {
+				background: #ffb000 !important;
+				color: #000000 !important;
+				font-weight: 800;
+			}
+
+			.download-modal-overlay {
+				display: none;
+				position: fixed;
+				inset: 0;
+				background: rgba(0, 0, 0, 0.85);
+				backdrop-filter: blur(5px);
+				-webkit-backdrop-filter: blur(5px);
+				z-index: 1000;
+				align-items: center;
+				justify-content: center;
+				padding: 16px;
+			}
+
+			.download-modal-overlay.active {
+				display: flex;
+			}
+
+			.download-modal-box {
+				background: var(--bg-surface-light);
+				border: 3px solid var(--border-heavy);
+				box-shadow: 10px 10px 0px #000000;
+				max-width: 660px;
+				width: 100%;
+				max-height: 90vh;
+				display: flex;
+				flex-direction: column;
+				animation: modalSlideIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+				overflow: hidden;
+			}
+
+			@keyframes modalSlideIn {
+				from {
+					transform: translateY(12px) scale(0.98);
+					opacity: 0;
+				}
+				to {
+					transform: translateY(0) scale(1);
+					opacity: 1;
+				}
+			}
+
+			.modal-header {
+				background: var(--bg-surface-black);
+				color: #ffffff;
+				padding: 10px 16px;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				border-bottom: 2px solid var(--border-heavy);
+				flex-shrink: 0;
+			}
+
+			.modal-header-tag {
+				font-family: var(--font-mono);
+				font-size: 11px;
+				font-weight: 800;
+				letter-spacing: 0.06em;
+				text-transform: uppercase;
+				display: flex;
+				align-items: center;
+				gap: 10px;
+			}
+
+			.modal-close-btn {
+				background: transparent;
+				border: 1px solid #444;
+				color: #fff;
+				font-family: var(--font-mono);
+				font-size: 10px;
+				font-weight: 700;
+				padding: 4px 8px;
+				cursor: pointer;
+				transition:
+					background 0.15s,
+					border-color 0.15s;
+			}
+
+			.modal-close-btn:hover {
+				background: var(--color-accent-industrial);
+				border-color: var(--color-accent-industrial);
+			}
+
+			.modal-body {
+				padding: 20px;
+				overflow-y: auto;
+				display: flex;
+				flex-direction: column;
+				gap: 16px;
+				background: #ffffff;
+			}
+
+			.modal-alert-banner {
+				background: #fffbeb;
+				border: 2px solid var(--color-accent-gold);
+				border-left: 6px solid var(--color-accent-gold);
+				padding: 12px 14px;
+				display: flex;
+				gap: 12px;
+				align-items: flex-start;
+			}
+
+			.modal-alert-icon {
+				font-size: 18px;
+				line-height: 1;
+				flex-shrink: 0;
+				margin-top: 2px;
+			}
+
+			.modal-alert-title {
+				font-family: var(--font-display);
+				font-size: 12.5px;
+				font-weight: 800;
+				color: #92400e;
+				letter-spacing: 0.03em;
+				text-transform: uppercase;
+				margin-bottom: 4px;
+			}
+
+			.modal-alert-desc {
+				font-size: 11.5px;
+				color: #78350f;
+				line-height: 1.45;
+			}
+
+			.instruction-title {
+				font-family: var(--font-display);
+				font-size: 15px;
+				font-weight: 800;
+				text-transform: uppercase;
+				letter-spacing: -0.01em;
+				margin-bottom: 8px;
+				display: flex;
+				align-items: center;
+				gap: 8px;
+			}
+
+			.instruction-steps {
+				padding-left: 20px;
+				font-size: 12px;
+				line-height: 1.6;
+				display: flex;
+				flex-direction: column;
+				gap: 8px;
+			}
+
+			.instruction-steps strong {
+				color: #000000;
+				background: #fef08a;
+				padding: 0 4px;
+			}
+
+			.instruction-quote {
+				display: block;
+				margin: 4px 0;
+				padding: 4px 8px;
+				background: #f3f4f6;
+				border-left: 3px solid #000;
+				font-family: var(--font-mono);
+				font-size: 10.5px;
+				font-style: normal;
+				color: #1f2937;
+			}
+
+			.modal-code-row {
+				margin-top: 6px;
+				background: #0d0e12;
+				color: #00e5ff;
+				padding: 8px 12px;
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				gap: 10px;
+				border: 1px solid #333;
+			}
+
+			.modal-code-row code {
+				font-family: var(--font-mono);
+				font-size: 11px;
+				word-break: break-all;
+			}
+
+			.btn-copy-code {
+				background: #222;
+				color: #fff;
+				border: 1px solid #555;
+				font-family: var(--font-mono);
+				font-size: 9.5px;
+				font-weight: 700;
+				padding: 3px 8px;
+				cursor: pointer;
+				flex-shrink: 0;
+			}
+
+			.btn-copy-code:hover {
+				background: var(--color-accent-industrial);
+				border-color: var(--color-accent-industrial);
+			}
+
+			.modal-meta-row {
+				background: #f4f4f5;
+				border: 1px solid #d4d4d8;
+				padding: 8px 12px;
+				display: flex;
+				flex-wrap: wrap;
+				gap: 16px;
+				font-size: 11px;
+				font-family: var(--font-mono);
+			}
+
+			.modal-footer {
+				background: #f9fafb;
+				border-top: 2px solid var(--border-heavy);
+				padding: 12px 18px;
+				display: flex;
+				justify-content: flex-end;
+				gap: 10px;
+				flex-wrap: wrap;
+				flex-shrink: 0;
+			}
+
+			.btn-modal-cancel {
+				background: transparent;
+				border: 2px solid var(--border-heavy);
+				color: #000;
+				font-family: var(--font-mono);
+				font-size: 11.5px;
+				font-weight: 700;
+				padding: 10px 16px;
+				cursor: pointer;
+			}
+
+			.btn-modal-cancel:hover {
+				background: #e5e5e5;
+			}
+
+			.btn-modal-confirm {
+				background: var(--color-accent-industrial);
+				color: #ffffff;
+				border: 2px solid var(--border-heavy);
+				box-shadow: 3px 3px 0px #000000;
+				font-family: var(--font-mono);
+				font-size: 12px;
+				font-weight: 800;
+				letter-spacing: 0.04em;
+				padding: 10px 20px;
+				cursor: pointer;
+				text-transform: uppercase;
+				transition:
+					background 0.15s,
+					transform 0.1s;
+			}
+
+			.btn-modal-confirm:hover {
+				background: #000000;
+				transform: translate(-1px, -1px);
+				box-shadow: 4px 4px 0px #000000;
+			}
+		</style>
+	</head>
+	<body>
+		<!-- Top System Status Ticker -->
+		<div class="ticker-bar">
+			<div class="ticker-left">
+				<span class="status-dot"></span>
+				<span>ANAHAT // RELEASE v1.0.0 [ GOLDEN MASTER ]</span>
+			</div>
+			<div class="ticker-right">
+				<span>TAURI v2 // RUST // WEB AUDIO API // THREE.JS</span>
+				<span id="utc-clock">UTC 00:00:00</span>
+			</div>
+		</div>
+
+		<div class="container">
+			<!-- Hero Lab Section -->
+			<div class="hero-grid">
+				<div class="hero-main">
+					<div class="hero-brand-row">
+						<img
+							src="logo.svg"
+							alt="Anahat Logo"
+							class="hero-logo" />
+						<div class="hero-title-wrap">
+							<h1>ANAHAT</h1>
+							<div class="hero-tagline-pill">ACOUSTIC RESONANCE & CYMATIC LAB</div>
+						</div>
+					</div>
+
+					<p class="hero-subhead">
+						A high-performance, background-first desktop neuroacoustic sound synthesizer and mathematical cymatics
+						visualizer. Built with a raw industrial brutalist aesthetic, bridging harmonic physics with real-time audio
+						therapy.
+					</p>
+
+					<div style="display: flex; gap: 8px; flex-wrap: wrap">
+						<span style="background: #000; color: #fff; padding: 4px 8px; font-size: 10px; font-weight: 800"
+							>100% PURE DSP (NO MP3s)</span
+						>
+						<span style="background: #000; color: #fff; padding: 4px 8px; font-size: 10px; font-weight: 800"
+							>11 GPU ENGINES</span
+						>
+						<span style="background: #000; color: #fff; padding: 4px 8px; font-size: 10px; font-weight: 800"
+							>TIBETAN SINGING BOWL</span
+						>
+						<span style="background: #000; color: #fff; padding: 4px 8px; font-size: 10px; font-weight: 800"
+							>AUTONOMIC BREATH SYNC</span
+						>
+					</div>
+
+					<!-- Detected OS Quick Download -->
+					<div style="margin-top: 10px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center">
+						<a
+							id="btn-quick-download"
+							href="#downloads"
+							class="btn-download"
+							style="font-size: 13px; padding: 14px 20px">
+							[ ⬇ DOWNLOAD ANAHAT <span id="quick-version-label">v1.0.0</span> FOR
+							<span id="detected-os-label">DESKTOP</span> ]
+						</a>
+						<a
+							href="https://www.producthunt.com/products/anahat?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-anahat"
+							target="_blank"
+							rel="noopener noreferrer"
+							style="display: flex; height: 60px; align-items: center"
+							><img
+								alt="Anahat - Zero-MP3 neuroacoustic sound deck &amp; cymatics visualizer | Product Hunt"
+								width="250"
+								height="54"
+								src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1301263&amp;theme=light&amp;t=1793606924156"
+						/></a>
+					</div>
+				</div>
+
+				<!-- Interactive Live Cymatics Canvas (Generative in-browser demo) -->
+				<div class="hero-canvas-col">
+					<div class="canvas-hud">
+						<span>INTERACTIVE CYMATICS SIMULATOR</span>
+						<span>60 FPS // DRAG TO MODULATE</span>
+					</div>
+					<canvas id="cymatics-canvas"></canvas>
+					<div class="canvas-hint">DRAG MOUSE TO ALTER CHLADNI MODAL NODES (n, m)</div>
+				</div>
+			</div>
+
+			<!-- Download Matrix Section -->
+			<div
+				class="download-section"
+				id="downloads">
+				<div class="download-header">
+					<div>
+						<h2>RELEASE BINARIES // <span id="release-version-tag">v1.0.0</span></h2>
+						<p style="font-size: 12px; color: #666; margin-top: 4px">
+							Universal self-contained desktop builds without external runtime dependencies.
+						</p>
+					</div>
+					<div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px">
+						<div style="font-size: 11px; font-weight: 700; color: #000">CHECKSUM VERIFICATION: SHA-256</div>
+						<div
+							class="badge-unsigned-header"
+							title="Free and open-source release. Windows SignPath in review. macOS ad-hoc signed.">
+							⚠ OPEN-SOURCE RELEASES // WINDOWS: SIGNPATH IN REVIEW // MACOS: AD-HOC SIGNED
+						</div>
+					</div>
+				</div>
+
+				<div class="download-grid">
+					<!-- macOS Universal (Apple Silicon & Intel) -->
+					<div
+						class="dl-card"
+						id="card-macos">
+						<div>
+							<div class="dl-platform-title">
+								<span>macOS</span>
+								<span class="dl-pill dl-pill--warn">AD-HOC SIGNED (FREE OPEN SOURCE)</span>
+							</div>
+							<p
+								class="dl-specs"
+								style="margin-top: 8px">
+								Apple Silicon (M1/M2/M3/M4) & Intel x86_64<br />
+								macOS 10.15 Catalina or newer<br />
+								Package: <code id="pkg-name-macos">Anahat_universal.dmg</code><br />
+								<span style="display: inline-block; margin-top: 4px; font-size: 10px; color: #92400e; font-weight: 700"
+									>⚠ First-launch Gatekeeper bypass instructions shown on click</span
+								>
+							</p>
+						</div>
+						<a
+							class="btn-download"
+							id="link-download-macos"
+							href="https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_universal.dmg">
+							[ ⬇ DOWNLOAD DMG (UNIVERSAL) ]
+						</a>
+					</div>
+
+					<!-- Windows x64 -->
+					<div
+						class="dl-card"
+						id="card-windows">
+						<div>
+							<div class="dl-platform-title">
+								<span>WINDOWS</span>
+								<span class="dl-pill dl-pill--warn">SIGNPATH IN REVIEW (OPEN SOURCE)</span>
+							</div>
+							<p
+								class="dl-specs"
+								style="margin-top: 8px">
+								Windows 10, 11 (x64)<br />
+								Hardware-accelerated DirectX / WebGL<br />
+								Package: <code id="pkg-name-windows">Anahat_x64-setup.exe</code><br />
+								<span style="display: inline-block; margin-top: 4px; font-size: 10px; color: #92400e; font-weight: 700"
+									>⚠ SmartScreen "Run anyway" instructions shown on click</span
+								>
+							</p>
+						</div>
+						<a
+							class="btn-download"
+							id="link-download-windows"
+							href="https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_x64-setup.exe">
+							[ ⬇ DOWNLOAD INSTALLER (SETUP) ]
+						</a>
+					</div>
+
+					<!-- Linux AppImage & Deb -->
+					<div
+						class="dl-card"
+						id="card-linux">
+						<div>
+							<div class="dl-platform-title">
+								<span>LINUX</span>
+								<span class="dl-pill">PORTABLE BINARY</span>
+							</div>
+							<p
+								class="dl-specs"
+								style="margin-top: 8px">
+								Ubuntu 20.04+, Fedora, Arch, Debian<br />
+								Standalone portable binary<br />
+								Package: <code id="pkg-name-linux">Anahat_amd64.AppImage</code><br />
+								<span style="display: inline-block; margin-top: 4px; font-size: 10px; color: #4b5563; font-weight: 700"
+									>✓ Ready to execute via AppImage or DEB</span
+								>
+							</p>
+						</div>
+						<a
+							class="btn-download"
+							id="link-download-linux"
+							href="https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_amd64.AppImage">
+							[ ⬇ DOWNLOAD APPIMAGE ]
+						</a>
+					</div>
+
+					<!-- Source & Developer -->
+					<div class="dl-card">
+						<div>
+							<div class="dl-platform-title">
+								<span>SOURCE</span>
+								<span class="dl-pill">GITHUB</span>
+							</div>
+							<p
+								class="dl-specs"
+								style="margin-top: 8px">
+								Rust 2024 / Astro 5 / Three.js<br />
+								Full MIT open-source repository<br />
+								Compile locally with <code>npm run tauri:build</code>
+							</p>
+						</div>
+						<a
+							class="btn-download"
+							href="https://github.com/projects-jagadishk/anahat"
+							target="_blank"
+							rel="noopener noreferrer">
+							[ ⌥ VIEW ON GITHUB ]
+						</a>
+					</div>
+				</div>
+			</div>
+
+			<!-- 4 Engineering Pillars -->
+			<div class="pillars-grid">
+				<div class="pillar-card">
+					<div class="pillar-num">01</div>
+					<div class="pillar-title">Pure Algorithmic DSP</div>
+					<div class="pillar-desc">
+						Zero pre-recorded MP3 samples or static loops. 100% synthesized in real time via the Web Audio API and Rust
+						native pipeline with sub-millisecond audio phase accuracy.
+					</div>
+				</div>
+
+				<div class="pillar-card">
+					<div class="pillar-num">02</div>
+					<div class="pillar-title">11 WebGL Cymatics Engines</div>
+					<div class="pillar-desc">
+						GPU-accelerated mathematical shaders: 10,000 Chladni particles, Faraday standing waves, Lissajous orbits, 3D
+						vortex curl smoke wisps, and dual-channel oscilloscopes.
+					</div>
+				</div>
+
+				<div class="pillar-card">
+					<div class="pillar-num">03</div>
+					<div class="pillar-title">Tibetan Singing Bowl Model</div>
+					<div class="pillar-desc">
+						Physical model synthesizing a 40ms organic mallet strike followed by 5 modal overtones, stereo spatial
+						dispersion, and 22% carrier ducking for pristine acoustic clarity.
+					</div>
+				</div>
+
+				<div class="pillar-card">
+					<div class="pillar-num">04</div>
+					<div class="pillar-title">Autonomic Cadence Controller</div>
+					<div class="pillar-desc">
+						Box Breathing (4-4-4-4), 4-7-8 Relax, and Coherent (5-5) paced respiration with a master toggle switch and
+						dedicated full-width timebox session manager.
+					</div>
+				</div>
+			</div>
+
+			<!-- 11 Visualizer Engines Showcase Matrix -->
+			<div class="panel panel--dark">
+				<div class="panel-header">
+					<span>GPU-ACCELERATED VISUALIZER ENGINES // 11 MODES</span>
+					<span class="panel-header-badge">60 FPS REAL-TIME</span>
+				</div>
+				<div class="engine-matrix">
+					<div class="engine-item">
+						<span class="engine-item-idx">[ 01 // RES ]</span>
+						<span class="engine-item-name">Chladni Plate</span>
+						<span class="engine-item-math"
+							>10k GPU particles on nodal lines: Z = sin(nπx)sin(mπy) ± sin(mπx)sin(nπy)</span
+						>
+					</div>
+					<div class="engine-item">
+						<span class="engine-item-idx">[ 02 // FAR ]</span>
+						<span class="engine-item-name">Fluid Cymatics</span>
+						<span class="engine-item-math">512×512 vertex-displaced surface gravity standing Faraday waves</span>
+					</div>
+					<div class="engine-item">
+						<span class="engine-item-idx">[ 03 // QNT ]</span>
+						<span class="engine-item-name">Quantum Nodal</span>
+						<span class="engine-item-math">Volumetric 3D density matrix mapping harmonic wavefunctions</span>
+					</div>
+					<div class="engine-item">
+						<span class="engine-item-idx">[ 04 // LIS ]</span>
+						<span class="engine-item-name">Lissajous Orbit</span>
+						<span class="engine-item-math">Orthogonal harmonic phase-portrait curve knot projection</span>
+					</div>
+					<div class="engine-item">
+						<span class="engine-item-idx">[ 05 // WTR ]</span>
+						<span class="engine-item-name">3D Waterfall</span>
+						<span class="engine-item-math">Continuous cascading FFT frequency spectrum terrain</span>
+					</div>
+					<div class="engine-item">
+						<span class="engine-item-idx">[ 06 // OSC ]</span>
+						<span class="engine-item-name">Winamp Scope</span>
+						<span class="engine-item-math">Dual-trace multi-channel time-domain oscillographic waveform</span>
+					</div>
+					<div class="engine-item">
+						<span class="engine-item-idx">[ 07 // TOR ]</span>
+						<span class="engine-item-name">Torus Vortex</span>
+						<span class="engine-item-math">Magnetic plasma confinement streamlines with live FFT expansion</span>
+					</div>
+					<div class="engine-item">
+						<span class="engine-item-idx">[ 08 // VOX ]</span>
+						<span class="engine-item-name">Voxel Matrix</span>
+						<span class="engine-item-math">3D cubic lattice grid with audio-reactive displacement</span>
+					</div>
+					<div class="engine-item">
+						<span class="engine-item-idx">[ 09 // TUN ]</span>
+						<span class="engine-item-name">Warp Tunnel</span>
+						<span class="engine-item-math">16-rib corridor with gradient-interpolated connecting rings</span>
+					</div>
+					<div class="engine-item">
+						<span class="engine-item-idx">[ 10 // WIR ]</span>
+						<span class="engine-item-name">Neon Wire Tunnel</span>
+						<span class="engine-item-math">Longitudinal cyber conduits with bass-reactive lattice opacity</span>
+					</div>
+					<div class="engine-item">
+						<span class="engine-item-idx">[ 11 // MST ]</span>
+						<span class="engine-item-name">Ethereal Mist</span>
+						<span class="engine-item-math">36 curling smoke wisps with 3D vortex curl noise and blurry puffs</span>
+					</div>
+				</div>
+			</div>
+
+			<!-- Keyboard Hotkeys Matrix -->
+			<div class="panel">
+				<div class="panel-header">
+					<span>COMMAND MATRIX // ZERO-LATENCY HOTKEYS</span>
+					<span class="panel-header-badge">GLOBAL ACCESS</span>
+				</div>
+				<div class="hotkeys-grid">
+					<div>
+						<div class="hotkey-row">
+							<span>Toggle Audio Play / Pause</span>
+							<span class="kbd-key">SPACE</span>
+						</div>
+						<div class="hotkey-row">
+							<span>Direct Engine Selection</span>
+							<span class="kbd-key">1 – 9, 0, E</span>
+						</div>
+						<div class="hotkey-row">
+							<span>Cycle Engine Prev / Next</span>
+							<span class="kbd-key">[ / ]</span>
+						</div>
+						<div class="hotkey-row">
+							<span>Open Engine Matrix Overlay</span>
+							<span class="kbd-key">M</span>
+						</div>
+					</div>
+					<div>
+						<div class="hotkey-row">
+							<span>Toggle Fullscreen Theater Mode</span>
+							<span class="kbd-key">T</span>
+						</div>
+						<div class="hotkey-row">
+							<span>Cycle Color Palette (6 Tones)</span>
+							<span class="kbd-key">C</span>
+						</div>
+						<div class="hotkey-row">
+							<span>Cycle Random Engine Timer</span>
+							<span class="kbd-key">S</span>
+						</div>
+						<div class="hotkey-row">
+							<span>Cycle Detail Density</span>
+							<span class="kbd-key">D</span>
+						</div>
+					</div>
+					<div>
+						<div class="hotkey-row">
+							<span>Reset 3D Perspective & Zoom</span>
+							<span class="kbd-key">R</span>
+						</div>
+						<div class="hotkey-row">
+							<span>Maximize / Restore Canvas</span>
+							<span class="kbd-key">Z</span>
+						</div>
+						<div class="hotkey-row">
+							<span>Toggle Singing Bowl Chimes</span>
+							<span class="kbd-key">B</span>
+						</div>
+						<div class="hotkey-row">
+							<span>Toggle Audio Input (Mic/Synth)</span>
+							<span class="kbd-key">I</span>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Unsigned Release Notice & Download Confirmation Modal -->
+		<div
+			class="download-modal-overlay"
+			id="download-modal"
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="modal-alert-title">
+			<div class="download-modal-box">
+				<!-- Modal Header -->
+				<div class="modal-header">
+					<div class="modal-header-tag">
+						<span class="status-dot"></span>
+						<span id="modal-platform-badge">MACOS UNIVERSAL // DOWNLOAD</span>
+					</div>
+					<button
+						type="button"
+						class="modal-close-btn"
+						id="btn-modal-close"
+						aria-label="Close dialog">
+						✕ CLOSE [ESC]
+					</button>
+				</div>
+
+				<!-- Modal Body -->
+				<div class="modal-body">
+					<div class="modal-alert-banner">
+						<span class="modal-alert-icon">⚠️</span>
+						<div>
+							<div
+								class="modal-alert-title"
+								id="modal-alert-title">
+								OPEN-SOURCE UNSIGNED BINARY NOTICE
+							</div>
+							<div
+								class="modal-alert-desc"
+								id="modal-alert-desc">
+								Anahat is 100% free open-source software under the MIT License. Because this is an independent,
+								non-commercial project, commercial signing fees are not feasible at the moment.
+							</div>
+						</div>
+					</div>
+
+					<!-- macOS Instructions -->
+					<div
+						id="modal-instructions-macos"
+						class="modal-instructions">
+						<div class="instruction-title">
+							macOS Gatekeeper First-Launch Instructions (macOS Sequoia / Sonoma / Ventura)
+						</div>
+						<div style="font-size: 12px; color: #333; margin-bottom: 8px">
+							On first launch, macOS Gatekeeper blocks unnotarized apps with the security prompt:
+							<br /><em class="instruction-quote"
+								>“Apple could not verify ‘Anahat’ is free of malware that may harm your Mac or compromise your
+								privacy.”</em
+							>
+						</div>
+
+						<div
+							style="
+								font-weight: 700;
+								font-size: 11px;
+								margin-top: 10px;
+								margin-bottom: 4px;
+								color: #000;
+								letter-spacing: 0.04em;
+							">
+							METHOD 1: SYSTEM SETTINGS (RECOMMENDED GUI WORKFLOW)
+						</div>
+						<ol class="instruction-steps">
+							<li>
+								Open the downloaded <code>Anahat_universal.dmg</code> and drag <strong>Anahat.app</strong> into your
+								<strong>Applications</strong> folder.
+							</li>
+							<li>
+								Double-click <code>Anahat.app</code>. When the verification warning dialog appears, click
+								<strong>Done</strong>.
+							</li>
+							<li>
+								Open <strong>System Settings</strong> (from the Apple  menu) &rarr; select
+								<strong>Privacy & Security</strong>.
+							</li>
+							<li>
+								Scroll down to the <strong>Security</strong> section. You will see:<br />
+								<em>“Anahat” was blocked to use because it is not from an identified developer</em>.
+							</li>
+							<li>Click the button: <strong>"Open Anyway"</strong> (enter your Mac login password or Touch ID).</li>
+							<li>
+								Click <strong>Open</strong> in the confirmation prompt.
+								<em>(Required only once; subsequent launches open normally)</em>.
+							</li>
+						</ol>
+
+						<div
+							style="
+								font-weight: 700;
+								font-size: 11px;
+								margin-top: 12px;
+								margin-bottom: 4px;
+								color: #000;
+								letter-spacing: 0.04em;
+							">
+							METHOD 2: INSTANT TERMINAL COMMAND (QUICKEST)
+						</div>
+						<p style="font-size: 12px; color: #444; margin: 0 0 6px 0">
+							Drag <strong>Anahat.app</strong> to Applications, then paste this command in Terminal to clear the
+							quarantine flag:
+						</p>
+						<div class="modal-code-row">
+							<code>xattr -cr /Applications/Anahat.app</code>
+							<button
+								type="button"
+								class="btn-copy-code"
+								data-code="xattr -cr /Applications/Anahat.app">
+								[ 📋 COPY ]
+							</button>
+						</div>
+						<p style="font-size: 11px; color: #666; margin: 4px 0 0 0">
+							Then double-click <strong>Anahat.app</strong> to launch instantly without any prompts.
+						</p>
+
+						<div
+							style="
+								font-size: 11px;
+								color: #555;
+								margin-top: 10px;
+								padding: 6px 10px;
+								background: #f4f4f5;
+								border-left: 2px solid #888;
+							">
+							ℹ <em>Why this occurs:</em> Apple requires a recurring $99/year commercial membership for automated
+							Gatekeeper notarization, which is not feasible for this free open-source project at the moment. The app is
+							ad-hoc signed and 100% safe to inspect on GitHub.
+						</div>
+					</div>
+
+					<!-- Windows Instructions -->
+					<div
+						id="modal-instructions-windows"
+						class="modal-instructions"
+						style="display: none">
+						<div class="instruction-title">Windows Defender SmartScreen First-Launch Instructions</div>
+						<ol class="instruction-steps">
+							<li>Run the downloaded <code>Anahat_x64-setup.exe</code> installer.</li>
+							<li>
+								When Windows Defender SmartScreen shows: <br /><em class="instruction-quote"
+									>"Windows protected your PC — Microsoft Defender SmartScreen prevented an unrecognized app from
+									starting"</em
+								>.
+							</li>
+							<li>Click the underlined link: <strong>"More info"</strong>.</li>
+							<li>Click the button: <strong>"Run anyway"</strong> to begin setup.</li>
+						</ol>
+						<div
+							style="
+								font-size: 11px;
+								color: #555;
+								margin-top: 8px;
+								padding: 6px 10px;
+								background: #f4f4f5;
+								border-left: 2px solid #888;
+							">
+							ℹ <em>Roadmap:</em> We have applied for free trusted open-source code signing through the
+							<strong>SignPath Foundation</strong> (available for Windows). While our verification is in review,
+							clicking "Run anyway" allows complete execution.
+						</div>
+					</div>
+
+					<!-- Linux Instructions -->
+					<div
+						id="modal-instructions-linux"
+						class="modal-instructions"
+						style="display: none">
+						<div class="instruction-title">Linux AppImage / DEB Instructions</div>
+						<ol class="instruction-steps">
+							<li>
+								Make the downloaded <code>Anahat_amd64.AppImage</code> executable:
+								<div class="modal-code-row">
+									<code>chmod +x Anahat_amd64.AppImage && ./Anahat_amd64.AppImage</code>
+									<button
+										type="button"
+										class="btn-copy-code"
+										data-code="chmod +x Anahat_amd64.AppImage && ./Anahat_amd64.AppImage">
+										[ 📋 COPY ]
+									</button>
+								</div>
+							</li>
+							<li>Or install via Debian package: <code>sudo dpkg -i anahat_amd64.deb</code></li>
+						</ol>
+					</div>
+
+					<!-- Metadata Row -->
+					<div class="modal-meta-row">
+						<span>PACKAGE: <strong id="modal-target-pkg">Anahat_universal.dmg</strong></span>
+						<span
+							>STATUS:
+							<strong
+								id="modal-target-status"
+								style="color: #92400e"
+								>AD-HOC SIGNED (FREE OPEN SOURCE)</strong
+							></span
+						>
+					</div>
+				</div>
+
+				<!-- Modal Footer -->
+				<div class="modal-footer">
+					<button
+						type="button"
+						class="btn-modal-cancel"
+						id="btn-modal-cancel">
+						[ ✕ CANCEL ]
+					</button>
+					<button
+						type="button"
+						class="btn-modal-confirm"
+						id="btn-modal-confirm">
+						[ ⬇ I UNDERSTAND — PROCEED WITH DOWNLOAD ]
+					</button>
+				</div>
+			</div>
+		</div>
+
+		<!-- Industrial Footer -->
+		<footer>
+			<div class="footer-links">
+				<a href="#downloads">DOWNLOADS</a>
+				<a
+					href="https://coff.ee/jagadishk"
+					target="_blank"
+					rel="noopener noreferrer"
+					style="color: var(--color-accent-gold)"
+					>☕ BUY ME A COFFEE</a
+				>
+				<a href="https://www.producthunt.com/@jagadishk" target="_blank" rel="noopener noreferrer" style="color: #DA552F;">PRODUCT HUNT</a>
+				<a
+					href="https://github.com/projects-jagadishk/anahat"
+					target="_blank"
+					rel="noopener noreferrer"
+					>GITHUB</a
+				>
+				<a
+					href="https://github.com/projects-jagadishk/anahat/blob/main/docs/PRD.md"
+					target="_blank"
+					rel="noopener noreferrer"
+					>PRD SPEC</a
+				>
+				<a
+					href="https://github.com/projects-jagadishk/anahat/blob/main/docs/DISTRIBUTION.md"
+					target="_blank"
+					rel="noopener noreferrer"
+					>DISTRIBUTION GUIDE</a
+				>
+			</div>
+			<div class="footer-credits">
+				Built with 🫨 ☕ ❤️ 🤖 by
+				<strong
+					><a
+						href="https://jagadishk.work/"
+						target="_blank"
+						>Jagadish, Kasi</a
+					></strong
+				>
+				// Solae scientiae gloria.
+			</div>
+			<div style="font-size: 9px; color: #666; margin-top: 4px">
+				ANAHAT v1.0.0 // ZERO-TRACKING // 100% LOCAL SYNTHESIS // ALL RIGHTS RESERVED
+			</div>
+		</footer>
+
+		<!-- Interactive Live Cymatics Simulator Script -->
+		<script>
+			// Live UTC Clock
+			function updateClock() {
+				const now = new Date();
+				const str = now.toUTCString().split(' ')[4] || '';
+				const el = document.getElementById('utc-clock');
+				if (el) el.textContent = `UTC ${str}`;
+			}
+			setInterval(updateClock, 1000);
+			updateClock();
+
+			// OS Auto-Detection for Quick Download Button & Platform Highlight
+			(function detectOS() {
+				const userAgent = window.navigator.userAgent.toLowerCase();
+				let os = 'DESKTOP';
+				let cardId = 'card-macos';
+				let downloadUrl = 'https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_universal.dmg';
+
+				if (userAgent.includes('win')) {
+					os = 'WINDOWS';
+					cardId = 'card-windows';
+					downloadUrl = 'https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_x64-setup.exe';
+				} else if (userAgent.includes('linux')) {
+					os = 'LINUX';
+					cardId = 'card-linux';
+					downloadUrl = 'https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_amd64.AppImage';
+				} else if (userAgent.includes('mac')) {
+					os = 'MACOS';
+					cardId = 'card-macos';
+					downloadUrl = 'https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_universal.dmg';
+				}
+
+				const osLabel = document.getElementById('detected-os-label');
+				if (osLabel) osLabel.textContent = os;
+
+				const quickBtn = document.getElementById('btn-quick-download');
+				if (quickBtn) {
+					quickBtn.href = downloadUrl;
+				}
+
+				const targetCard = document.getElementById(cardId);
+				if (targetCard) {
+					targetCard.classList.add('dl-card--highlight');
+				}
+			})();
+
+			// Dynamic GitHub Release Synchronizer (Real-time metadata, file sizes, version numbers)
+			(async function syncLatestRelease() {
+				try {
+					const response = await fetch('https://api.github.com/repos/projects-jagadishk/anahat/releases/latest');
+					if (!response.ok) return;
+					const release = await response.json();
+					const tag = release.tag_name;
+					if (!tag) return;
+
+					// Update displayed release tag in header and quick download
+					const tagElem = document.getElementById('release-version-tag');
+					if (tagElem) tagElem.textContent = tag;
+
+					const quickVerElem = document.getElementById('quick-version-label');
+					if (quickVerElem) quickVerElem.textContent = tag;
+
+					// Parse release assets for exact bundle names
+					if (Array.isArray(release.assets)) {
+						release.assets.forEach((asset) => {
+							if (asset.name.endsWith('.dmg')) {
+								const btn = document.getElementById('link-download-macos');
+								if (btn) btn.textContent = `[ ⬇ DOWNLOAD DMG  ]`;
+								const pkg = document.getElementById('pkg-name-macos');
+								if (pkg) pkg.textContent = asset.name;
+							} else if (asset.name.endsWith('.exe') || asset.name.endsWith('-setup.exe')) {
+								const btn = document.getElementById('link-download-windows');
+								if (btn) btn.textContent = `[ ⬇ DOWNLOAD INSTALLER  ]`;
+								const pkg = document.getElementById('pkg-name-windows');
+								if (pkg) pkg.textContent = asset.name;
+							} else if (asset.name.endsWith('.AppImage')) {
+								const btn = document.getElementById('link-download-linux');
+								if (btn) btn.textContent = `[ ⬇ DOWNLOAD APPIMAGE  ]`;
+								const pkg = document.getElementById('pkg-name-linux');
+								if (pkg) pkg.textContent = asset.name;
+							}
+						});
+					}
+				} catch (_) {
+					// Fallback remains completely operational with static permalinks
+				}
+			})();
+
+			// ═══════════════════════════════════════════════════════════
+			// UNSIGNED RELEASE DOWNLOAD MODAL & FIRST-LAUNCH INSTRUCTIONS
+			// ═══════════════════════════════════════════════════════════
+			const downloadModal = document.getElementById('download-modal');
+			const modalPlatformBadge = document.getElementById('modal-platform-badge');
+			const modalAlertDesc = document.getElementById('modal-alert-desc');
+			const modalTargetPkg = document.getElementById('modal-target-pkg');
+
+			const modalTargetStatus = document.getElementById('modal-target-status');
+			const modalInstrMac = document.getElementById('modal-instructions-macos');
+			const modalInstrWin = document.getElementById('modal-instructions-windows');
+			const modalInstrLin = document.getElementById('modal-instructions-linux');
+			const btnModalConfirm = document.getElementById('btn-modal-confirm');
+			const btnModalCancel = document.getElementById('btn-modal-cancel');
+			const btnModalClose = document.getElementById('btn-modal-close');
+
+			let activeDownloadUrl = '';
+
+			function openDownloadModal(platform, url, pkgName) {
+				activeDownloadUrl = url;
+				if (modalPlatformBadge) {
+					modalPlatformBadge.textContent = `${platform} // DOWNLOAD & FIRST-LAUNCH VERIFICATION`;
+				}
+				if (modalTargetPkg) {
+					modalTargetPkg.textContent = pkgName || 'Anahat Desktop Bundle';
+				}
+
+				if (platform === 'MACOS') {
+					if (modalAlertDesc) {
+						modalAlertDesc.innerHTML =
+							"Anahat is 100% free open-source software (MIT License). As an independent personal project, paying Apple's recurring $99/year Developer Program fee is not feasible at the moment. The app is distributed with standard ad-hoc signing (satisfying local Apple Silicon execution). On first launch, follow the simple Gatekeeper bypass below to open.";
+					}
+					if (modalTargetStatus) {
+						modalTargetStatus.textContent = 'AD-HOC SIGNED (APPLE DEV FEE NOT FEASIBLE)';
+						modalTargetStatus.style.color = '#92400E';
+					}
+				} else if (platform === 'WINDOWS') {
+					if (modalAlertDesc) {
+						modalAlertDesc.innerHTML =
+							'Anahat is 100% free open-source software (MIT License). We have applied for free trusted open-source code signing through the <strong>SignPath Foundation</strong> (available for Windows). While our verification is currently in review, Windows Defender SmartScreen will display a first-time notice. Follow the steps below to run.';
+					}
+					if (modalTargetStatus) {
+						modalTargetStatus.textContent = 'UNSIGNED (SIGNPATH APPLICATION IN REVIEW)';
+						modalTargetStatus.style.color = '#92400E';
+					}
+				} else {
+					if (modalAlertDesc) {
+						modalAlertDesc.innerHTML =
+							'Anahat is 100% free open-source software (MIT License). Standard standalone AppImage and DEB binaries without external runtime dependencies.';
+					}
+					if (modalTargetStatus) {
+						modalTargetStatus.textContent = 'PORTABLE BINARY (OPEN SOURCE)';
+						modalTargetStatus.style.color = '#000000';
+					}
+				}
+
+				if (modalInstrMac) modalInstrMac.style.display = platform === 'MACOS' ? 'block' : 'none';
+				if (modalInstrWin) modalInstrWin.style.display = platform === 'WINDOWS' ? 'block' : 'none';
+				if (modalInstrLin) modalInstrLin.style.display = platform === 'LINUX' ? 'block' : 'none';
+
+				if (downloadModal) {
+					downloadModal.classList.add('active');
+					document.body.style.overflow = 'hidden';
+				}
+			}
+
+			function closeDownloadModal() {
+				if (downloadModal) {
+					downloadModal.classList.remove('active');
+					document.body.style.overflow = '';
+				}
+				activeDownloadUrl = '';
+			}
+
+			btnModalClose?.addEventListener('click', closeDownloadModal);
+			btnModalCancel?.addEventListener('click', closeDownloadModal);
+			downloadModal?.addEventListener('click', (e) => {
+				if (e.target === downloadModal) closeDownloadModal();
+			});
+
+			window.addEventListener('keydown', (e) => {
+				if (e.key === 'Escape' && downloadModal?.classList.contains('active')) {
+					closeDownloadModal();
+				}
+			});
+
+			btnModalConfirm?.addEventListener('click', () => {
+				if (activeDownloadUrl) {
+					// Trigger browser download via invisible anchor
+					const downloadLink = document.createElement('a');
+					downloadLink.href = activeDownloadUrl;
+					downloadLink.setAttribute('download', '');
+					downloadLink.style.display = 'none';
+					document.body.appendChild(downloadLink);
+					downloadLink.click();
+					document.body.removeChild(downloadLink);
+				}
+				closeDownloadModal();
+			});
+
+			// Wire up Copy Code buttons in modal
+			document.querySelectorAll('.btn-copy-code').forEach((btn) => {
+				btn.addEventListener('click', () => {
+					const code = btn.getAttribute('data-code');
+					if (!code) return;
+					navigator.clipboard.writeText(code).then(() => {
+						const original = btn.textContent;
+						btn.textContent = '[ ✓ COPIED ]';
+						btn.style.background = '#00E5FF';
+						btn.style.color = '#000000';
+						setTimeout(() => {
+							btn.textContent = original;
+							btn.style.background = '';
+							btn.style.color = '';
+						}, 2000);
+					});
+				});
+			});
+
+			// Wire up direct platform download buttons to trigger modal
+			const macBtn = document.getElementById('link-download-macos');
+			macBtn?.addEventListener('click', (e) => {
+				e.preventDefault();
+				const pkg = document.getElementById('pkg-name-macos')?.textContent || 'Anahat_universal.dmg';
+				openDownloadModal(
+					'MACOS',
+					'https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_universal.dmg',
+					pkg,
+				);
+			});
+
+			const winBtn = document.getElementById('link-download-windows');
+			winBtn?.addEventListener('click', (e) => {
+				e.preventDefault();
+				const pkg = document.getElementById('pkg-name-windows')?.textContent || 'Anahat_x64-setup.exe';
+				openDownloadModal(
+					'WINDOWS',
+					'https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_x64-setup.exe',
+					pkg,
+				);
+			});
+
+			const linBtn = document.getElementById('link-download-linux');
+			linBtn?.addEventListener('click', (e) => {
+				e.preventDefault();
+				const pkg = document.getElementById('pkg-name-linux')?.textContent || 'Anahat_amd64.AppImage';
+				openDownloadModal(
+					'LINUX',
+					'https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_amd64.AppImage',
+					pkg,
+				);
+			});
+
+			// Quick download button in hero section
+			const quickBtn = document.getElementById('btn-quick-download');
+			quickBtn?.addEventListener('click', (e) => {
+				e.preventDefault();
+				const osLabel = document.getElementById('detected-os-label')?.textContent || 'DESKTOP';
+				if (osLabel.includes('WIN')) {
+					const pkg = document.getElementById('pkg-name-windows')?.textContent || 'Anahat_x64-setup.exe';
+					openDownloadModal(
+						'WINDOWS',
+						'https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_x64-setup.exe',
+						pkg,
+					);
+				} else if (osLabel.includes('LIN')) {
+					const pkg = document.getElementById('pkg-name-linux')?.textContent || 'Anahat_amd64.AppImage';
+					openDownloadModal(
+						'LINUX',
+						'https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_amd64.AppImage',
+						pkg,
+					);
+				} else {
+					const pkg = document.getElementById('pkg-name-macos')?.textContent || 'Anahat_universal.dmg';
+					openDownloadModal(
+						'MACOS',
+						'https://github.com/projects-jagadishk/anahat/releases/latest/download/Anahat_universal.dmg',
+						pkg,
+					);
+				}
+			});
+
+			// In-Browser Real-Time Chladni Mathematical Particle Canvas
+			(function initHeroCymatics() {
+				const canvas = document.getElementById('cymatics-canvas');
+				if (!canvas) return;
+				const ctx = canvas.getContext('2d');
+				if (!ctx) return;
+
+				let width = (canvas.width = canvas.parentElement.clientWidth);
+				let height = (canvas.height = canvas.parentElement.clientHeight || 380);
+
+				window.addEventListener('resize', () => {
+					width = canvas.width = canvas.parentElement.clientWidth;
+					height = canvas.height = canvas.parentElement.clientHeight || 380;
+				});
+
+				let n = 3;
+				let m = 4;
+				let targetN = 3;
+				let targetM = 4;
+
+				canvas.addEventListener('mousemove', (e) => {
+					const rect = canvas.getBoundingClientRect();
+					const x = (e.clientX - rect.left) / rect.width;
+					const y = (e.clientY - rect.top) / rect.height;
+					targetN = Math.max(1, Math.min(8, Math.round(x * 7 + 1)));
+					targetM = Math.max(1, Math.min(8, Math.round(y * 7 + 1)));
+				});
+
+				// 4000 Particle Simulation
+				const PARTICLE_COUNT = 3200;
+				const px = new Float32Array(PARTICLE_COUNT);
+				const py = new Float32Array(PARTICLE_COUNT);
+				const vx = new Float32Array(PARTICLE_COUNT);
+				const vy = new Float32Array(PARTICLE_COUNT);
+
+				for (let i = 0; i < PARTICLE_COUNT; i++) {
+					px[i] = (Math.random() - 0.5) * 2;
+					py[i] = (Math.random() - 0.5) * 2;
+				}
+
+				function chladni(x, y, curN, curM) {
+					const pi = Math.PI;
+					return Math.sin(curN * pi * x) * Math.sin(curM * pi * y) - Math.sin(curM * pi * x) * Math.sin(curN * pi * y);
+				}
+
+				let time = 0;
+
+				function render() {
+					requestAnimationFrame(render);
+					time += 0.016;
+
+					n += (targetN - n) * 0.05;
+					m += (targetM - m) * 0.05;
+
+					// Dark fade trail
+					ctx.fillStyle = 'rgba(13, 14, 18, 0.28)';
+					ctx.fillRect(0, 0, width, height);
+
+					const cx = width / 2;
+					const cy = height / 2;
+					const scale = Math.min(width, height) * 0.44;
+
+					ctx.fillStyle = '#FF1433';
+
+					const eps = 0.02;
+					for (let i = 0; i < PARTICLE_COUNT; i++) {
+						const x = px[i];
+						const y = py[i];
+
+						const z = chladni(x, y, n, m);
+						const zx = (chladni(x + eps, y, n, m) - z) / eps;
+						const zy = (chladni(x, y + eps, n, m) - z) / eps;
+
+						// Gradient migration to nodal lines
+						vx[i] -= zx * 0.0035;
+						vy[i] -= zy * 0.0035;
+
+						// Brownian wander
+						vx[i] += (Math.random() - 0.5) * 0.0018;
+						vy[i] += (Math.random() - 0.5) * 0.0018;
+
+						vx[i] *= 0.94;
+						vy[i] *= 0.94;
+
+						px[i] += vx[i];
+						py[i] += vy[i];
+
+						if (Math.abs(px[i]) > 1.05 || Math.abs(py[i]) > 1.05) {
+							px[i] = (Math.random() - 0.5) * 2;
+							py[i] = (Math.random() - 0.5) * 2;
+							vx[i] = 0;
+							vy[i] = 0;
+						}
+
+						const screenX = cx + px[i] * scale;
+						const screenY = cy + py[i] * scale;
+
+						ctx.fillRect(screenX, screenY, 1.8, 1.8);
+					}
+
+					// Draw crosshair center mark
+					ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+					ctx.beginPath();
+					ctx.moveTo(cx - 10, cy);
+					ctx.lineTo(cx + 10, cy);
+					ctx.moveTo(cx, cy - 10);
+					ctx.lineTo(cx, cy + 10);
+					ctx.stroke();
+				}
+
+				render();
+			})();
+		</script>
+		<!-- Google tag (gtag.js) -->
+		<script
+			async
+			src="https://www.googletagmanager.com/gtag/js?id=G-82BP91C9LQ"></script>
+		<script>
+			window.dataLayer = window.dataLayer || [];
+			function gtag() {
+				dataLayer.push(arguments);
+			}
+			gtag('js', new Date());
+
+			gtag('config', 'G-82BP91C9LQ');
+		</script>
+	</body>
 </html>
