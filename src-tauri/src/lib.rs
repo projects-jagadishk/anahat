@@ -79,16 +79,21 @@ fn audio_start_recording(audio: tauri::State<'_, Arc<AudioController>>) {
 }
 
 #[tauri::command]
-fn audio_stop_and_save(
+async fn audio_stop_and_save(
     destination_path: String,
     audio: tauri::State<'_, Arc<AudioController>>,
 ) -> Result<usize, String> {
-    audio.stop_and_save_wav(&destination_path)
+    let controller = audio.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        controller.stop_and_save_wav(&destination_path)
+    })
+    .await
+    .map_err(|e| format!("Async join error: {}", e))?
 }
 
 #[tauri::command]
 fn audio_get_status(audio: tauri::State<'_, Arc<AudioController>>) -> AudioStatusPayload {
-    let p = audio.params.lock().unwrap().clone();
+    let p = *audio.params.lock().unwrap();
     AudioStatusPayload {
         is_playing: audio.is_playing.load(Ordering::SeqCst),
         is_recording: audio.is_recording.load(Ordering::SeqCst),
@@ -97,8 +102,8 @@ fn audio_get_status(audio: tauri::State<'_, Arc<AudioController>>) -> AudioStatu
         amplitude: p.amplitude,
         harmonic_n: p.harmonic_n,
         harmonic_m: p.harmonic_m,
-        waveform: p.waveform,
-        noise_type: p.noise_type,
+        waveform: p.waveform.as_str().to_string(),
+        noise_type: p.noise_type.as_str().to_string(),
         noise_blend_ratio: p.noise_blend_ratio,
     }
 }
@@ -119,6 +124,7 @@ fn audio_set_device(
 #[tauri::command]
 fn app_minimize_to_tray(window: tauri::WebviewWindow) {
     let _ = window.hide();
+    let _ = window.emit("window-hidden", ());
 }
 
 #[tauri::command]
@@ -126,6 +132,7 @@ fn app_restore_from_tray(window: tauri::WebviewWindow) {
     let _ = window.show();
     let _ = window.unminimize();
     let _ = window.set_focus();
+    let _ = window.emit("window-shown", ());
 }
 
 #[tauri::command]
@@ -160,6 +167,7 @@ fn setup_tray(app: &tauri::App, audio: Arc<AudioController>) -> Result<(), Box<d
                     let _ = window.show();
                     let _ = window.unminimize();
                     let _ = window.set_focus();
+                    let _ = window.emit("window-shown", ());
                 }
             }
             "play_pause" => {
@@ -180,6 +188,7 @@ fn setup_tray(app: &tauri::App, audio: Arc<AudioController>) -> Result<(), Box<d
                             let _ = window.show();
                             let _ = window.unminimize();
                             let _ = window.set_focus();
+                            let _ = window.emit("window-shown", ());
                         }
                     }
                 }
@@ -188,6 +197,7 @@ fn setup_tray(app: &tauri::App, audio: Arc<AudioController>) -> Result<(), Box<d
                         let _ = window.show();
                         let _ = window.unminimize();
                         let _ = window.set_focus();
+                        let _ = window.emit("window-shown", ());
                     }
                 }
                 _ => {}
@@ -207,7 +217,6 @@ pub fn run() {
     let audio_controller = Arc::new(AudioController::init().expect("Failed to initialize audio engine"));
 
     tauri::Builder::default()
-        .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .manage(audio_controller.clone())
         .invoke_handler(tauri::generate_handler![
