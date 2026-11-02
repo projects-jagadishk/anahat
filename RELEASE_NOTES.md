@@ -8,7 +8,13 @@
 
 ## ⚡ Highlights
 
-Anahat v1.1.0 delivers a massive performance and security upgrade. When left running in the background or idle, the application previously suffered from gradual memory accumulation and CPU thread contention. This release resolves all identified memory leaks, eliminates over **200,000 heap allocations per second** in the visualizer loops, suspends audio and rendering threads when minimized to the system tray, closes an XSS attack vector in preset imports, and hardens the Tauri IPC bridge.
+Anahat v1.1.0 delivers a comprehensive performance, security, and tactile interactivity upgrade:
+- **Zero-Allocation Rendering & DSP:** Eliminates all identified memory leaks and over **200,000 heap allocations per second** in the active visualizer and audio synthesis loops.
+- **Background Resource Suspension:** Suspends WebGL rendering loops, audio synthesis context, and telemetry timers when minimized to the system tray, dropping idle CPU/GPU consumption to baseline zero.
+- **Tactile Canvas Interactivity:** Introduced real-time 3D raycasted click disturbances on the Chladni plate and visualizers—displacing particles with localized kinetic shockwaves that smoothly re-coalesce onto mathematical nodal curves.
+- **Unambiguous Audio Ingest Controls:** Completely refined the toolbar and routing matrix labels (`SOURCE: [ ∿ INTERNAL SYNTH | 🎙 LIVE MIC ]`) with explicit behavioral tooltips.
+- **Release Packaging & Iconography Resolution:** Corrected missing titlebar emblems (`/logo.svg` bundling) and native macOS/Windows system tray template icons.
+- **Security & Pipeline Hardening:** Eliminated stored XSS vectors in custom preset imports, dropped the global Tauri IPC bridge object, and enforced strict release branch validation gates with automated downmerge pull requests.
 
 ---
 
@@ -59,6 +65,49 @@ Anahat v1.1.0 delivers a massive performance and security upgrade. When left run
 - **Removed Unused Shell Plugin:** Completely stripped `tauri-plugin-shell` from Rust dependencies, capabilities, and permissions, closing unnecessary command execution and external browser launching vectors.
 - **WAV Export Validation:** Added path validation and enforced the `.wav` file extension in `stop_and_save_wav()`, rejecting malformed or misleading destination paths.
 - **CSP Level 3 Directives:** Upgraded Content Security Policy to include `style-src-elem 'self' https://fonts.googleapis.com` to prohibit injected `<style>` tags, while retaining `style-src-attr 'unsafe-inline'` for safe programmatic DOM styling.
+
+---
+
+## 🎨 Interactive Canvas Dynamics & UI Refinements
+
+### 1. Real-Time Canvas Click Disturbances (Chladni Plate & Beyond)
+
+- **Raycasted 3D Interaction:** Added screen-to-plate raycasting via `THREE.Raycaster` and `THREE.Plane` ($Z = 0$), translating 2D pointer coordinates `(clientX, clientY)` directly to physical plate space regardless of camera orientation or perspective.
+- **Physical Nodal Perturbation:** Clicking any point on the canvas triggers an instantaneous radial blast wave with subtle vortex curl (`i % 2` rotational swirl) around the epicenter, temporarily knocking particles out of place.
+- **Organic Harmonic Recovery:** As the kinetic impulse decays over 1.35 seconds, the underlying Ernst Chladni analytical gradient $\nabla Z$ and viscous damping ($d = 0.94$) smoothly steer the scattered particles back into their nodal equilibrium lines.
+- **Cross-Engine Reactivity:** Click disturbances also induce surface shockwave pulses in Faraday Fluid (`u_burst_active`) and kinetic dispersion in Ethereal Mist.
+- **Click vs. Drag Differentiation:** Differentiated single clicks/taps (< 5px movement) from 3D camera orbital drags (> 5px movement), providing immediate tactile feedback without fighting camera perspective adjustments.
+
+### 2. Unambiguous Audio Ingest Source Labels
+
+- **Primary Toolbar Clarification:** Replaced ambiguous `AUDIO: [ ∿ TONES | 🎙 MIC ]` with `SOURCE: [ ∿ INTERNAL SYNTH | 🎙 LIVE MIC ]`.
+- **Descriptive Functional Tooltips:**
+  - `∿ INTERNAL SYNTH`: Generates dual-channel carrier frequencies, binaural beats, and harmonic ratios.
+  - `🎙 LIVE MIC`: Captures external room audio, voice, or instruments in real-time with zero audio feedback.
+- **Routing Matrix & HUD Alignment:** Synchronized labels across the Hardware Audio Routing modal (`[X] INTERNAL TONE SYNTH (CARRIER & HARMONICS)` / `[ ] LIVE MICROPHONE INGEST (ACOUSTIC VISUALIZATION)`), Fullscreen Theater HUD (`SRC: INTERNAL SYNTH [TONE GENERATOR]` / `SRC: LIVE MIC [ACOUSTIC INGEST]`), and Command Matrix hotkeys.
+
+---
+
+## 🖼️ Iconography & Desktop Packaging Fixes
+
+### 1. Titlebar Emblem Bundling (Fixed WebKit Blue Question Mark)
+
+- **Problem:** In release builds (`npm run build`), the custom titlebar `<img src="/logo.svg" />` failed to load because `logo.svg` resided in the project root rather than `public/`, causing macOS WebKit to render a blue question mark broken image placeholder.
+- **Resolution:** Placed `logo.svg` in `public/logo.svg`, guaranteeing its static inclusion in `dist/logo.svg` across all desktop distribution bundles.
+
+### 2. Native System Tray Icon Resolution
+
+- **Transparent Stencil Generation:** Generated dedicated 32×32 and 64×64 transparent monochrome tray icons (`src-tauri/icons/tray-icon.png`) representing the Anahat cymatics node matrix, replacing an opaque 512×512 black image that broke macOS menu bar template rendering (`iconAsTemplate: true`).
+- **Tauri Tray Collision Fix:** Refactored `setup_tray` in `src-tauri/src/lib.rs` to configure the existing tray instance created by `tauri.conf.json` (`app.tray_by_id("main-tray")`) directly, preventing duplicate ID registration collisions and ensuring menu actions and click handlers attach reliably.
+
+---
+
+## 🔄 CI/CD & Branching Workflow Automation
+
+- **Release Tag Verification Gate:** Added `verify-main-tag` job to `.github/workflows/release.yml`, executing an ancestry check (`git merge-base --is-ancestor HEAD main`) to enforce that release tags (`v*`) are cut strictly from `main`.
+- **Automated Main-to-Develop Downmerge:** Created `.github/workflows/downmerge-main-to-develop.yml` which triggers on any push to `main` (hotfixes, releases) and automatically opens a pull request (`chore(sync): downmerge main into develop`) to keep `develop` in sync.
+- **Protected Branch Git Hooks:** Updated local hooks (`.githooks/pre-commit`, `.githooks/pre-push`) to enforce feature PRs targeting `develop` and hotfix PRs targeting `main`.
+- **macOS Sequoia Gatekeeper Guidance:** Documented first-launch Gatekeeper bypass steps (System Settings > Privacy & Security > Open Anyway) on the landing site and in `docs/DISTRIBUTION.md`.
 
 ---
 
