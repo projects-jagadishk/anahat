@@ -158,10 +158,11 @@ fn setup_tray(app: &tauri::App, audio: Arc<AudioController>) -> Result<(), Box<d
 
     let audio_clone = audio.clone();
 
-    let _tray = TrayIconBuilder::with_id("main-tray")
-        .menu(&menu)
-        .tooltip("Anahat // Neuroacoustic Sound Deck")
-        .on_menu_event(move |app, event| match event.id().as_ref() {
+    if let Some(tray) = app.tray_by_id("main-tray") {
+        tray.set_menu(Some(menu))?;
+        tray.set_tooltip(Some("Anahat // Neuroacoustic Sound Deck"))?;
+        let audio_for_menu = audio_clone.clone();
+        tray.on_menu_event(move |app, event| match event.id().as_ref() {
             "show" => {
                 if let Some(window) = app.get_webview_window("main") {
                     let _ = window.show();
@@ -171,15 +172,16 @@ fn setup_tray(app: &tauri::App, audio: Arc<AudioController>) -> Result<(), Box<d
                 }
             }
             "play_pause" => {
-                let is_playing = audio_clone.toggle_playback();
+                let is_playing = audio_for_menu.toggle_playback();
                 let _ = app.emit("tray-playback-changed", is_playing);
             }
             "quit" => {
                 app.exit(0);
             }
             _ => {}
-        })
-        .on_tray_icon_event(|tray, event| {
+        });
+
+        tray.on_tray_icon_event(|tray, event| {
             let app = tray.app_handle();
             match event {
                 tauri::tray::TrayIconEvent::Click { button, .. } => {
@@ -202,8 +204,62 @@ fn setup_tray(app: &tauri::App, audio: Arc<AudioController>) -> Result<(), Box<d
                 }
                 _ => {}
             }
-        })
-        .build(app)?;
+        });
+    } else {
+        let mut builder = TrayIconBuilder::with_id("main-tray")
+            .menu(&menu)
+            .tooltip("Anahat // Neuroacoustic Sound Deck");
+
+        if let Some(icon) = app.default_window_icon() {
+            builder = builder.icon(icon.clone());
+        }
+        builder = builder.icon_as_template(true);
+
+        builder
+            .on_menu_event(move |app, event| match event.id().as_ref() {
+                "show" => {
+                    if let Some(window) = app.get_webview_window("main") {
+                        let _ = window.show();
+                        let _ = window.unminimize();
+                        let _ = window.set_focus();
+                        let _ = window.emit("window-shown", ());
+                    }
+                }
+                "play_pause" => {
+                    let is_playing = audio_clone.toggle_playback();
+                    let _ = app.emit("tray-playback-changed", is_playing);
+                }
+                "quit" => {
+                    app.exit(0);
+                }
+                _ => {}
+            })
+            .on_tray_icon_event(|tray, event| {
+                let app = tray.app_handle();
+                match event {
+                    tauri::tray::TrayIconEvent::Click { button, .. } => {
+                        if button == tauri::tray::MouseButton::Left {
+                            if let Some(window) = app.get_webview_window("main") {
+                                let _ = window.show();
+                                let _ = window.unminimize();
+                                let _ = window.set_focus();
+                                let _ = window.emit("window-shown", ());
+                            }
+                        }
+                    }
+                    tauri::tray::TrayIconEvent::DoubleClick { .. } => {
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.unminimize();
+                            let _ = window.set_focus();
+                            let _ = window.emit("window-shown", ());
+                        }
+                    }
+                    _ => {}
+                }
+            })
+            .build(app)?;
+    }
 
     Ok(())
 }

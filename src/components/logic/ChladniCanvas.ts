@@ -725,6 +725,74 @@ export class ChladniCanvas {
     }
   }
 
+  // Interactive Click Disturbances
+  private disturbances: Array<{
+    x: number;
+    y: number;
+    radius: number;
+    strength: number;
+    time: number;
+    maxAge: number;
+  }> = [];
+
+  /**
+   * Triggers a localized physical disturbance at (clientX, clientY) screen coordinates.
+   * Raycasts to 3D plate coordinates and disturbs particles with kinetic outward force.
+   */
+  public triggerClickDisturbance(clientX: number, clientY: number): void {
+    if (!this.renderer || !this.camera) return;
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
+
+    const ndcX = ((clientX - rect.left) / rect.width) * 2 - 1;
+    const ndcY = -((clientY - rect.top) / rect.height) * 2 + 1;
+
+    // Raycast to the XY plate plane (z = 0)
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(new THREE.Vector2(ndcX, ndcY), this.camera);
+
+    const platePlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+    const hitPoint = new THREE.Vector3();
+    const hit = raycaster.ray.intersectPlane(platePlane, hitPoint);
+
+    let x = 0;
+    let y = 0;
+    if (hit) {
+      x = hitPoint.x;
+      y = hitPoint.y;
+    } else {
+      x = ndcX * 0.85;
+      y = ndcY * 0.85;
+    }
+
+    this.addDisturbance(x, y);
+  }
+
+  /**
+   * Adds a physical disturbance epicenter in plate coordinates.
+   */
+  public addDisturbance(x: number, y: number): void {
+    const clampedX = Math.max(-0.95, Math.min(0.95, x));
+    const clampedY = Math.max(-0.95, Math.min(0.95, y));
+
+    this.disturbances.push({
+      x: clampedX,
+      y: clampedY,
+      radius: 0.52,
+      strength: 1.35,
+      time: 0.0,
+      maxAge: 1.35,
+    });
+
+    if (this.disturbances.length > 6) {
+      this.disturbances.shift();
+    }
+
+    // Trigger visual shader burst in fluid / other modes
+    this.burstActive = 0.75;
+    this.burstTime = 0.0;
+  }
+
   /**
    * Sine Wave Burst — Non-distracting internal audio burst sync
    */
@@ -2705,6 +2773,23 @@ export class ChladniCanvas {
         vel[idx + 1] += (0.0015 + bass * 0.004 - vel[idx + 1]) * 0.05;
         vel[idx + 2] += (Math.cos(x * 2.8 + time * 0.5) * 0.002 - vel[idx + 2]) * 0.05;
 
+        // Interactive Click Disturbance in Ethereal Mist
+        if (this.disturbances.length > 0) {
+          for (let d = 0; d < this.disturbances.length; d++) {
+            const distObj = this.disturbances[d];
+            const ddx = x - distObj.x;
+            const ddy = y - distObj.y;
+            const dDistSq = ddx * ddx + ddy * ddy;
+            if (dDistSq < distObj.radius * distObj.radius) {
+              const dDist = Math.sqrt(dDistSq) + 0.001;
+              const prog = distObj.time / distObj.maxAge;
+              const pForce = distObj.strength * Math.pow(1.0 - prog, 2.0) * 0.02;
+              vel[idx] += (ddx / dDist) * pForce;
+              vel[idx + 1] += (ddy / dDist) * pForce;
+            }
+          }
+        }
+
         pos[idx] += vel[idx] * breath;
         pos[idx + 1] += vel[idx + 1] * breath;
         pos[idx + 2] += vel[idx + 2] * breath;
@@ -2804,12 +2889,57 @@ export class ChladniCanvas {
     const shockRadius = this.burstActive > 0.0 ? this.burstTime * 1.5 : -1.0;
     const shockStrength = this.burstActive > 0.0 ? Math.max(0.0, 1.0 - this.burstTime / 1.5) * 0.45 : 0.0;
 
+    // Update active click disturbances
+    for (let d = this.disturbances.length - 1; d >= 0; d--) {
+      this.disturbances[d].time += delta;
+      if (this.disturbances[d].time >= this.disturbances[d].maxAge) {
+        this.disturbances.splice(d, 1);
+      }
+    }
+    const hasDisturbances = this.disturbances.length > 0;
+
     for (let i = 0; i < count; i++) {
       const idx = i * 3;
       let x = this.particlePositions[idx];
       let y = this.particlePositions[idx + 1];
       let vx = this.particleVelocities[idx];
       let vy = this.particleVelocities[idx + 1];
+
+      // 0. Interactive Click Disturbance: Disperses particles temporarily before gradient pull returns them
+      if (hasDisturbances) {
+        for (let d = 0; d < this.disturbances.length; d++) {
+          const distObj = this.disturbances[d];
+          const dx = x - distObj.x;
+          const dy = y - distObj.y;
+          const distSq = dx * dx + dy * dy;
+          const maxR = distObj.radius;
+
+          if (distSq < maxR * maxR) {
+            const dist = Math.sqrt(distSq) + 0.001;
+            const progress = distObj.time / distObj.maxAge; // 0.0 to 1.0
+
+            // Concentric shockwave ripple expanding outward
+            const waveR = progress * maxR * 1.3;
+            const dWave = Math.abs(dist - waveR);
+            const wavePulse = Math.exp(-(dWave * dWave) / 0.015);
+
+            // Immediate core blast + traveling ripple ring
+            const corePush = Math.max(0.0, 1.0 - dist / maxR) * 0.4;
+            const decay = Math.pow(1.0 - progress, 2.5);
+            const force = distObj.strength * decay * (wavePulse * 0.65 + corePush);
+
+            // Outward radial blast
+            vx += (dx / dist) * force * delta * 60;
+            vy += (dy / dist) * force * delta * 60;
+
+            // Subtle organic swirl/vorticity for fluid kinetic realism
+            const swirlSign = (i % 2 === 0) ? 1.0 : -1.0;
+            const swirl = force * 0.22 * swirlSign;
+            vx += -(dy / dist) * swirl * delta * 60;
+            vy += (dx / dist) * swirl * delta * 60;
+          }
+        }
+      }
 
       // 1. Physical Shockwave push if wave passes through particle
       if (shockRadius > 0.0) {
@@ -3063,31 +3193,53 @@ export class ChladniCanvas {
     const dom = this.renderer.domElement;
     dom.style.cursor = "grab";
 
+    let isPointerDown = false;
+    let pointerStartX = 0;
+    let pointerStartY = 0;
+    let hasDragged = false;
+
     dom.addEventListener("pointerdown", (e: PointerEvent) => {
+      if (e.button !== 0) return;
+      isPointerDown = true;
       this.isDragging = true;
       this.lastPointerX = e.clientX;
       this.lastPointerY = e.clientY;
+      pointerStartX = e.clientX;
+      pointerStartY = e.clientY;
+      hasDragged = false;
       dom.style.cursor = "grabbing";
       try { dom.setPointerCapture(e.pointerId); } catch {}
+
+      // Interactive Click Disturbance: Immediately disturb particles at click location
+      this.triggerClickDisturbance(e.clientX, e.clientY);
     });
 
     dom.addEventListener("pointermove", (e: PointerEvent) => {
-      if (!this.isDragging) return;
-      const dx = e.clientX - this.lastPointerX;
-      const dy = e.clientY - this.lastPointerY;
-      this.lastPointerX = e.clientX;
-      this.lastPointerY = e.clientY;
+      if (!isPointerDown) return;
+      const totalDx = e.clientX - pointerStartX;
+      const totalDy = e.clientY - pointerStartY;
+      if (!hasDragged && Math.hypot(totalDx, totalDy) > 5) {
+        hasDragged = true;
+      }
 
-      this.cameraAzimuth -= dx * 0.007;
-      this.cameraElevation = Math.max(-1.45, Math.min(1.45, this.cameraElevation + dy * 0.007));
-      if (this.cameraPreset !== "custom") {
-        this.cameraPreset = "custom";
-        this.onCameraPresetChange?.("custom");
+      if (hasDragged) {
+        const dx = e.clientX - this.lastPointerX;
+        const dy = e.clientY - this.lastPointerY;
+        this.lastPointerX = e.clientX;
+        this.lastPointerY = e.clientY;
+
+        this.cameraAzimuth -= dx * 0.007;
+        this.cameraElevation = Math.max(-1.45, Math.min(1.45, this.cameraElevation + dy * 0.007));
+        if (this.cameraPreset !== "custom") {
+          this.cameraPreset = "custom";
+          this.onCameraPresetChange?.("custom");
+        }
       }
     });
 
     const stopDrag = (e: PointerEvent) => {
-      if (this.isDragging) {
+      if (isPointerDown) {
+        isPointerDown = false;
         this.isDragging = false;
         dom.style.cursor = "grab";
         try { dom.releasePointerCapture(e.pointerId); } catch {}

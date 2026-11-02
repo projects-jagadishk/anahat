@@ -1,0 +1,57 @@
+
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 256 256"
+     width="100%"
+     height="auto"
+     role="img"
+     aria-labelledby="anahat-title anahat-desc">
+  <title id="anahat-title">Anahat — Faraday Grid Dark</title>
+  <desc id="anahat-desc">
+    Concrete-colored industrial badge on a black canvas,
+    with a black particle grid and a red active frequency node.
+  </desc>
+
+  <!-- Dark canvas -->
+  <rect width="256" height="256" fill="#000000"/>
+
+  <!-- Inverted badge -->
+  <rect x="24" y="24" width="208" height="208" fill="#E5E5E5"/>
+
+  <!-- 4 × 4 particle grid -->
+  <g fill="#000000">
+    <rect x="56" y="56" width="16" height="16"/>
+    <rect x="88" y="56" width="16" height="16"/>
+    <rect x="120" y="56" width="16" height="16"/>
+    <rect x="152" y="56" width="16" height="16"/>
+
+    <rect x="56" y="88" width="16" height="16"/>
+    <rect x="88" y="88" width="16" height="16"/>
+    <rect x="120" y="88" width="16" height="16"/>
+    <rect x="152" y="88" width="16" height="16"/>
+
+    <rect x="56" y="120" width="16" height="16"/>
+    <rect x="88" y="120" width="16" height="16"/>
+    <rect x="120" y="120" width="16" height="16"/>
+    <rect x="152" y="120" width="16" height="16"/>
+
+    <rect x="56" y="152" width="16" height="16"/>
+    <rect x="88" y="152" width="16" height="16"/>
+    <rect x="120" y="152" width="16" height="16"/>
+    <rect x="152" y="152" width="16" height="16"/>
+  </g>
+
+  <!-- Active frequency node -->
+  <rect x="120" y="88" width="16" height="16" fill="#FF3333"/>
+
+  <!-- Industrial label separator -->
+  <rect x="40" y="188" width="176" height="2" fill="#000000"/>
+
+  <!-- Wordmark -->
+  <text x="128" y="211"
+        font-family="'IBM Plex Mono', monospace"
+        font-size="17"
+        font-weight="500"
+        letter-spacing="1.2"
+        text-anchor="middle"
+        fill="#000000">ANAHAT</text>
+</svg>
