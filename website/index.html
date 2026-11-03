@@ -915,7 +915,7 @@
 		<div class="ticker-bar">
 			<div class="ticker-left">
 				<span class="status-dot"></span>
-				<span>ANAHAT // RELEASE v1.0.0 [ GOLDEN MASTER ]</span>
+				<span>ANAHAT // RELEASE <span class="version-tag">v1.0.0</span></span>
 			</div>
 			<div class="ticker-right">
 				<span>TAURI v2 // RUST // WEB AUDIO API // THREE.JS</span>
@@ -966,8 +966,13 @@
 							href="#downloads"
 							class="btn-download"
 							style="font-size: 13px; padding: 14px 20px">
-							[ ⬇ DOWNLOAD ANAHAT <span id="quick-version-label">v1.0.0</span> FOR
-							<span id="detected-os-label">DESKTOP</span> ]
+							[ ⬇ DOWNLOAD ANAHAT
+							<span
+								id="quick-version-label"
+								class="version-tag"
+								>v1.0.0</span
+							>
+							FOR <span id="detected-os-label">DESKTOP</span> ]
 						</a>
 						<a
 							href="https://www.producthunt.com/products/anahat?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-anahat"
@@ -1000,7 +1005,14 @@
 				id="downloads">
 				<div class="download-header">
 					<div>
-						<h2>RELEASE BINARIES // <span id="release-version-tag">v1.0.0</span></h2>
+						<h2>
+							RELEASE BINARIES //
+							<span
+								id="release-version-tag"
+								class="version-tag"
+								>v1.0.0</span
+							>
+						</h2>
 						<p style="font-size: 12px; color: #666; margin-top: 4px">
 							Universal self-contained desktop builds without external runtime dependencies.
 						</p>
@@ -1530,7 +1542,13 @@
 					style="color: var(--color-accent-gold)"
 					>☕ BUY ME A COFFEE</a
 				>
-				<a href="https://www.producthunt.com/@jagadishk" target="_blank" rel="noopener noreferrer" style="color: #DA552F;">PRODUCT HUNT</a>
+				<a
+					href="https://www.producthunt.com/@jagadishk"
+					target="_blank"
+					rel="noopener noreferrer"
+					style="color: #da552f"
+					>PRODUCT HUNT</a
+				>
 				<a
 					href="https://github.com/projects-jagadishk/anahat"
 					target="_blank"
@@ -1562,7 +1580,7 @@
 				// Solae scientiae gloria.
 			</div>
 			<div style="font-size: 9px; color: #666; margin-top: 4px">
-				ANAHAT v1.0.0 // ZERO-TRACKING // 100% LOCAL SYNTHESIS // ALL RIGHTS RESERVED
+				ANAHAT <span class="version-tag">v1.0.0</span> // ZERO-TRACKING // 100% LOCAL SYNTHESIS // ALL RIGHTS RESERVED
 			</div>
 		</footer>
 
@@ -1623,11 +1641,11 @@
 					if (!tag) return;
 
 					// Update displayed release tag in header and quick download
-					const tagElem = document.getElementById('release-version-tag');
-					if (tagElem) tagElem.textContent = tag;
+					const versionTags = document.querySelectorAll('.version-tag');
 
-					const quickVerElem = document.getElementById('quick-version-label');
-					if (quickVerElem) quickVerElem.textContent = tag;
+					for (let tagElem of versionTags) {
+						tagElem.textContent = tag;
+					}
 
 					// Parse release assets for exact bundle names
 					if (Array.isArray(release.assets)) {
